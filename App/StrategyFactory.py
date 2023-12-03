@@ -1,6 +1,6 @@
 import math
 
-from Strategies import *
+from App.Strategies import *
 
 
 def calculate_observability_score(celestial_object: CelestialObject) -> dict[str, float]:

@@ -1,20 +1,108 @@
-from CelestialObject import CelestialObject
-from StrategyFactory import calculate_observability_score
+import sys
 
-observability_score_sun = calculate_observability_score(CelestialObject('Sun', 'Sun', -26.74, 31.00, 39.00))
-observability_score_moon = calculate_observability_score(CelestialObject('Moon', 'Moon', -12.60, 31.00, 39.00))
-observability_score_jupiter = calculate_observability_score(CelestialObject('Jupiter', 'Planet', -2.40, 0.77, 43.00))
-observability_score_sirius = calculate_observability_score(CelestialObject('Sirius', 'DeepSky', -1.46, 0.0001, 90.00))
-observability_score_betelgeuse = calculate_observability_score(CelestialObject('Betelgeuse', 'DeepSky', 0.5, 0.0001, 45.00))
-observability_score_vega = calculate_observability_score(CelestialObject('Vega', 'DeepSky', 0.03, 0.0001, 50.00))
-observability_score_andromeda = calculate_observability_score(CelestialObject('Andromeda Galaxy', 'DeepSky', 3.44, 190.00, 60.00))
-observability_score_veil = calculate_observability_score(CelestialObject('Veil Nebula', 'DeepSky', 7.0, 180.00, 55.00))
+from PySide6.QtCore import QSettings, QByteArray, QRect
+from PySide6.QtGui import QScreen
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QPushButton, QVBoxLayout, QWidget, QFileDialog, QHeaderView
+)
 
-print(f"Observability score for Sun: {observability_score_sun}")
-print(f"Observability score for Moon: {observability_score_moon}")
-print(f"Observability score for Jupiter: {observability_score_jupiter}")
-print(f"Observability score for Sirius: {observability_score_sirius}")
-print(f"Observability score for Betelgeuse: {observability_score_betelgeuse}")
-print(f"Observability score for Vega: {observability_score_vega}")
-print(f"Observability score for Andromeda: {observability_score_andromeda}")
-print(f"Observability score for Veil: {observability_score_veil}")
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.settings = QSettings('BennyBottema', 'CelestialObjectObservability')
+
+        # Restore the window's last geometry or center it
+        geometry: QByteArray = self.settings.value("geometry", QByteArray())
+        if not geometry:
+            self.position_window_to_default()
+        else:
+            self.restoreGeometry(geometry)
+
+        self.setWindowTitle('Celestial Object Observability')
+
+        # Button to import data
+        self.import_button = QPushButton("Import from Excel")
+        self.import_button.clicked.connect(self.import_data)
+
+        # Table to display celestial objects
+        self.table = QTableWidget(0, 4)  # Start with zero rows and four columns
+        self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Magnitude', 'Observability Index'])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+        # Buttons for adding equipment
+        self.add_telescope_button = QPushButton("Add Telescope")
+        self.add_eyepiece_button = QPushButton("Add Eyepiece")
+        self.add_barlow_lens_button = QPushButton("Add Barlow Lens")
+
+        # Connect equipment buttons to methods
+        self.add_telescope_button.clicked.connect(self.add_telescope)
+        self.add_eyepiece_button.clicked.connect(self.add_eyepiece)
+        self.add_barlow_lens_button.clicked.connect(self.add_barlow_lens)
+
+        # Layout and central widget
+        layout = QVBoxLayout()
+        layout.addWidget(self.import_button)
+        layout.addWidget(self.table)
+        layout.addWidget(self.add_telescope_button)
+        layout.addWidget(self.add_eyepiece_button)
+        layout.addWidget(self.add_barlow_lens_button)
+
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+
+    def import_data(self):
+        # Open a dialog to select an Excel file and import data
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")
+        if file_path:
+            self.process_import(file_path)
+
+    def process_import(self, file_path):
+        # Here you would open the Excel file and read the data
+        # For now, let's populate the table with dummy data
+        self.table.insertRow(0)
+        self.table.setItem(0, 0, QTableWidgetItem("Dummy Star"))
+        self.table.setItem(0, 1, QTableWidgetItem("Star"))
+        self.table.setItem(0, 2, QTableWidgetItem("5.5"))
+        self.table.setItem(0, 3, QTableWidgetItem("Not Calculated"))
+
+    def add_telescope(self):
+        # Open dialog to input telescope details
+        # Update observability index accordingly
+        pass
+
+    def add_eyepiece(self):
+        # Open dialog to input eyepiece details
+        # Update observability index accordingly
+        pass
+
+    def add_barlow_lens(self):
+        # Open dialog to input Barlow lens details
+        # Update observability index accordingly
+        pass
+
+    # More methods would be defined here for processing equipment and updating observability index
+
+    def closeEvent(self, event):
+        # Save the current geometry of the window before closing
+        self.settings.setValue("geometry", self.saveGeometry())
+        super().closeEvent(event)
+
+    def position_window_to_default(self):
+        self.setGeometry(100, 100, 800, 600)
+        # Center the window on the screen
+        center_point = QScreen.availableGeometry(QApplication.primaryScreen()).center()
+        frame_geometry: QRect = self.frameGeometry()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
+
+
+# Entry point of the application
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())

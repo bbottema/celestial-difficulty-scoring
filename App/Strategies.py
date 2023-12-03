@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 
-from Constants import *
+from App.Constants import *
 
 
 class IObservabilityScoringStrategy(ABC):
