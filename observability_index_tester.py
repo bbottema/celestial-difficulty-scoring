@@ -1,5 +1,5 @@
-from App.CelestialObject import CelestialObject
-from App.StrategyFactory import calculate_observability_score
+from App.ObservabilityIndex.CelestialObject import CelestialObject
+from App.ObservabilityIndex.StrategyFactory import calculate_observability_score
 
 observability_score_sun = calculate_observability_score(CelestialObject('Sun', 'Sun', -26.74, 31.00, 39.00))
 observability_score_moon = calculate_observability_score(CelestialObject('Moon', 'Moon', -12.60, 31.00, 39.00))

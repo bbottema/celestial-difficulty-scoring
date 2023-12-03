@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QPushButton, QVBoxLayout, QWidget, QFileDialog, QHeaderView
 )
 
+from App.DataImport.astroplanner_excel_importer import AstroPlannerExcelImporter
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -58,9 +60,10 @@ class MainWindow(QMainWindow):
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")
         if file_path:
-            self.process_import(file_path)
+            data = AstroPlannerExcelImporter(file_path).import_data()
+            self.populate_table(data)
 
-    def process_import(self, file_path):
+    def populate_table(self, data):
         # Here you would open the Excel file and read the data
         # For now, let's populate the table with dummy data
         self.table.insertRow(0)
