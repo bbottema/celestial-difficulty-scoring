@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from app.domain.light_pollution import LightPollution
-from app.domain.weather_conditions import WeatherConditions
 
 
 @dataclass
@@ -10,7 +9,6 @@ class ObservationSite:
     name: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    weather_conditions: WeatherConditions | None = None
     light_pollution: LightPollution | None = None
 
     def __post_init__(self):

@@ -15,7 +15,6 @@ def initialize_database():
                         name TEXT,
                         latitude REAL,
                         longitude REAL,
-                        weather_conditions TEXT,
                         light_pollution TEXT)''')
 
     conn.commit()

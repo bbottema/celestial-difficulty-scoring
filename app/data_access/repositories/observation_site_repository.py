@@ -1,8 +1,6 @@
-from db.database import get_db_connection
-
 from app.domain.entities.observation_site import ObservationSite
+from db.database import get_db_connection
 from domain.light_pollution import LightPollution
-from domain.weather_conditions import WeatherConditions
 
 
 class ObservationSiteRepository:
@@ -12,10 +10,10 @@ class ObservationSiteRepository:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO observation_sites "
-                       "(name, latitude, longitude, weather_conditions, light_pollution) VALUES "
-                       "(?, ?, ?, ?, ?)",
+                       "(name, latitude, longitude, light_pollution) VALUES "
+                       "(?, ?, ?, ?)",
                        (observation_site.name, observation_site.latitude, observation_site.longitude,
-                        observation_site.weather_conditions.name, observation_site.light_pollution.name))
+                        observation_site.light_pollution.name))
         conn.commit()
         conn.close()
 
@@ -44,8 +42,7 @@ class ObservationSiteRepository:
             name=row[1],
             latitude=row[2],
             longitude=row[3],
-            weather_conditions=WeatherConditions[row[4]],
-            light_pollution=LightPollution[row[5]]
+            light_pollution=LightPollution[row[4]]
         )
 
     # Implement update_item and delete_item similarly
@@ -53,11 +50,11 @@ class ObservationSiteRepository:
     def update_observation_sites(site_id, observation_site: ObservationSite):
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE observation_sites SET "
-                       "name = ?, latitude = ?, longitude = ?, weather_conditions = ?, light_pollution = ? "
+        cursor.execute("UPDATE observation_sites "
+                       "SET name = ?, latitude = ?, longitude = ?, light_pollution = ? "
                        "WHERE id = ?",
                        (observation_site.name, observation_site.latitude, observation_site.longitude,
-                        observation_site.weather_conditions.name, observation_site.light_pollution.name, site_id))
+                        observation_site.light_pollution.name, site_id))
         conn.commit()
         conn.close()
 
