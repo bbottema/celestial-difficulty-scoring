@@ -24,28 +24,40 @@ class ObservationSiteRepository:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM observation_sites")
+        sites = [ObservationSiteRepository.map_row(row) for row in cursor.fetchall()]
+        conn.close()
+        return sites
 
-        # weather_conditions and light_pollution are enums, so we need to process their names back to enum values
-        sites = [ObservationSite(
+    @staticmethod
+    def get_observation_site(site_id: int) -> ObservationSite:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM observation_sites WHERE id = ?", (site_id,))
+        observation_site = ObservationSiteRepository.map_row(cursor.fetchone())
+        conn.close()
+        return observation_site
+
+    @staticmethod
+    def map_row(row):
+        return ObservationSite(
             id=row[0],
             name=row[1],
             latitude=row[2],
             longitude=row[3],
             weather_conditions=WeatherConditions[row[4]],
             light_pollution=LightPollution[row[5]]
-        ) for row in cursor.fetchall()]
-        conn.close()
-        return sites
+        )
 
     # Implement update_item and delete_item similarly
     @staticmethod
-    def update_observation_sites(name, latitude, longitude, weather_conditions, light_pollution, site_id):
+    def update_observation_sites(site_id, observation_site: ObservationSite):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE observation_sites SET "
                        "name = ?, latitude = ?, longitude = ?, weather_conditions = ?, light_pollution = ? "
                        "WHERE id = ?",
-                       (name, latitude, longitude, weather_conditions, light_pollution, site_id))
+                       (observation_site.name, observation_site.latitude, observation_site.longitude,
+                        observation_site.weather_conditions.name, observation_site.light_pollution.name, site_id))
         conn.commit()
         conn.close()
 

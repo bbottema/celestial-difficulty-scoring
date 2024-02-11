@@ -1,0 +1,80 @@
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QHeaderView, QTableWidgetItem, QHBoxLayout
+
+from data_access.repositories.observation_site_repository import ObservationSiteRepository
+from domain.entities.observation_site import ObservationSite
+from ui.main_window.observation_sites.observation_site_details_dialogue import ObservationSiteDetailsDialog
+
+
+class ObservationSitesComponent(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.layout = QVBoxLayout()
+        self.init_ui()
+        self.setLayout(self.layout)
+
+    # noinspection PyAttributeOutsideInit
+    def init_ui(self):
+        # Table to display observation sites
+        self.table = QTableWidget(0, 6)  # Adjust columns as needed
+        self.table.setHorizontalHeaderLabels([
+            'Name', 'Latitude', 'Longitude', 'Weather Conditions', 'Light Pollution', 'Actions'
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # Button to define a new observation site
+        self.define_new_button = QPushButton("Define new observation site")
+        self.define_new_button.clicked.connect(self.define_new_site)
+
+        # Add table and button to the layout
+        self.layout.addWidget(self.table)
+        self.layout.addWidget(self.define_new_button)
+
+        # Populate table with existing observation sites
+        self.populate_table()
+
+    def populate_table(self):
+        self.table.setRowCount(0)
+        data: [ObservationSite] = ObservationSiteRepository.get_observation_sites()
+        for i, observation_site in enumerate(data):
+            self.table.insertRow(i)
+            self.table.setItem(i, 0, QTableWidgetItem(observation_site.name))
+            self.table.setItem(i, 1, QTableWidgetItem(str(observation_site.latitude)))
+            self.table.setItem(i, 2, QTableWidgetItem(str(observation_site.longitude)))
+            self.table.setItem(i, 3, QTableWidgetItem(observation_site.weather_conditions.name))
+            self.table.setItem(i, 4, QTableWidgetItem(observation_site.light_pollution.name))
+
+            # Create a QWidget to hold the buttons
+            button_widget = QWidget()
+            layout = QHBoxLayout(button_widget)
+            layout.setContentsMargins(0, 0, 0, 0)
+
+            modify_button = QPushButton("Modify")
+            modify_button.clicked.connect(lambda *args, site_id=observation_site.id: self.modify_site(site_id))
+            layout.addWidget(modify_button)
+
+            delete_button = QPushButton("Delete")
+            delete_button.clicked.connect(lambda *args, site_id=observation_site.id: self.delete_site(site_id))
+            layout.addWidget(delete_button)
+
+            self.table.setCellWidget(i, 5, button_widget)
+
+    def define_new_site(self):
+        dialog = ObservationSiteDetailsDialog(self)
+        if dialog.exec():
+            new_site = dialog.to_observation_site()
+            ObservationSiteRepository.add_observation_site(new_site)
+            self.populate_table()
+
+    def modify_site(self, site_id):
+        observation_site = ObservationSiteRepository.get_observation_site(site_id)
+        dialog = ObservationSiteDetailsDialog(self, observation_site)
+        if dialog.exec():
+            ObservationSiteRepository.update_observation_sites(site_id, dialog.to_observation_site())
+            self.populate_table()
+
+    def delete_site(self, site_id):
+        print(f"Deleting site {site_id}")
+        ObservationSiteRepository.delete_observation_sites(site_id)
+        self.populate_table()
+
+    # Additional methods to handle the 'Delete' action and update the table will be added here

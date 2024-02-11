@@ -6,12 +6,12 @@ from app.domain.weather_conditions import WeatherConditions
 
 @dataclass
 class ObservationSite:
-    id: int
-    name: str | None
-    latitude: float | None
-    longitude: float | None
-    weather_conditions: WeatherConditions | None
-    light_pollution: LightPollution | None
+    id: int | None = None
+    name: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    weather_conditions: WeatherConditions | None = None
+    light_pollution: LightPollution | None = None
 
     def __post_init__(self):
         self.validate_coordinates()

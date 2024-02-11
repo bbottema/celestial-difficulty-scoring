@@ -11,11 +11,6 @@ if __name__ == '__main__':
 
     initialize_database()
 
-    testSite = ObservationSite(1, 'Home', None, None, WeatherConditions.CLEAR, LightPollution.BORTLE_5)
-    ObservationSiteRepository.add_observation_site(testSite)
-    items = ObservationSiteRepository.get_observation_sites()
-    print(items)
-
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

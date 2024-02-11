@@ -6,7 +6,6 @@ class LightPollution(Enum):
     BORTLE_2 = "Bortle 2 - Typical truly dark site"
     BORTLE_3 = "Bortle 3 - Rural sky"
     BORTLE_4 = "Bortle 4 - Brighter rural sky"
-    BORTLE_4_5 = "Bortle 4.5 - Semi-Suburban/Transition sky"
     BORTLE_5 = "Bortle 5 - Suburban sky"
     BORTLE_6 = "Bortle 6 - Bright suburban sky"
     BORTLE_7 = "Bortle 7 - Suburban/urban transition"
