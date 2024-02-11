@@ -1,7 +1,30 @@
+from dataclasses import dataclass
+from typing import TypedDict, List
+
+
+@dataclass
 class CelestialObject:
-    def __init__(self, name, object_type, magnitude, size, altitude):
-        self.name = name
-        self.object_type = object_type
-        self.magnitude = magnitude
-        self.size = size
-        self.altitude = altitude
+    name: str
+    object_type: str
+    magnitude: float
+    size: float
+    altitude: float
+
+
+@dataclass
+class CelestialObjectScore:
+    score: float
+    normalized_score: float
+
+
+@dataclass
+class CelestialObjectData:
+    name: str
+    object_type: str
+    magnitude: float
+    size: float
+    altitude: float
+    observability_score: CelestialObjectScore
+
+
+CelestialsList = List[CelestialObjectData]

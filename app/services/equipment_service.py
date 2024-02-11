@@ -1,0 +1,2 @@
+class EquipmentService:
+    pass

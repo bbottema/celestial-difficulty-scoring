@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.data_access.importers.astroplanner_excel_importer import AstroPlannerExcelImporter
+from app.domain.celestial_object import CelestialsList
 
 
 class MainWindow(QMainWindow):
@@ -27,8 +28,16 @@ class MainWindow(QMainWindow):
         self.import_button.clicked.connect(self.import_data)
 
         # Table to display celestial objects
-        self.table = QTableWidget(0, 4)  # Start with zero rows and four columns
-        self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Magnitude', 'Observability Index'])
+        self.table = QTableWidget(0, 7)  # Start with zero rows and four columns
+        self.table.setHorizontalHeaderLabels([
+            'Name',
+            'Type',
+            'Magnitude',
+            'Size in arcminutes',
+            'Altitude',
+            'Observability Index',
+            'Observability Index (normalized)'
+        ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         # Buttons for adding equipment
@@ -58,17 +67,30 @@ class MainWindow(QMainWindow):
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")
         if file_path:
-            data = AstroPlannerExcelImporter(file_path).import_data()
+            data: CelestialsList = AstroPlannerExcelImporter(file_path).import_data()
             self.populate_table(data)
 
-    def populate_table(self, data):
+    def populate_table(self, data: CelestialsList):
         # Here you would open the Excel file and read the data
         # For now, let's populate the table with dummy data
+        print(data)
+
         self.table.insertRow(0)
-        self.table.setItem(0, 0, QTableWidgetItem("Dummy Star"))
-        self.table.setItem(0, 1, QTableWidgetItem("Star"))
-        self.table.setItem(0, 2, QTableWidgetItem("5.5"))
-        self.table.setItem(0, 3, QTableWidgetItem("Not Calculated"))
+        # self.table.setItem(0, 0, QTableWidgetItem("Dummy Star"))
+        # self.table.setItem(0, 1, QTableWidgetItem("Star"))
+        # self.table.setItem(0, 2, QTableWidgetItem("5.5"))
+        # self.table.setItem(0, 3, QTableWidgetItem("Not Calculated"))
+
+        for i, celestial_object in enumerate(data):
+            self.table.insertRow(i)
+            self.table.setItem(i, 0, QTableWidgetItem(celestial_object.name))
+            self.table.setItem(i, 1, QTableWidgetItem(celestial_object.object_type))
+            self.table.setItem(i, 2, QTableWidgetItem(str(celestial_object.magnitude)))
+            self.table.setItem(i, 3, QTableWidgetItem(str(celestial_object.size)))
+            self.table.setItem(i, 4, QTableWidgetItem(str(celestial_object.altitude)))
+            self.table.setItem(i, 5, QTableWidgetItem(str(celestial_object.observability_score.score)))
+            self.table.setItem(i, 6, QTableWidgetItem(str(celestial_object.observability_score.normalized_score)))
+
 
     def add_telescope(self):
         # Open dialog to input telescope details

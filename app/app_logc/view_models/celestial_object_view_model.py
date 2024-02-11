@@ -1,0 +1,2 @@
+class CelestialObjectViewModel:
+    pass
