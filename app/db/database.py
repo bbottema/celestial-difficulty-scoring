@@ -1,5 +1,8 @@
 import sqlite3
 
+from utils.event_bus_config import database_ready_bus
+
+database_ready_bus.on_next('DATABASE_READY')
 
 def get_db_connection():
     return sqlite3.connect('celestial.db')

@@ -1,6 +1,9 @@
+import dataclasses
+
 from app.domain.entities.observation_site import ObservationSite
 from db.database import get_db_connection
 from domain.light_pollution import LightPollution
+from utils.event_bus_config import bus, CelestialEvent
 
 
 class ObservationSiteRepository:
@@ -16,6 +19,8 @@ class ObservationSiteRepository:
                         observation_site.light_pollution.name))
         conn.commit()
         conn.close()
+        updated_observation_site = dataclasses.replace(observation_site, id=cursor.lastrowid)
+        bus.emit(CelestialEvent.OBSERVATION_SITE_ADDED, updated_observation_site)
 
     @staticmethod
     def get_observation_sites() -> [ObservationSite]:
@@ -48,6 +53,7 @@ class ObservationSiteRepository:
     # Implement update_item and delete_item similarly
     @staticmethod
     def update_observation_sites(site_id, observation_site: ObservationSite):
+        print(f"Updating site {site_id}")
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE observation_sites "
@@ -57,11 +63,14 @@ class ObservationSiteRepository:
                         observation_site.light_pollution.name, site_id))
         conn.commit()
         conn.close()
+        bus.emit(CelestialEvent.OBSERVATION_SITE_UPDATED, observation_site)
 
     @staticmethod
-    def delete_observation_sites(item_id):
+    def delete_observation_sites(site_id):
+        print(f"Deleting site {site_id}")
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM observation_sites WHERE id = ?", (item_id,))
+        cursor.execute("DELETE FROM observation_sites WHERE id = ?", (site_id,))
         conn.commit()
         conn.close()
+        bus.emit(CelestialEvent.OBSERVATION_SITE_DELETED, site_id)

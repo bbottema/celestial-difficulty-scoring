@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QTableWidgetItem, QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
+    QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
 )
 
 from app.data_access.importers.astroplanner_excel_importer import AstroPlannerExcelImporter
@@ -17,21 +17,27 @@ class ObservationDataComponent(QWidget):
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):
-        # Button to import data
         self.import_button = QPushButton("Import AstroPlanner's Excel export")
         self.import_button.clicked.connect(self.import_data)
 
+        # Widgets for weather and date/time
         weather_widget = QWidget()
-        weather_layout = QHBoxLayout(weather_widget)  # Pass the widget to the layout
-        weather_label = QLabel("Current Weather Conditions:")
-        self.weather_conditions_combo = QComboBox()
+        weather_layout = QHBoxLayout(weather_widget)
+        weather_layout.addWidget(QLabel("Weather Conditions:"))
+        weather_conditions_combo = QComboBox()
+        weather_layout.addWidget(weather_conditions_combo)
 
         for wc in WeatherConditions:
-            self.weather_conditions_combo.addItem(wc.value, wc.name)
-        self.weather_conditions_combo.setCurrentText(WeatherConditions.CLEAR.value)
+            weather_conditions_combo.addItem(wc.value, wc.name)
+        weather_conditions_combo.setCurrentText(WeatherConditions.CLEAR.value)
 
-        weather_layout.addWidget(weather_label)
-        weather_layout.addWidget(self.weather_conditions_combo)
+        date_time_widget = QWidget()
+        date_time_layout = QHBoxLayout(date_time_widget)
+        date_time_layout.addWidget(QLabel("Date/time:"))
+        date_picker = QLabel("localized date picker here")  # ??
+        date_time_layout.addWidget(date_picker)
+        time_input = QLabel("localized time editor here")  # ??
+        date_time_layout.addWidget(time_input)
 
         # Table to display celestial objects
         self.table = default_table([
@@ -56,6 +62,7 @@ class ObservationDataComponent(QWidget):
         # Add components to the layout
         self.layout.addWidget(self.import_button)
         self.layout.addWidget(weather_widget)
+        self.layout.addWidget(date_time_widget)
         self.layout.addWidget(self.table)
         self.layout.addWidget(self.add_telescope_button)
         self.layout.addWidget(self.add_eyepiece_button)

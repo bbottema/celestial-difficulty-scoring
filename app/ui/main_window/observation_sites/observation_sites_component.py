@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from data_access.repositories.observation_site_repository import ObservationSiteRepository
 from domain.entities.observation_site import ObservationSite
 from ui.main_window.observation_sites.observation_site_details_dialogue import ObservationSiteDetailsDialog
+from utils.event_bus_config import bus, CelestialEvent, database_ready_bus
 from utils.gui_helper import centered_table_widget_item, default_table
 
 
@@ -26,10 +27,14 @@ class ObservationSitesComponent(QWidget):
         self.layout.addWidget(self.table)
         self.layout.addWidget(self.define_new_button)
 
-        # Populate table with existing observation sites
-        self.populate_table()
+        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, self.populate_table)
+        bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, self.populate_table)
+        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, self.populate_table)
 
-    def populate_table(self):
+        database_ready_bus.subscribe(self.populate_table)
+
+    # noinspection PyUnusedLocal
+    def populate_table(self, *args):
         self.table.setRowCount(0)
         data: [ObservationSite] = ObservationSiteRepository.get_observation_sites()
         for i, observation_site in enumerate(data):
@@ -59,18 +64,13 @@ class ObservationSitesComponent(QWidget):
         if dialog.exec():
             new_site = dialog.to_observation_site()
             ObservationSiteRepository.add_observation_site(new_site)
-            self.populate_table()
 
     def modify_site(self, site_id):
         observation_site = ObservationSiteRepository.get_observation_site(site_id)
         dialog = ObservationSiteDetailsDialog(self, observation_site)
         if dialog.exec():
             ObservationSiteRepository.update_observation_sites(site_id, dialog.to_observation_site())
-            self.populate_table()
 
-    def delete_site(self, site_id):
-        print(f"Deleting site {site_id}")
+    @staticmethod
+    def delete_site(site_id):
         ObservationSiteRepository.delete_observation_sites(site_id)
-        self.populate_table()
-
-    # Additional methods to handle the 'Delete' action and update the table will be added here
