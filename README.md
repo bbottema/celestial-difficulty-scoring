@@ -4,11 +4,13 @@ This guide provides a quick overview of the rapid prototype workflow, designed f
 
 The steps to follow to get this workflow up and running are as follows:
 
-1. **Synchronize your Python environment:** You can do this by running the command `pipenv synq`. This step ensures all necessary Python dependencies are properly installed in your Python environment.
+1. **Create a new Python environment:** Start by creating a new Python environment and installing the necessary dependencies. You can do this by running the following commands.
 
     ```
-    pipenv synq
-    ``` 
+    pipenv sync
+    ```
+   
+Alternatively, use ```pipenv install``` to install the dependencies from the Pipfile with latest versions.
 
 2. **Initialize your database schema:** After synchronizing your environment, run `python initialize_db_schema.py`. Be aware that this command will update the structure of your tables and also drop all existing data whenever it is run.
 
