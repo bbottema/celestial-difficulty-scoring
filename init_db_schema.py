@@ -23,18 +23,20 @@ def clear_migrations_folder():
     print("Cleared existing migrations.")
 
 
-def regenerate_initial_migration():
-    subprocess.run(["alembic", "revision", "--autogenerate", "-m", "Initial schema"], check=True)
+def regenerate_initial_migration(env):
+    subprocess.run(["alembic", "revision", "--autogenerate", "-m", "Initial schema"], check=True, env=env)
     print("Generated initial migration.")
 
 
-def apply_migration():
-    subprocess.run(["alembic", "upgrade", "head"], check=True)
+def apply_migration(env):
+    subprocess.run(["alembic", "upgrade", "head"], check=True, env=env)
     print("Applied migration to the database.")
 
 
 if __name__ == "__main__":
     clear_alembic_version_history()
     clear_migrations_folder()
-    regenerate_initial_migration()
-    apply_migration()
+    env = os.environ.copy()
+    env['PYTHONPATH'] = os.path.join(os.getcwd(), 'app')
+    regenerate_initial_migration(env)
+    apply_migration(env)

@@ -5,7 +5,9 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from app.domain.entities.entities import Base
+from domain.entities.entities import Base
+
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
