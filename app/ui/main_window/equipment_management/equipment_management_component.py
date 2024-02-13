@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QTabWidget, QHBoxLayout, QVBoxLayout, QTableWidget, QLabel, QLineEdit, QComboBox, QPushButton, QSizePolicy, QSpacerItem)
 
+from data_access.repositories.telescope_repository import TelescopeRepository
+from domain.entities.telescope import Telescope
 from utils.event_bus_config import CelestialEvent, bus, database_ready_bus
 from utils.gui_helper import centered_table_widget_item
 
