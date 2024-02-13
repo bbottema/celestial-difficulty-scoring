@@ -1,6 +1,6 @@
 import dataclasses
 
-from app.domain.entities.observation_site import ObservationSite
+from app.domain.entities.entities import ObservationSite
 from db.database import get_db_connection
 from domain.light_pollution import LightPollution
 from utils.event_bus_config import bus, CelestialEvent

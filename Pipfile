@@ -7,6 +7,8 @@ name = "pypi"
 reactivex = "*"
 pandas = "*"
 pyside6 = "*"
+sqlalchemy = "*"
+alembic = "*"
 
 [dev-packages]
 

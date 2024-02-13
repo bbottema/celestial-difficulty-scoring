@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
 from data_access.repositories.observation_site_repository import ObservationSiteRepository
-from domain.entities.observation_site import ObservationSite
+from domain.entities.entities import ObservationSite
 from ui.main_window.observation_sites.observation_site_details_dialogue import ObservationSiteDetailsDialog
 from utils.event_bus_config import bus, CelestialEvent, database_ready_bus
 from utils.gui_helper import centered_table_widget_item, default_table
