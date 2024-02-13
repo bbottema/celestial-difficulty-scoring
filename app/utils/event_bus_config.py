@@ -1,4 +1,4 @@
-from rx.subject import ReplaySubject
+from reactivex.subject import ReplaySubject
 
 from utils.rx_bus import RxBus
 

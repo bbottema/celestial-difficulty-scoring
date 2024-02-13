@@ -1,4 +1,4 @@
-from rx.subject import Subject
+from reactivex import Subject
 
 
 class RxBus:
@@ -6,6 +6,7 @@ class RxBus:
     This uses rx.subject to emulate pyee.EventEmitter.
     This way, we can ditch the pyee dependency, because anyway we need rx for its ReplaySubject which pyee doesn't support.
     """
+
     def __init__(self):
         self.subject = Subject()
 
