@@ -1,9 +1,15 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
 from sqlalchemy.orm import declarative_base, relationship
 
 from domain.light_pollution import LightPollution
 
 Base = declarative_base()
+
+# Association table
+observation_site_telescope_association = Table(
+    'observation_site_telescope', Base.metadata,
+    Column('observation_site_id', Integer, ForeignKey('observation_sites.id')),
+    Column('telescope_id', Integer, ForeignKey('telescopes.id')))
 
 
 class ObservationSite(Base):
@@ -15,8 +21,7 @@ class ObservationSite(Base):
     longitude = Column(Float)
     light_pollution = Column(Enum(LightPollution))
 
-    # Relationship to Telescope
-    telescopes = relationship("Telescope", back_populates="observation_site")
+    telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites")
 
     def __post_init__(self):
         self.validate_coordinates()
@@ -33,7 +38,5 @@ class Telescope(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    observation_site_id = Column(Integer, ForeignKey('observation_sites.id'))
 
-    # Relationship to ObservationSite
-    observation_site = relationship("ObservationSite", back_populates="telescopes")
+    observation_sites = relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes")

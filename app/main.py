@@ -1,5 +1,9 @@
+import logging
+
 from app.db.database import initialize_database
 from app.ui.main_window.main_window import MainWindow
+
+logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':
     import sys
