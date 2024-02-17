@@ -2,10 +2,10 @@ from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
 )
 
-from utils.astroplanner_excel_importer import AstroPlannerExcelImporter
-from domain.model.celestial_object import CelestialsList
-from domain.model.weather_conditions import WeatherConditions
-from utils.gui_helper import default_table, centered_table_widget_item
+from app.domain.model.celestial_object import CelestialsList
+from app.domain.model.weather_conditions import WeatherConditions
+from app.utils.astroplanner_excel_importer import AstroPlannerExcelImporter
+from app.utils.gui_helper import default_table, centered_table_widget_item
 
 
 class ObservationDataComponent(QWidget):

@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget
 from PySide6.QtWidgets import QMessageBox
 
-from orm.entities import ObservationSite
-from domain.model.light_pollution import LightPollution
-from utils.input_value_helper import parse_str_float, parse_float_str
+from app.domain.model.light_pollution import LightPollution
+from app.orm.entities import ObservationSite
+from app.utils.input_value_helper import parse_float_str, parse_str_float
 
 
 class ObservationSiteDetailsDialog(QDialog):
@@ -22,7 +22,7 @@ class ObservationSiteDetailsDialog(QDialog):
     def init_ui(self, observation_site: ObservationSite | None = None):
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Home Garden, Out in the woods, Local Observatory club")
-        self.name_edit.setText(parse_float_str(observation_site.name) if observation_site else "")
+        self.name_edit.setText(observation_site.name if observation_site else "")
         self.latitude_edit = QLineEdit()
         self.latitude_edit.setPlaceholderText("e.g. 52.5200, optional")
         self.latitude_edit.setText(parse_float_str(observation_site.latitude) if observation_site else "")
@@ -74,6 +74,7 @@ class ObservationSiteDetailsDialog(QDialog):
         self.accept()  # Close the dialog only if validation passes
 
     def to_observation_site(self):
+        # TODO figure out why PyCharm thinks all these parameters are unexpected and wants to remove them
         return ObservationSite(
             id=self.observation_site_id,
             name=self.name_edit.text(),

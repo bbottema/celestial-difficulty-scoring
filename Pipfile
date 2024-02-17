@@ -9,6 +9,7 @@ pandas = "*"
 pyside6 = "*"
 sqlalchemy = "*"
 alembic = "*"
+injector = "*"
 
 [dev-packages]
 

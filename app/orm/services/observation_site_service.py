@@ -25,4 +25,5 @@ class ObservationSiteService(BaseService):
                 session.merge(telescope)
 
 
+# FIXME: replace with dependency injection
 observation_site_service = ObservationSiteService()

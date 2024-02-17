@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
-from orm.entities import ObservationSite
-from orm.services.observation_site_service import observation_site_service
-from ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
-from utils.event_bus_config import bus, CelestialEvent, database_ready_bus
-from utils.gui_helper import centered_table_widget_item, default_table
+from app.orm.entities import ObservationSite
+from app.orm.services.observation_site_service import observation_site_service
+from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
+from app.utils.event_bus_config import CelestialEvent, database_ready_bus
+from app.utils.gui_helper import default_table, centered_table_widget_item
 
 
 class ObservationSitesComponent(QWidget):
