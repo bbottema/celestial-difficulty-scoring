@@ -14,6 +14,7 @@ class ObservationSiteDetailsDialog(QDialog):
         self.setMinimumWidth(500)
         self.layout = QVBoxLayout()
         self.form_layout = QFormLayout()
+        self.observation_site_id = observation_site.id if observation_site else None
         self.init_ui(observation_site)
         self.setLayout(self.layout)
 
@@ -74,6 +75,7 @@ class ObservationSiteDetailsDialog(QDialog):
 
     def to_observation_site(self):
         return ObservationSite(
+            id=self.observation_site_id,
             name=self.name_edit.text(),
             latitude=parse_str_float(self.latitude_edit.text()),
             longitude=parse_str_float(self.longitude_edit.text()),
