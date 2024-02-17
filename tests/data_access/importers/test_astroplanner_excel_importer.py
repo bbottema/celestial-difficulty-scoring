@@ -2,7 +2,7 @@ import unittest
 
 from assertpy import assert_that
 
-from app.data_access.importers.astroplanner_excel_importer import AstroPlannerExcelImporter
+from utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 
 
 class TestAstroPlannerExcelImporter(unittest.TestCase):

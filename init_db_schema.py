@@ -3,12 +3,9 @@ import subprocess
 
 from sqlalchemy import create_engine, text
 
-# Configure your database URL
-DATABASE_URL = "sqlite:///celestial.db"  # Adjust for your database
-
 
 def clear_alembic_version_history():
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine("sqlite:///celestial.db")
     with engine.connect() as conn:
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
         print("Cleared Alembic version history.")
@@ -34,9 +31,9 @@ def apply_migration(env):
 
 
 if __name__ == "__main__":
-    clear_alembic_version_history()
     clear_migrations_folder()
     env = os.environ.copy()
     env['PYTHONPATH'] = os.path.join(os.getcwd(), 'app')
+    clear_alembic_version_history()
     regenerate_initial_migration(env)
     apply_migration(env)

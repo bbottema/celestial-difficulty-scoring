@@ -2,9 +2,9 @@ from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
 )
 
-from app.data_access.importers.astroplanner_excel_importer import AstroPlannerExcelImporter
-from app.domain.celestial_object import CelestialsList
-from domain.weather_conditions import WeatherConditions
+from utils.astroplanner_excel_importer import AstroPlannerExcelImporter
+from domain.model.celestial_object import CelestialsList
+from domain.model.weather_conditions import WeatherConditions
 from utils.gui_helper import default_table, centered_table_widget_item
 
 

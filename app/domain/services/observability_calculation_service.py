@@ -1,7 +1,7 @@
 import math
 
-from app.domain.celestial_object import CelestialObjectScore
-from app.services.strategies import *
+from domain.model.celestial_object import CelestialObjectScore
+from domain.services.strategies import *
 
 
 class ObservabilityCalculationService:

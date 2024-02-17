@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from domain.entities.entities import Base
+from orm.entities import Base
 
 
 

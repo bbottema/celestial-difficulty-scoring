@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QTabWidget, QHBoxLayout, QVBoxLayout, QTableWidget, QLabel, QLineEdit, QComboBox, QPushButton, QSizePolicy, QSpacerItem)
 
-from domain.entities.entities import Telescope
-from services.telescope_service import telescope_service
+from orm.entities import Telescope
+from orm.services.telescope_service import telescope_service
 from utils.event_bus_config import CelestialEvent, bus, database_ready_bus
 from utils.gui_helper import centered_table_widget_item
 
@@ -90,7 +90,7 @@ class EquipmentManagementComponent(QWidget):
 
     def populate_telescope_table(self, *args):
         self.telescope_table.setRowCount(0)
-        data: [Telescope] = telescope_service.get_telescopes()
+        data: [Telescope] = telescope_service.get_all()
         for i, telescope in enumerate(data):
             self.telescope_table.insertRow(i)
             self.telescope_table.setItem(i, 0, centered_table_widget_item(telescope.name))

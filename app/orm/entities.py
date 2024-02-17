@@ -1,7 +1,9 @@
+from dataclasses import dataclass
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
 from sqlalchemy.orm import declarative_base, relationship
 
-from domain.light_pollution import LightPollution
+from domain.model.light_pollution import LightPollution
 
 Base = declarative_base()
 
@@ -12,6 +14,7 @@ observation_site_telescope_association = Table(
     Column('telescope_id', Integer, ForeignKey('telescopes.id')))
 
 
+@dataclass
 class ObservationSite(Base):
     __tablename__ = 'observation_sites'
 
@@ -33,6 +36,7 @@ class ObservationSite(Base):
             raise ValueError("Longitude must be between -180 and 180 degrees.")
 
 
+@dataclass
 class Telescope(Base):
     __tablename__ = 'telescopes'
 

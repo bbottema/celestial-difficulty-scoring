@@ -1,4 +1,4 @@
-from app.domain.celestial_object import CelestialObject
+from domain.model.celestial_object import CelestialObject
 
 best_observable_object = CelestialObject('Sun', 'Sun', -26.74, 31.00, 90.00)
 brightest_deepsky_object = CelestialObject('Sirius', 'DeepSky', -1.46, 0.0001, 90.00)

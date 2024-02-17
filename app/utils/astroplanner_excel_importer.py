@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Assuming the CelestialObject class and observability_calculation_service are defined elsewhere
-from app.domain.celestial_object import CelestialObject, CelestialsList, CelestialObjectData
-from app.services.observability_calculation_service import ObservabilityCalculationService
+from domain.model.celestial_object import CelestialObject, CelestialsList, CelestialObjectData
+from domain.services.observability_calculation_service import ObservabilityCalculationService
 
 observability_calculation_service = ObservabilityCalculationService()
 

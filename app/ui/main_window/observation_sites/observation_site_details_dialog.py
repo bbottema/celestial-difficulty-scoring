@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget
 from PySide6.QtWidgets import QMessageBox
 
-from domain.entities.entities import ObservationSite
-from domain.light_pollution import LightPollution
+from orm.entities import ObservationSite
+from domain.model.light_pollution import LightPollution
 from utils.input_value_helper import parse_str_float, parse_float_str
 
 

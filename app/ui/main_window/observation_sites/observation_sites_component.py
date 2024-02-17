@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
-from domain.entities.entities import ObservationSite
-from services.observation_site_service import observation_site_service
-from ui.main_window.observation_sites.observation_site_details_dialogue import ObservationSiteDetailsDialog
+from orm.entities import ObservationSite
+from orm.services.observation_site_service import observation_site_service
+from ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
 from utils.event_bus_config import bus, CelestialEvent, database_ready_bus
 from utils.gui_helper import centered_table_widget_item, default_table
 
@@ -35,9 +35,8 @@ class ObservationSitesComponent(QWidget):
 
     # noinspection PyUnusedLocal
     def populate_table(self, *args):
-        print("MOOOOOOOOOOOOOOOOOOO")
         self.table.setRowCount(0)
-        data: [ObservationSite] = observation_site_service.get_observation_sites()
+        data: [ObservationSite] = observation_site_service.get_all()
         for i, observation_site in enumerate(data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(observation_site.name))
@@ -64,13 +63,13 @@ class ObservationSitesComponent(QWidget):
         dialog = ObservationSiteDetailsDialog(self)
         if dialog.exec():
             new_site = dialog.to_observation_site()
-            observation_site_service.add_observation_site(new_site)
+            observation_site_service.add(new_site)
 
     def modify_site(self, observation_site):
         dialog = ObservationSiteDetailsDialog(self, observation_site)
         if dialog.exec():
-            observation_site_service.update_observation_site(dialog.to_observation_site())
+            observation_site_service.update(dialog.to_observation_site())
 
     @staticmethod
     def delete_site(observation_site):
-        observation_site_service.delete_observation_site(observation_site)
+        observation_site_service.delete(observation_site)
