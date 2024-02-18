@@ -1,14 +1,17 @@
 from PySide6.QtWidgets import (QWidget, QTabWidget, QHBoxLayout, QVBoxLayout, QTableWidget, QLabel, QLineEdit, QComboBox, QPushButton, QSizePolicy, QSpacerItem)
 
+from config.auto_wire import component
 from orm.entities import Telescope
-from orm.services.telescope_service import telescope_service
+from orm.services.telescope_service import TelescopeService
 from utils.event_bus_config import CelestialEvent, bus, database_ready_bus
 from utils.gui_helper import centered_table_widget_item
 
 
+@component
 class EquipmentManagementComponent(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, telescope_service: TelescopeService):
+        super().__init__(None)
+        self.telescope_service = telescope_service
         self.init_ui()
 
     # noinspection PyAttributeOutsideInit
@@ -90,7 +93,7 @@ class EquipmentManagementComponent(QWidget):
 
     def populate_telescope_table(self, *args):
         self.telescope_table.setRowCount(0)
-        data: [Telescope] = telescope_service.get_all()
+        data: [Telescope] = self.telescope_service.get_all()
         for i, telescope in enumerate(data):
             self.telescope_table.insertRow(i)
             self.telescope_table.setItem(i, 0, centered_table_widget_item(telescope.name))

@@ -1,15 +1,18 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
-from app.orm.entities import ObservationSite
-from app.orm.services.observation_site_service import observation_site_service
-from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
-from app.utils.event_bus_config import CelestialEvent, database_ready_bus
-from app.utils.gui_helper import default_table, centered_table_widget_item
+from orm.entities import ObservationSite
+from ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
+from utils.event_bus_config import CelestialEvent, database_ready_bus, bus
+from utils.gui_helper import default_table, centered_table_widget_item
+from config.auto_wire import component
+from orm.services.observation_site_service import ObservationSiteService
 
 
+@component
 class ObservationSitesComponent(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, observation_site_service: ObservationSiteService):
+        super().__init__(None)
+        self.observation_site_service = observation_site_service
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
@@ -36,7 +39,7 @@ class ObservationSitesComponent(QWidget):
     # noinspection PyUnusedLocal
     def populate_table(self, *args):
         self.table.setRowCount(0)
-        data: [ObservationSite] = observation_site_service.get_all()
+        data: [ObservationSite] = self.observation_site_service.get_all()
         for i, observation_site in enumerate(data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(observation_site.name))
@@ -63,13 +66,12 @@ class ObservationSitesComponent(QWidget):
         dialog = ObservationSiteDetailsDialog(self)
         if dialog.exec():
             new_site = dialog.to_observation_site()
-            observation_site_service.add(new_site)
+            self.observation_site_service.add(new_site)
 
     def modify_site(self, observation_site):
         dialog = ObservationSiteDetailsDialog(self, observation_site)
         if dialog.exec():
-            observation_site_service.update(dialog.to_observation_site())
+            self.observation_site_service.update(dialog.to_observation_site())
 
-    @staticmethod
-    def delete_site(observation_site):
-        observation_site_service.delete(observation_site)
+    def delete_site(self, observation_site):
+        self.observation_site_service.delete(observation_site)

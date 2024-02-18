@@ -1,23 +1,24 @@
-# import logging
+import logging
 
-# import injector
+import injector
 
-# from app.config.auto_wire import auto_wire
+from config.auto_wire import auto_wire
 from database import initialize_database
-# from app.ui.main_window.main_window import MainWindow
+from ui.main_window.main_window import MainWindow
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
+
+injector = injector.Injector()
 
 if __name__ == '__main__':
     import sys
     from PySide6.QtWidgets import QApplication
 
-    # auto_wire()
+    auto_wire('app')
 
     initialize_database()
 
     app = QApplication(sys.argv)
-    # window = injector.get(MainWindow)
-    # window = MainWindow()
-    # window.show()
+    window = injector.get(MainWindow)
+    window.show()
     sys.exit(app.exec())

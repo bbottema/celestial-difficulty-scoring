@@ -5,15 +5,24 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import (QTabWidget)
 
-from app.ui.main_window.equipment_management.equipment_management_component import EquipmentManagementComponent
-from app.ui.main_window.observation_data.observation_data_component import ObservationDataComponent
-from app.ui.main_window.observation_preferences.observation_preferences_component import ObservationPreferencesComponent
-from app.ui.main_window.observation_sites.observation_sites_component import ObservationSitesComponent
+from ui.main_window.equipment_management.equipment_management_component import EquipmentManagementComponent
+from ui.main_window.observation_data.observation_data_component import ObservationDataComponent
+from ui.main_window.observation_preferences.observation_preferences_component import ObservationPreferencesComponent
+from ui.main_window.observation_sites.observation_sites_component import ObservationSitesComponent
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,
+                 observation_data_component: ObservationDataComponent,
+                 observation_sites_component: ObservationSitesComponent,
+                 equipment_management_component: EquipmentManagementComponent,
+                 observation_preferences_component: ObservationPreferencesComponent):
+        super().__init__(None)
+
+        self.observation_data_component = observation_data_component
+        self.observation_sites_component = observation_sites_component
+        self.equipment_management_component = equipment_management_component
+        self.observation_preferences_component = observation_preferences_component
 
         self.settings = QSettings('BennyBottema', 'CelestialObjectObservability')
 
@@ -32,11 +41,10 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
-        # FIXME: replace this with dependency injection
-        self.tabs.addTab(ObservationDataComponent(), "Observation Data")
-        self.tabs.addTab(ObservationSitesComponent(), "Manage Observation Sites")
-        self.tabs.addTab(EquipmentManagementComponent(), "Manage Equipment")
-        self.tabs.addTab(ObservationPreferencesComponent(), "Observation Preferences")
+        self.tabs.addTab(self.observation_data_component, "Observation Data")
+        self.tabs.addTab(self.observation_sites_component, "Manage Observation Sites")
+        self.tabs.addTab(self.equipment_management_component, "Manage Equipment")
+        self.tabs.addTab(self.observation_preferences_component, "Observation Preferences")
 
     def closeEvent(self, event):
         # Save the current geometry of the window before closing
