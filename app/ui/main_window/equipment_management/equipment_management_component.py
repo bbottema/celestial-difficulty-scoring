@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QTabWidget, QHBoxLayout, QVBoxLayout, QTableWidget, QLabel, QLineEdit, QComboBox, QPushButton, QSizePolicy, QSpacerItem)
+from injector import inject
 
 from config.auto_wire import component
 from orm.entities import Telescope
@@ -9,6 +10,7 @@ from utils.gui_helper import centered_table_widget_item
 
 @component
 class EquipmentManagementComponent(QWidget):
+    @inject
     def __init__(self, telescope_service: TelescopeService):
         super().__init__(None)
         self.telescope_service = telescope_service

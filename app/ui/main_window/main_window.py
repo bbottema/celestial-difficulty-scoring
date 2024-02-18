@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow
 )
 from PySide6.QtWidgets import (QTabWidget)
+from injector import inject
 
 from ui.main_window.equipment_management.equipment_management_component import EquipmentManagementComponent
 from ui.main_window.observation_data.observation_data_component import ObservationDataComponent
@@ -12,6 +13,7 @@ from ui.main_window.observation_sites.observation_sites_component import Observa
 
 
 class MainWindow(QMainWindow):
+    @inject
     def __init__(self,
                  observation_data_component: ObservationDataComponent,
                  observation_sites_component: ObservationSitesComponent,

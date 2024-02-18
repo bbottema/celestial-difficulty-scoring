@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
+from injector import inject
 
 from orm.entities import ObservationSite
 from ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
@@ -10,6 +11,7 @@ from orm.services.observation_site_service import ObservationSiteService
 
 @component
 class ObservationSitesComponent(QWidget):
+    @inject
     def __init__(self, observation_site_service: ObservationSiteService):
         super().__init__(None)
         self.observation_site_service = observation_site_service

@@ -1,5 +1,7 @@
 import logging
 
+from injector import inject
+
 from config.auto_wire import component
 from orm.entities import ObservationSite
 from orm.repositories.observation_site_repository import ObservationSiteRepository
@@ -11,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 @component
 class ObservationSiteService(BaseService):
+    @inject
     def __init__(self, observation_site_repository: ObservationSiteRepository):
         super().__init__(
             observation_site_repository,

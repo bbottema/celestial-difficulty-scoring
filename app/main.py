@@ -1,14 +1,13 @@
-import logging
+import logging.config
+import os
+from pathlib import Path
 
-import injector
-
-from config.auto_wire import auto_wire
+from config.auto_wire import auto_wire, injector
 from database import initialize_database
 from ui.main_window.main_window import MainWindow
 
-logging.basicConfig(level=logging.DEBUG)
-
-injector = injector.Injector()
+logging.config.fileConfig(Path(os.path.dirname(__file__)) / 'logging.ini', disable_existing_loggers=False)
+logging.getLogger(__name__).info("Logging configuration loaded")
 
 if __name__ == '__main__':
     import sys

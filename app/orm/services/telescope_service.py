@@ -1,5 +1,7 @@
 import logging
 
+from injector import inject
+
 from config.auto_wire import component
 from orm.entities import Telescope
 from orm.repositories.telescope_repository import TelescopeRepository
@@ -11,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 @component
 class TelescopeService(BaseService):
+
+    @inject
     def __init__(self, telescope_repository: TelescopeRepository):
         super().__init__(
             telescope_repository,
