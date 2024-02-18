@@ -1,5 +1,7 @@
 import logging
 
+from config.auto_wire import component
+from orm.entities import ObservationSite
 from orm.repositories.observation_site_repository import ObservationSiteRepository
 from orm.services.base_service import BaseService
 from utils.event_bus_config import CelestialEvent
@@ -7,10 +9,11 @@ from utils.event_bus_config import CelestialEvent
 logger = logging.getLogger(__name__)
 
 
+@component
 class ObservationSiteService(BaseService):
-    def __init__(self):
+    def __init__(self, observation_site_repository: ObservationSiteRepository):
         super().__init__(
-            ObservationSiteRepository(),
+            observation_site_repository,
             {
                 'added': CelestialEvent.OBSERVATION_SITE_ADDED,
                 'updated': CelestialEvent.OBSERVATION_SITE_UPDATED,
@@ -18,12 +21,7 @@ class ObservationSiteService(BaseService):
             }
         )
 
-    # FIXME: instance should be strong-typed in the super class via generics
-    def handle_relations(self, instance, session, operation):
+    def handle_relations(self, instance: ObservationSite, session, operation):
         if operation in ['add', 'update'] and instance.telescopes is not None:
             for telescope in instance.telescopes:
                 session.merge(telescope)
-
-
-# FIXME: replace with dependency injection
-observation_site_service = ObservationSiteService()

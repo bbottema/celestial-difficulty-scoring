@@ -11,7 +11,7 @@ class ObservabilityCalculationService:
         base_score = strategy.calculate_score(celestial_object)
         altitude_adjusted_score = base_score  # adjust_for_altitude(base_score, celestial_object.altitude)
 
-        return CelestialObjectScore(altitude_adjusted_score, self.normalize_score(altitude_adjusted_score))
+        return CelestialObjectScore(altitude_adjusted_score, self._normalize_score(altitude_adjusted_score))
 
     @staticmethod
     def _determine_scoring_strategy(celestial_object: CelestialObject) -> IObservabilityScoringStrategy:
@@ -25,15 +25,16 @@ class ObservabilityCalculationService:
         else:
             raise ValueError(f'Unknown celestial object type: {celestial_object.object_type}')
 
+    # TODO: incorporate altitude into scoring
     @staticmethod
-    def adjust_for_altitude(score, altitude):
+    def _adjust_for_altitude(score, altitude):
         # Assuming altitude is given in degrees from the horizon.
         # Exponential decay factor can be adjusted based on observational preferences.
         altitude_factor = math.exp(-0.03 * (optimal_altitude - altitude))
         return score * altitude_factor
 
     @staticmethod
-    def normalize_score(score) -> float:
+    def _normalize_score(score) -> float:
         if score > 10:
             transformed_score = math.log10(score + 1) ** 2  # More aggressive transformation for higher scores
         else:

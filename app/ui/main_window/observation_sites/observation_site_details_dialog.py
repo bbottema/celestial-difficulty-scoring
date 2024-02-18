@@ -64,17 +64,15 @@ class ObservationSiteDetailsDialog(QDialog):
         if observation_site.light_pollution:
             return observation_site.light_pollution.value
         else:
-            return LightPollution.BORTLE_5.value
+            return LightPollution.BORTLE_6.value
 
     def on_save_clicked(self):
         if not self.name_edit.text().strip():
-            # Name field is empty, show an error message and do not close the dialog
             QMessageBox.warning(self, "Mandatory Field", "The name field is required. Please enter a name for the observation site.")
             return
         self.accept()  # Close the dialog only if validation passes
 
     def to_observation_site(self):
-        # TODO figure out why PyCharm thinks all these parameters are unexpected and wants to remove them
         return ObservationSite(
             id=self.observation_site_id,
             name=self.name_edit.text(),

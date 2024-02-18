@@ -1,7 +1,9 @@
-from orm.repositories.base_repository import BaseRepository
+from config.auto_wire import component
 from orm.entities import Telescope
+from orm.repositories.base_repository import BaseRepository
 
 
+@component
 class TelescopeRepository(BaseRepository):
     def __init__(self):
         super().__init__(Telescope)
