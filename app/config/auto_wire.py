@@ -9,13 +9,8 @@ from typing import Type, Any, Dict
 
 from injector import Injector
 
-component_registry: Dict[str, Type[Any]] = {}
+"""This is a script for handling auto wiring in a Spring bean like manner.
 
-logger = logging.getLogger(__name__)
-
-injector = Injector()
-
-"""" 
 NOTE: this script assumes a package structure with a single shared root folder, 
 which can be a package or a src folder.
 
@@ -32,6 +27,12 @@ Such a package structure could look like this:
       - ...
   - ...
 """
+
+component_registry: Dict[str, Type[Any]] = {}
+
+logger = logging.getLogger(__name__)
+
+injector = Injector()
 
 def component(cls: Type[Any]) -> Type[Any]:
     """
