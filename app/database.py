@@ -8,8 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from orm.entities import Base
 from utils.event_bus_config import database_ready_bus
 
-# FIXME: once DI is implemented, this should be a class and be injected instead of being a global variable
-
 _engine = create_engine("sqlite:///celestial.db", echo=False, future=True)
 _session_local = sessionmaker(expire_on_commit=False, bind=_engine)
 _logger = logging.getLogger(__name__)

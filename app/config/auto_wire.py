@@ -1,4 +1,5 @@
 import importlib
+import inspect
 import logging
 import os
 import pkgutil
@@ -19,6 +20,22 @@ def component(cls: Type[Any]) -> Type[Any]:
     logger.debug(f"Registering component {cls.__name__}")
     component_registry[cls.__name__] = cls
     return cls
+
+
+def _get_main_module_name():
+    """
+    Get the name of the main module (i.e. the module that is run with `python -m` or directly).
+    The reason we need this, is that we want to avoid importing the main module itself, as it is already currently
+    being executed (and therefor not in `sys.modules`, yet).
+    """
+    for frame_info in reversed(inspect.stack()):
+        if frame_info.frame.f_globals.get('__name__') == '__main__':
+            # Extract the module name from the file path
+            return Path(frame_info.filename).stem
+    return None
+
+
+main_module_name = _get_main_module_name()
 
 
 def _is_package(path):
@@ -48,7 +65,7 @@ def _scan_and_import_packages(package_name: str, is_base_package: bool = True):
         # Adjust the prefix based on whether this is the base package or a nested package
         prefix = '' if is_base_package else package_name + '.'
         for _, name, is_pkg in pkgutil.walk_packages([base_path], prefix=prefix, onerror=onerror):
-            if name not in sys.modules:
+            if name not in sys.modules and not name == main_module_name:
                 logger.debug(f"Loading package/module ({name})")
                 try:
                     importlib.import_module(name)
