@@ -15,6 +15,23 @@ logger = logging.getLogger(__name__)
 
 injector = Injector()
 
+"""" 
+NOTE: this script assumes a package structure with a single shared root folder, 
+which can be a package or a src folder.
+
+Such a package structure could look like this:
+- app/src/your_organisation/etc.
+  - your_main.py
+  - ui
+    - main_window
+      - main_window.py
+      - ...
+    - database
+      - database.py
+    - utils
+      - ...
+  - ...
+"""
 
 def component(cls: Type[Any]) -> Type[Any]:
     """
