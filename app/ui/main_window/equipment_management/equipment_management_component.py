@@ -4,7 +4,7 @@ from injector import inject
 from config.autowire import component
 from orm.entities import Telescope
 from orm.services.telescope_service import TelescopeService
-from utils.event_bus_config import CelestialEvent, bus, database_ready_bus
+from config.event_bus_config import CelestialEvent, bus, database_ready_bus
 from utils.gui_helper import centered_table_widget_item
 from utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
 

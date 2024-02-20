@@ -6,7 +6,7 @@ from config.autowire import component
 from orm.entities import Telescope
 from orm.repositories.telescope_repository import TelescopeRepository
 from orm.services.base_service import BaseService
-from utils.event_bus_config import CelestialEvent
+from config.event_bus_config import CelestialEvent
 
 logger = logging.getLogger(__name__)
 

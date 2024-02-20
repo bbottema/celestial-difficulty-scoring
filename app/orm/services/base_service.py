@@ -3,7 +3,7 @@ from typing import Generic, TypeVar, Type
 
 from orm.repositories.base_repository import BaseRepository
 from config.database import session_scope
-from utils.event_bus_config import bus
+from config.event_bus_config import bus
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')

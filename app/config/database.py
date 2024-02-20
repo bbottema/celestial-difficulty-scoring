@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from orm.entities import Base
-from utils.event_bus_config import database_ready_bus
+from config.event_bus_config import database_ready_bus
 
 _engine = create_engine("sqlite:///celestial.db", echo=False, future=True)
 _session_local = sessionmaker(expire_on_commit=False, bind=_engine)
