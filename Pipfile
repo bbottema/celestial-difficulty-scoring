@@ -10,7 +10,6 @@ pyside6 = "*"
 sqlalchemy = "*"
 alembic = "*"
 injector = "*"
-numpy = "*"
 
 [dev-packages]
 
