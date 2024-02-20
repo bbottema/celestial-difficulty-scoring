@@ -1,15 +1,13 @@
 from PySide6.QtCore import QSettings, QByteArray, QRect
 from PySide6.QtGui import QScreen
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow
-)
-from PySide6.QtWidgets import (QTabWidget)
+from PySide6.QtWidgets import *
 from injector import inject
 
 from ui.main_window.equipment_management.equipment_management_component import EquipmentManagementComponent
 from ui.main_window.observation_data.observation_data_component import ObservationDataComponent
 from ui.main_window.observation_preferences.observation_preferences_component import ObservationPreferencesComponent
 from ui.main_window.observation_sites.observation_sites_component import ObservationSitesComponent
+from utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
 
 
 class MainWindow(QMainWindow):
@@ -37,6 +35,11 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle('Celestial Object Observability')
         self.init_ui()
+
+        UiDebugClipBoardWatch.install_on_q_object(self)
+
+    def cleanup_event_filter(self):
+        QApplication.instance().removeEventFilter(self.eventFilter)
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):

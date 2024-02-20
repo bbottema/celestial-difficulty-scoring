@@ -7,6 +7,7 @@ from domain.model.weather_conditions import WeatherConditions
 from utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 from utils.gui_helper import default_table, centered_table_widget_item
 from config.auto_wire import component
+from utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
 
 
 @component
@@ -27,6 +28,7 @@ class ObservationDataComponent(QWidget):
         weather_layout = QHBoxLayout(weather_widget)
         weather_layout.addWidget(QLabel("Weather Conditions:"))
         weather_conditions_combo = QComboBox()
+        weather_conditions_combo.setProperty(CUSTOM_NAME_PROPERTY, "ObservationData_WeatherCombo")
         weather_layout.addWidget(weather_conditions_combo)
 
         for wc in WeatherConditions:

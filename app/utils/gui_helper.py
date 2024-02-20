@@ -1,6 +1,8 @@
 from PySide6.QtGui import Qt, QFont
 from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView
 
+from utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
+
 
 def default_table(labels: [str]) -> QTableWidget:
     table = QTableWidget(0, len(labels))
@@ -9,6 +11,9 @@ def default_table(labels: [str]) -> QTableWidget:
     header_font = QFont()  # Create a new font object
     header_font.setBold(True)  # Set the font to bold
     table.horizontalHeader().setFont(header_font)
+
+    UiDebugClipBoardWatch.install_on_table(table)
+
     return table
 
 

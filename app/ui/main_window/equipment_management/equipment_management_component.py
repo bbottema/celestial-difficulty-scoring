@@ -6,6 +6,7 @@ from orm.entities import Telescope
 from orm.services.telescope_service import TelescopeService
 from utils.event_bus_config import CelestialEvent, bus, database_ready_bus
 from utils.gui_helper import centered_table_widget_item
+from utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
 
 
 @component
@@ -75,6 +76,7 @@ class EquipmentManagementComponent(QWidget):
         # Assuming observation site is common across all equipment types
         form_layout.addWidget(QLabel("Observation Site:"))
         observation_site_dropdown = QComboBox()
+        observation_site_dropdown.setProperty(CUSTOM_NAME_PROPERTY, "Equipment_ObservationSiteCombo")
         # Populate observationSiteDropdown with Observation Sites (not shown here)
         form_layout.addWidget(observation_site_dropdown)
 
