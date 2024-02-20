@@ -75,7 +75,7 @@ class UiDebugClipBoardWatch(QObject):
 
     @staticmethod
     def _handle_label_event(watched):
-        ctrl_c(watched.text(), "Label text '{copied_value}' copied to clipboard [Label Click")
+        ctrl_c(watched.text(), "Label text '{copied_value}' copied to clipboard [Label Click]")
 
     @staticmethod
     def _handle_header_view_event(watched, event):
