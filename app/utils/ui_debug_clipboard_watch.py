@@ -20,11 +20,13 @@ class UiDebugClipBoardWatch(QObject):
         """ Installs click handlers on the table's cells and headers to copy the cell's value or the header's label to the clipboard """
 
         def item_clicked(item):
-            ctrl_c(item.text(), "Table cell value '{copied_value}' copied to clipboard [Table Cell Click]")
+            if QApplication.keyboardModifiers() & Qt.ControlModifier:
+                ctrl_c(item.text(), "Table cell value '{copied_value}' copied to clipboard [Table Cell Click]")
 
         def header_clicked(section):
-            header_text = table.horizontalHeaderItem(section).text()
-            ctrl_c(header_text, "Header label '{copied_value}' copied to clipboard [Header Click]")
+            if QApplication.keyboardModifiers() & Qt.ControlModifier:
+                header_text = table.horizontalHeaderItem(section).text()
+                ctrl_c(header_text, "Header label '{copied_value}' copied to clipboard [Header Click]")
 
         table.itemClicked.connect(item_clicked)
         table.horizontalHeader().sectionClicked.connect(header_clicked)
