@@ -5,7 +5,7 @@ from orm.entities import ObservationSite
 from ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
 from utils.event_bus_config import CelestialEvent, database_ready_bus, bus
 from utils.gui_helper import default_table, centered_table_widget_item
-from config.auto_wire import component
+from config.autowire import component
 from orm.services.observation_site_service import ObservationSiteService
 
 

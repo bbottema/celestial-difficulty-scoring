@@ -2,7 +2,7 @@ import logging
 
 from injector import inject
 
-from config.auto_wire import component
+from config.autowire import component
 from orm.entities import ObservationSite
 from orm.repositories.observation_site_repository import ObservationSiteRepository
 from orm.services.base_service import BaseService

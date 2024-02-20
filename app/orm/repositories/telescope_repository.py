@@ -1,4 +1,4 @@
-from config.auto_wire import component
+from config.autowire import component
 from orm.entities import Telescope
 from orm.repositories.base_repository import BaseRepository
 

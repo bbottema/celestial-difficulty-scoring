@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QTabWidget, QHBoxLayout, QVBoxLayout, QTableWidget, QLabel, QLineEdit, QComboBox, QPushButton, QSizePolicy, QSpacerItem)
 from injector import inject
 
-from config.auto_wire import component
+from config.autowire import component
 from orm.entities import Telescope
 from orm.services.telescope_service import TelescopeService
 from utils.event_bus_config import CelestialEvent, bus, database_ready_bus

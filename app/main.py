@@ -1,21 +1,18 @@
-import logging.config
-import os
-from pathlib import Path
+import sys
 
-from config.auto_wire import auto_wire, injector
-from database import initialize_database
+from PySide6.QtWidgets import QApplication
+
+from config.autowire import auto_wire, injector
+from config.database import initialize_database
+from config.init_logging import configure_logging
 from ui.main_window.main_window import MainWindow
-
-logging.config.fileConfig(Path(os.path.dirname(__file__)) / 'logging.ini', disable_existing_loggers=False)
-logging.getLogger(__name__).info("Logging configuration loaded")
+from utils.gui_helper import configure_close_signal_handler
 
 if __name__ == '__main__':
-    import sys
-    from PySide6.QtWidgets import QApplication
-
-    auto_wire('app')
-
+    configure_logging(__file__)
     initialize_database()
+    configure_close_signal_handler()
+    auto_wire('app')
 
     app = QApplication(sys.argv)
     window = injector.get(MainWindow)
