@@ -2,11 +2,11 @@ from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
 )
 
+from config.autowire import component
 from domain.model.celestial_object import CelestialsList
 from domain.model.weather_conditions import WeatherConditions
 from utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 from utils.gui_helper import default_table, centered_table_widget_item
-from config.autowire import component
 from utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
 
 

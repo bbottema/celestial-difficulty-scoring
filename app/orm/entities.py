@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
 from sqlalchemy.orm import declarative_base, relationship
 
 from domain.model.light_pollution import LightPollution
+from domain.model.telescope_type import TelescopeType
 
 Base = declarative_base()
 
@@ -19,10 +20,10 @@ class ObservationSite(Base):
     __tablename__ = 'observation_sites'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    light_pollution = Column(Enum(LightPollution))
+    name = Column(String, unique=True, nullable=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    light_pollution = Column(Enum(LightPollution), nullable=False)
 
     telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites")
 
@@ -41,6 +42,10 @@ class Telescope(Base):
     __tablename__ = 'telescopes'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, unique=True, nullable=False)
+    type = Column(Enum(TelescopeType), nullable=False)
+    aperture = Column(Float, nullable=False)  # in mm
+    focal_length = Column(Float, nullable=False)  # in mm
+    focal_ratio = Column(Float, nullable=False)  # f/number
 
     observation_sites = relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes")
