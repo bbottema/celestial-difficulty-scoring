@@ -2,8 +2,8 @@ import unittest
 
 from assertpy import assert_that
 
-from domain.model.celestial_object import CelestialObject
-from domain.services.observability_calculation_service import ObservabilityCalculationService
+from app.domain.model.celestial_object import CelestialObject
+from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 
 
 class TestObservabilityCalculationService(unittest.TestCase):

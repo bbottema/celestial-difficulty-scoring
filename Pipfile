@@ -10,6 +10,9 @@ pyside6 = "*"
 sqlalchemy = "*"
 alembic = "*"
 injector = "*"
+mypy = "*"
+pandas-stubs = "*"
+pyside6-stubs = "*"
 
 [dev-packages]
 

@@ -33,7 +33,7 @@ def apply_migration(env):
 if __name__ == "__main__":
     clear_migrations_folder()
     env = os.environ.copy()
-    env['PYTHONPATH'] = os.path.join(os.getcwd(), 'app')
+    env['PYTHONPATH'] = os.path.join(os.getcwd(), 'src')
     clear_alembic_version_history()
     regenerate_initial_migration(env)
     apply_migration(env)
