@@ -38,7 +38,7 @@ class UiDebugClipBoardWatch(QObject):
         table.horizontalHeader().sectionClicked.connect(header_clicked)
 
     def eventFilter(self, watched, event: QEvent):
-        if event.type() == QEvent.MouseButtonPress and QMouseEvent(event).modifiers() & Qt.ControlModifier:
+        if event.type() == QEvent.Type.MouseButtonPress and QMouseEvent(event).modifiers() & Qt.KeyboardModifier.ControlModifier:
             if watched.property("customName"):
                 self._handle_custom_name_event(watched)
             elif isinstance(watched, QLineEdit):

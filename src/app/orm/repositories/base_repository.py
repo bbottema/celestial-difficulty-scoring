@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Generic, TypeVar, Type, Protocol
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 
@@ -24,7 +25,8 @@ class BaseRepository(Generic[T]):
         return session.query(self.entity).all()
 
     def get_by_id(self, session: Session, instance_id: int) -> Type[T]:
-        return session.query(self.entity).filter(self.entity.id == instance_id).first()
+        condition = and_(self.entity.id == instance_id)
+        return session.query(self.entity).filter(condition).first()
 
     def update(self, session: Session, instance_id: int, updated_object: Type[T]) -> Type[T]:
         persisted_object: Type[T] = self.get_by_id(session, instance_id)

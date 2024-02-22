@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @component
-class ObservationSiteService(BaseService):
+class ObservationSiteService(BaseService[ObservationSite]):
     @inject
     def __init__(self, observation_site_repository: ObservationSiteRepository):
         super().__init__(

@@ -19,11 +19,11 @@ observation_site_telescope_association = Table(
 class ObservationSite(Base):
     __tablename__ = 'observation_sites'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    light_pollution = Column(Enum(LightPollution), nullable=False)
+    id: int = Column(Integer, primary_key=True)
+    name: str = Column(String, unique=True, nullable=False)
+    latitude: float | None = Column(Float, nullable=True)
+    longitude: float | None = Column(Float, nullable=True)
+    light_pollution: LightPollution = Column(Enum(LightPollution), nullable=False)
 
     telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites")
 
@@ -41,11 +41,11 @@ class ObservationSite(Base):
 class Telescope(Base):
     __tablename__ = 'telescopes'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    type = Column(Enum(TelescopeType), nullable=False)
-    aperture = Column(Float, nullable=False)  # in mm
-    focal_length = Column(Float, nullable=False)  # in mm
-    focal_ratio = Column(Float, nullable=False)  # f/number
+    id: int = Column(Integer, primary_key=True)  # type: ignore
+    name: str = Column(String, unique=True, nullable=False)  # type: ignore
+    type: TelescopeType = Column(Enum(TelescopeType), nullable=False)  # type: ignore
+    aperture: float = Column(Float, nullable=False)  # in mm  # type: ignore
+    focal_length: float = Column(Float, nullable=False)  # in mm  # type: ignore
+    focal_ratio: float = Column(Float, nullable=False)  # f/number  # type: ignore
 
     observation_sites = relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes")

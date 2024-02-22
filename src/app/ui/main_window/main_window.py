@@ -10,6 +10,8 @@ from app.ui.main_window.observation_sites.observation_sites_component import Obs
 
 
 class MainWindow(QMainWindow):
+    settings: QSettings = QSettings('BennyBottema', 'CelestialObjectObservability')
+
     @inject
     def __init__(self,
                  observation_data_component: ObservationDataComponent,
@@ -22,8 +24,6 @@ class MainWindow(QMainWindow):
         self.observation_sites_component = observation_sites_component
         self.equipment_management_component = equipment_management_component
         self.observation_preferences_component = observation_preferences_component
-
-        self.settings = QSettings('BennyBottema', 'CelestialObjectObservability')
 
         # Restore the window's last geometry or center it
         geometry: QByteArray = self.settings.value("geometry", QByteArray())

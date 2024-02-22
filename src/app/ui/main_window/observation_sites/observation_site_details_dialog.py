@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget, QLayout
 from PySide6.QtWidgets import QMessageBox
 
 from app.domain.model.light_pollution import LightPollution
@@ -12,14 +12,12 @@ class ObservationSiteDetailsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Observation Site Details")
         self.setMinimumWidth(500)
-        self.layout = QVBoxLayout()
-        self.form_layout = QFormLayout()
+        self.setLayout(QVBoxLayout())
         self.observation_site_id = observation_site.id if observation_site else None
-        self.init_ui(observation_site)
-        self.setLayout(self.layout)
+        self.init_ui(self.layout(), observation_site)
 
     # noinspection PyAttributeOutsideInit
-    def init_ui(self, observation_site: ObservationSite | None = None):
+    def init_ui(self, layout: QVBoxLayout, observation_site: ObservationSite | None = None):
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Home Garden, Out in the woods, Local Observatory club")
         self.name_edit.setText(observation_site.name if observation_site else "")
@@ -39,15 +37,16 @@ class ObservationSiteDetailsDialog(QDialog):
         self.cancel_button = QPushButton("Cancel")
 
         # Add widgets to the form layout
-        self.form_layout.addRow("Name:", self.name_edit)
-        self.form_layout.addRow("Latitude:", self.latitude_edit)
-        self.form_layout.addRow("Longitude:", self.longitude_edit)
-        self.form_layout.addRow("Light Pollution:", self.light_pollution_combo)
+        form_layout = QFormLayout()
+        form_layout.addRow("Name:", self.name_edit)
+        form_layout.addRow("Latitude:", self.latitude_edit)
+        form_layout.addRow("Longitude:", self.longitude_edit)
+        form_layout.addRow("Light Pollution:", self.light_pollution_combo)
 
         # Add buttons to the layout
-        self.layout.addLayout(self.form_layout)
-        self.layout.addWidget(self.save_button)
-        self.layout.addWidget(self.cancel_button)
+        layout.addLayout(form_layout)
+        layout.addWidget(self.save_button)
+        layout.addWidget(self.cancel_button)
 
         # Connect buttons to actions
         self.save_button.clicked.connect(self.on_save_clicked)

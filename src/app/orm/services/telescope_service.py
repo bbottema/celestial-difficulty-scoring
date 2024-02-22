@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @component
-class TelescopeService(BaseService):
+class TelescopeService(BaseService[Telescope]):
 
     @inject
     def __init__(self, telescope_repository: TelescopeRepository):

@@ -15,12 +15,12 @@ class ObservationSitesComponent(QWidget):
     def __init__(self, observation_site_service: ObservationSiteService):
         super().__init__(None)
         self.observation_site_service = observation_site_service
-        self.layout = QVBoxLayout()
-        self.init_ui()
-        self.setLayout(self.layout)
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        self.init_ui(layout)
 
     # noinspection PyAttributeOutsideInit
-    def init_ui(self):
+    def init_ui(self, layout: QVBoxLayout):
         # Table to display observation sites
         self.table = default_table(['Name', 'Latitude', 'Longitude', 'Light Pollution', ''])
 
@@ -29,8 +29,8 @@ class ObservationSitesComponent(QWidget):
         self.define_new_button.clicked.connect(self.define_new_site)
 
         # Add table and button to the layout
-        self.layout.addWidget(self.table)
-        self.layout.addWidget(self.define_new_button)
+        layout.addWidget(self.table)
+        layout.addWidget(self.define_new_button)
 
         bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, self.populate_table)
         bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, self.populate_table)

@@ -1,14 +1,16 @@
+from typing import Type
+
 from app.config.autowire import component
 from app.orm.entities import Telescope
 from app.orm.repositories.base_repository import BaseRepository
 
 
 @component
-class TelescopeRepository(BaseRepository):
+class TelescopeRepository(BaseRepository[Telescope]):
     def __init__(self):
         super().__init__(Telescope)
 
-    def handle_update(self, persisted_telescope: Telescope, updated_telescope: Telescope):
+    def handle_update(self, persisted_telescope: Telescope, updated_telescope: Type[Telescope]):
         persisted_telescope.name = updated_telescope.name
         persisted_telescope.observation_sites.clear()
 
