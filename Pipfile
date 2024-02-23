@@ -15,6 +15,7 @@ pandas-stubs = "*"
 pyside6-stubs = "*"
 
 [dev-packages]
+assertpy = "*"
 
 [requires]
 python_version = "3"

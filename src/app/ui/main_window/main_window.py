@@ -1,4 +1,6 @@
-from PySide6.QtCore import QSettings, QByteArray, QRect
+from typing import cast
+
+from PySide6.QtCore import QSettings, QByteArray
 from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import *
 from injector import inject
@@ -17,7 +19,7 @@ class MainWindow(QMainWindow):
                  observation_data_component: ObservationDataComponent,
                  observation_sites_component: ObservationSitesComponent,
                  equipment_management_component: EquipmentManagementComponent,
-                 observation_preferences_component: ObservationPreferencesComponent):
+                 observation_preferences_component: ObservationPreferencesComponent) -> None:
         super().__init__(None)
 
         self.observation_data_component = observation_data_component
@@ -26,7 +28,7 @@ class MainWindow(QMainWindow):
         self.observation_preferences_component = observation_preferences_component
 
         # Restore the window's last geometry or center it
-        geometry: QByteArray = self.settings.value("geometry", QByteArray())
+        geometry: QByteArray = cast(QByteArray, self.settings.value("geometry", QByteArray()))
         if not geometry:
             self.position_window_to_default()
         else:
@@ -57,6 +59,6 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         # Center the window on the screen
         center_point = QScreen.availableGeometry(QApplication.primaryScreen()).center()
-        frame_geometry: QRect = self.frameGeometry()
+        frame_geometry = self.frameGeometry()
         frame_geometry.moveCenter(center_point)
         self.move(frame_geometry.topLeft())

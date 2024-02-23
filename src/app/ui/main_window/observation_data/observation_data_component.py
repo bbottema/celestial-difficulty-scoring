@@ -72,7 +72,7 @@ class ObservationDataComponent(QWidget):
         self.layout.addWidget(self.add_eyepiece_button)
         self.layout.addWidget(self.add_barlow_lens_button)
 
-    def import_data(self):
+    def import_data(self) -> None:
         # Open a dialog to select an Excel file and import data
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")

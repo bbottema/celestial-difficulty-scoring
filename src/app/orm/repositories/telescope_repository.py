@@ -10,7 +10,7 @@ class TelescopeRepository(BaseRepository[Telescope]):
     def __init__(self):
         super().__init__(Telescope)
 
-    def handle_update(self, persisted_telescope: Telescope, updated_telescope: Type[Telescope]):
+    def handle_update(self, persisted_telescope: Telescope, updated_telescope: Telescope):
         persisted_telescope.name = updated_telescope.name
         persisted_telescope.observation_sites.clear()
 

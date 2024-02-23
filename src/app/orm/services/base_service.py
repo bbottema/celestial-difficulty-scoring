@@ -1,9 +1,9 @@
 import logging
-from typing import Generic, TypeVar, Type, Protocol
+from typing import Generic, TypeVar, Protocol
 
-from app.orm.repositories.base_repository import BaseRepository
 from app.config.database import session_scope
 from app.config.event_bus_config import bus
+from app.orm.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +20,11 @@ class BaseService(Generic[T]):
         self.repository = repository
         self.events = events
 
-    def add(self, instance: Type[T]) -> Type[T]:
+    def add(self, instance: T) -> T:
         try:
             with session_scope() as session:
                 self.handle_relations(instance, session, 'add')
-                new_instance: Type[T] = self.repository.add(session, instance)
+                new_instance: T = self.repository.add(session, instance)
                 session.commit()
                 bus.emit(self.events['added'], new_instance)
                 return new_instance
@@ -40,7 +40,7 @@ class BaseService(Generic[T]):
             logger.error("Failed to get instances: ERROR: {e}")
             raise e
 
-    def get_by_id(self, instance_id) -> Type[T]:
+    def get_by_id(self, instance_id) -> T | None:
         try:
             with session_scope() as session:
                 return self.repository.get_by_id(session, instance_id)
@@ -48,11 +48,11 @@ class BaseService(Generic[T]):
             logger.error(f"Failed to get instance {instance_id}: ERROR: {e}")
             raise e
 
-    def update(self, instance: Type[T]) -> Type[T]:
+    def update(self, instance: T) -> T:
         try:
             with session_scope() as session:
                 self.handle_relations(instance, session, 'update')
-                updated_instance: Type[T] = self.repository.update(session, instance.id, instance)
+                updated_instance: T = self.repository.update(session, instance.id, instance)
                 session.commit()
                 bus.emit(self.events['updated'], updated_instance)
                 return updated_instance
@@ -60,7 +60,7 @@ class BaseService(Generic[T]):
             logger.error(f"Failed to update {instance}: ERROR: {e}")
             raise e
 
-    def delete(self, instance: Type[T]) -> None:
+    def delete(self, instance: T) -> None:
         try:
             with session_scope() as session:
                 self.repository.delete(session, instance)

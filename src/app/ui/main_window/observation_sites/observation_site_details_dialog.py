@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget, QLayout
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget
 from PySide6.QtWidgets import QMessageBox
 
 from app.domain.model.light_pollution import LightPollution
@@ -12,9 +12,10 @@ class ObservationSiteDetailsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Observation Site Details")
         self.setMinimumWidth(500)
-        self.setLayout(QVBoxLayout())
         self.observation_site_id = observation_site.id if observation_site else None
-        self.init_ui(self.layout(), observation_site)
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        self.init_ui(layout, observation_site)
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self, layout: QVBoxLayout, observation_site: ObservationSite | None = None):

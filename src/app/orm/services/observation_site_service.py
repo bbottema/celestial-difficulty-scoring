@@ -3,10 +3,10 @@ import logging
 from injector import inject
 
 from app.config.autowire import component
+from app.config.event_bus_config import CelestialEvent
 from app.orm.entities import ObservationSite
 from app.orm.repositories.observation_site_repository import ObservationSiteRepository
 from app.orm.services.base_service import BaseService
-from app.config.event_bus_config import CelestialEvent
 
 logger = logging.getLogger(__name__)
 

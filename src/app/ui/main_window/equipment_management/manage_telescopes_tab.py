@@ -24,13 +24,13 @@ class ManageTelescopesTab(ManageEquipmentTab):
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
 
-    def populate_equipment_table(self, *args):
+    def populate_equipment_table(self, *args) -> None:
         self.equipment_table.setRowCount(0)
-        data: [Telescope] = self.telescope_service.get_all()
+        data: list[Telescope] = self.telescope_service.get_all()
         for i, telescope in enumerate(data):
             self.equipment_table.insertRow(i)
             self.equipment_table.setItem(i, self.COLUMN_NAME, centered_table_widget_item(telescope.name))
-            self.equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type))
+            self.equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type.value))
             self.equipment_table.setItem(i, self.COLUMN_APERTURE, centered_table_widget_item(f'{telescope.aperture} mm'))
             self.equipment_table.setItem(i, self.COLUMN_FOCAL_LENGTH, centered_table_widget_item(f'{telescope.focal_length} mm'))
             self.equipment_table.setItem(i, self.COLUMN_FOCAL_RATIO, centered_table_widget_item(f'f/{telescope.focal_ratio}'))

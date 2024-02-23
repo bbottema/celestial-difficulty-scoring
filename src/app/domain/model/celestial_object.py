@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TypedDict, List
 
 
 @dataclass
@@ -27,4 +26,4 @@ class CelestialObjectData:
     observability_score: CelestialObjectScore
 
 
-CelestialsList = List[CelestialObjectData]
+CelestialsList = list[CelestialObjectData]

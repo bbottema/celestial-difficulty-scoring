@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from injector import inject
 
-from app.orm.entities import ObservationSite
-from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
-from app.config.event_bus_config import CelestialEvent, database_ready_bus, bus
-from app.utils.gui_helper import default_table, centered_table_widget_item
 from app.config.autowire import component
+from app.config.event_bus_config import CelestialEvent, database_ready_bus, bus
+from app.orm.entities import ObservationSite
 from app.orm.services.observation_site_service import ObservationSiteService
+from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
+from app.utils.gui_helper import default_table, centered_table_widget_item
 
 
 @component
@@ -39,9 +39,9 @@ class ObservationSitesComponent(QWidget):
         database_ready_bus.subscribe(self.populate_table)
 
     # noinspection PyUnusedLocal
-    def populate_table(self, *args):
+    def populate_table(self, *args) -> None:
         self.table.setRowCount(0)
-        data: [ObservationSite] = self.observation_site_service.get_all()
+        data: list[ObservationSite] = self.observation_site_service.get_all()
         for i, observation_site in enumerate(data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(observation_site.name))

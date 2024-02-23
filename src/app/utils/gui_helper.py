@@ -24,7 +24,7 @@ def configure_close_signal_handler():
     timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
 
 
-def default_table(labels: [str]) -> QTableWidget:
+def default_table(labels: list[str]) -> QTableWidget:
     table = QTableWidget(0, len(labels))
     table.setHorizontalHeaderLabels(labels)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)

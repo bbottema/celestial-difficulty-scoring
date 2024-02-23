@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any, cast
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
 from sqlalchemy.orm import declarative_base, relationship
@@ -6,7 +7,7 @@ from sqlalchemy.orm import declarative_base, relationship
 from app.domain.model.light_pollution import LightPollution
 from app.domain.model.telescope_type import TelescopeType
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 # Association table
 observation_site_telescope_association = Table(
@@ -19,11 +20,11 @@ observation_site_telescope_association = Table(
 class ObservationSite(Base):
     __tablename__ = 'observation_sites'
 
-    id: int = Column(Integer, primary_key=True)
-    name: str = Column(String, unique=True, nullable=False)
-    latitude: float | None = Column(Float, nullable=True)
-    longitude: float | None = Column(Float, nullable=True)
-    light_pollution: LightPollution = Column(Enum(LightPollution), nullable=False)
+    id: int = cast(int, Column(Integer, primary_key=True))
+    name: str = cast(str, Column(String, unique=True, nullable=False))
+    latitude: float | None = cast(float, Column(Float, nullable=True))
+    longitude: float | None = cast(float, Column(Float, nullable=True))
+    light_pollution: LightPollution = cast(LightPollution, Column(Enum(LightPollution), nullable=False))
 
     telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites")
 
@@ -41,11 +42,11 @@ class ObservationSite(Base):
 class Telescope(Base):
     __tablename__ = 'telescopes'
 
-    id: int = Column(Integer, primary_key=True)  # type: ignore
-    name: str = Column(String, unique=True, nullable=False)  # type: ignore
-    type: TelescopeType = Column(Enum(TelescopeType), nullable=False)  # type: ignore
-    aperture: float = Column(Float, nullable=False)  # in mm  # type: ignore
-    focal_length: float = Column(Float, nullable=False)  # in mm  # type: ignore
-    focal_ratio: float = Column(Float, nullable=False)  # f/number  # type: ignore
+    id: int = cast(int, Column(Integer, primary_key=True))
+    name: str = cast(str, Column(String, unique=True, nullable=False))
+    type: TelescopeType = cast(TelescopeType, Column(Enum(TelescopeType), nullable=False))
+    aperture: float = cast(float, Column(Float, nullable=False))  # in mm  
+    focal_length: float = cast(float, Column(Float, nullable=False))  # in mm  
+    focal_ratio: float = cast(float, Column(Float, nullable=False))  # f/number  
 
     observation_sites = relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes")

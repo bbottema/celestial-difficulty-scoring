@@ -3,7 +3,7 @@ from reactivex.subject import ReplaySubject
 from app.utils.rx_bus import RxBus
 
 bus = RxBus()
-database_ready_bus = ReplaySubject()
+database_ready_bus: ReplaySubject = ReplaySubject()
 
 
 class CelestialEvent:

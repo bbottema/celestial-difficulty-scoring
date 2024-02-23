@@ -1,3 +1,5 @@
+from typing import cast
+
 from PySide6.QtCore import QObject, QEvent, Qt
 from PySide6.QtGui import QWindow, QMouseEvent
 from PySide6.QtWidgets import *
@@ -37,24 +39,25 @@ class UiDebugClipBoardWatch(QObject):
         table.itemClicked.connect(item_clicked)
         table.horizontalHeader().sectionClicked.connect(header_clicked)
 
-    def eventFilter(self, watched, event: QEvent):
-        if event.type() == QEvent.Type.MouseButtonPress and QMouseEvent(event).modifiers() & Qt.KeyboardModifier.ControlModifier:
-            if watched.property("customName"):
-                self._handle_custom_name_event(watched)
-            elif isinstance(watched, QLineEdit):
-                self._handle_line_edit_event(watched)
-            elif isinstance(watched, QPushButton):
-                self._handle_push_button_event(watched)
-            elif isinstance(watched, QLabel):
-                self._handle_label_event(watched)
-            elif isinstance(watched, QHeaderView):
-                self._handle_header_view_event(watched, event)
-            elif isinstance(watched, QTabBar):
-                self._handle_tab_bar_event(watched, event)
-            elif not isinstance(watched, (QPushButton, QLabel, QTabBar, QWidget, QWindow)):
-                self._handle_default_event(watched)
-            # else:
-            #     print(f"'{watched}' event not handled by ClassNameCopyEventFilter")
+    def eventFilter(self, watched, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonPress:
+            if cast(QMouseEvent, event).modifiers() & Qt.KeyboardModifier.ControlModifier:
+                if watched.property("customName"):
+                    self._handle_custom_name_event(watched)
+                elif isinstance(watched, QLineEdit):
+                    self._handle_line_edit_event(watched)
+                elif isinstance(watched, QPushButton):
+                    self._handle_push_button_event(watched)
+                elif isinstance(watched, QLabel):
+                    self._handle_label_event(watched)
+                elif isinstance(watched, QHeaderView):
+                    self._handle_header_view_event(watched, event)
+                elif isinstance(watched, QTabBar):
+                    self._handle_tab_bar_event(watched, event)
+                elif not isinstance(watched, (QPushButton, QLabel, QTabBar, QWidget, QWindow)):
+                    self._handle_default_event(watched)
+                # else:
+                #     print(f"'{watched}' event not handled by ClassNameCopyEventFilter")
         return super().eventFilter(watched, event)
 
     @staticmethod
