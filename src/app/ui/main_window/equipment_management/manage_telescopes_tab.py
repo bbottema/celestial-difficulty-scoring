@@ -12,7 +12,8 @@ from app.utils.gui_helper import centered_table_widget_item, default_table
 from app.utils.input_value_helper import parse_str_float, parse_str_int
 from app.utils.telescope_calculator import calculate_focal_length, calculate_focal_ratio, calculate_focal_length_from_aperture
 
-MAX_VALUE = 2147483647  # Maximum for a 32-bit signed integer, the max for int-based spinners
+MAX_SPINNER_VALUE = 2147483647  # Maximum for a 32-bit signed integer, the max for int-based spinners
+
 
 class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     COLUMN_NAME = 0
@@ -69,7 +70,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         self.aperture_input = aperture_input = QSpinBox()
         aperture_input.setSuffix(" mm")
         aperture_input.setMinimum(0)
-        aperture_input.setMaximum(MAX_VALUE)
+        aperture_input.setMaximum(MAX_SPINNER_VALUE)
         aperture_input.setSingleStep(10)
         aperture_input.valueChanged.connect(lambda new_aperture_value: self._calculate_focal_length_from_aperture(new_aperture_value))
         form_layout.addWidget(aperture_label)
@@ -81,7 +82,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         self.focal_length_input = focal_length_input = QSpinBox()
         focal_length_input.setSuffix(" mm")
         focal_length_input.setMinimum(0)
-        focal_length_input.setMaximum(MAX_VALUE)
+        focal_length_input.setMaximum(MAX_SPINNER_VALUE)
         focal_length_input.setSingleStep(50)
         focal_length_input.valueChanged.connect(lambda new_focal_length_value: self._calculate_focal_ratio(new_focal_length_value))
         form_layout.addWidget(focal_length_label)
@@ -94,7 +95,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         focal_ratio_input.setPrefix("f/")
         focal_ratio_input.setDecimals(1)
         focal_ratio_input.setMinimum(0)
-        focal_ratio_input.setMaximum(MAX_VALUE)
+        focal_ratio_input.setMaximum(MAX_SPINNER_VALUE)
         focal_ratio_input.setSingleStep(1)
         focal_ratio_input.valueChanged.connect(lambda new_ratio_value: self._calculate_focal_length(new_ratio_value))
         form_layout.addWidget(focal_ratio_label)
