@@ -1,6 +1,7 @@
 import signal
 from typing import Any
 
+from PySide6 import QtGui
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import Qt, QFont
 from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView
@@ -46,3 +47,19 @@ def centered_table_widget_item(value: str, data: Any = None) -> QTableWidgetItem
     if data is not None:
         item.setData(DATA_ROLE, data)
     return item
+
+
+def clear_table_row_selection_styles(table: QTableWidget, color: Qt.GlobalColor = Qt.GlobalColor.white):
+    for row in range(table.rowCount()):
+        for column in range(table.columnCount()):
+            item = table.item(row, column)
+            if item is not None:
+                item.setBackground(color)
+
+
+def apply_row_selection_styles(table: QTableWidget, row, color=QtGui.QColor(173, 216, 230)):
+    clear_table_row_selection_styles(table)
+    for column in range(table.columnCount()):
+        row_item = table.item(row, column)
+        if row_item is not None:
+            row_item.setBackground(color)

@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
 from app.utils.assume import verify_not_none
-from app.utils.gui_helper import DATA_ROLE
+from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles
 
 T = TypeVar('T')
 
@@ -37,9 +37,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _create_table_on_the_left(self, horizontal_layout: QHBoxLayout):
         self.equipment_table = self.create_equipment_table()
         self.equipment_table.itemClicked.connect(self._select_equipment)
+        self.selected_row_style = "background-color: lightblue;"
         horizontal_layout.addWidget(self.equipment_table, 2)
 
     def _select_equipment(self, item: QTableWidgetItem):
+        apply_row_selection_styles(self.equipment_table, item.row())
         self.selected_equipment = item.data(DATA_ROLE)
         self.handle_select_equipment(verify_not_none(self.selected_equipment, f"selected {self.equipment_type.__name__}"))
 
