@@ -3,10 +3,10 @@ import logging
 from injector import inject
 
 from app.config.autowire import component
+from app.config.event_bus_config import CelestialEvent
 from app.orm.entities import Telescope
 from app.orm.repositories.telescope_repository import TelescopeRepository
-from app.orm.services.base_service import BaseService
-from app.config.event_bus_config import CelestialEvent
+from app.orm.services.base_service import BaseService, MutationEvents
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +18,11 @@ class TelescopeService(BaseService[Telescope]):
     def __init__(self, telescope_repository: TelescopeRepository):
         super().__init__(
             telescope_repository,
-            {
-                'added': CelestialEvent.EQUIPMENT_TELESCOPE_ADDED,
-                'updated': CelestialEvent.EQUIPMENT_TELESCOPE_UPDATED,
-                'deleted': CelestialEvent.EQUIPMENT_TELESCOPE_DELETED
-            }
+            MutationEvents(
+                added=CelestialEvent.EQUIPMENT_TELESCOPE_ADDED,
+                updated=CelestialEvent.EQUIPMENT_TELESCOPE_UPDATED,
+                deleted=CelestialEvent.EQUIPMENT_TELESCOPE_DELETED
+            )
         )
 
     def handle_relations(self, instance: Telescope, session, operation):

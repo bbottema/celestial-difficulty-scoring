@@ -2,11 +2,18 @@ import logging
 from typing import Generic, TypeVar, Protocol
 
 from app.config.database import session_scope
-from app.config.event_bus_config import bus
+from app.config.event_bus_config import bus, CelestialEvent
 from app.orm.repositories.base_repository import BaseRepository
 from app.utils.assume import verify_not_none
 
 logger = logging.getLogger(__name__)
+
+
+class MutationEvents:
+    def __init__(self, added: CelestialEvent, updated: CelestialEvent, deleted: CelestialEvent) -> None:
+        self.added = added
+        self.updated = updated
+        self.deleted = deleted
 
 
 class SupportsID(Protocol):
@@ -17,9 +24,9 @@ T = TypeVar('T', bound=SupportsID)
 
 
 class BaseService(Generic[T]):
-    def __init__(self, repository: BaseRepository, events):
+    def __init__(self, repository: BaseRepository, mutation_events: MutationEvents):
         self.repository = repository
-        self.events = events
+        self.mutation_events = mutation_events
         self.entity_type = self.repository.entity.__class__.__name__
 
     def add(self, instance: T) -> T:
@@ -28,7 +35,7 @@ class BaseService(Generic[T]):
                 self.handle_relations(instance, session, 'add')
                 new_instance: T = self.repository.add(session, instance)
                 session.commit()
-                bus.emit(self.events['added'], new_instance)
+                bus.emit(self.mutation_events.added, new_instance)
                 return new_instance
         except Exception as e:
             logger.error(f"Failed to add {instance}: ERROR: {e}")
@@ -56,7 +63,7 @@ class BaseService(Generic[T]):
                 self.handle_relations(instance, session, 'update')
                 updated_instance: T = self.repository.update(session, instance.id, instance)
                 session.commit()
-                bus.emit(self.events['updated'], updated_instance)
+                bus.emit(self.mutation_events.updated, updated_instance)
                 return updated_instance
         except Exception as e:
             logger.error(f"Failed to update {instance}: ERROR: {e}")
@@ -68,7 +75,7 @@ class BaseService(Generic[T]):
                 instance: T = self.get_by_id(entity_id)
                 self.delete(instance)
                 session.commit()
-                bus.emit(self.events['deleted'], instance)
+                bus.emit(self.mutation_events.deleted, instance)
         except Exception as e:
             logger.error(f"Failed to delete {entity_id}: ERROR: {e}")
             raise e
@@ -78,7 +85,7 @@ class BaseService(Generic[T]):
             with session_scope() as session:
                 self.repository.delete(session, instance)
                 session.commit()
-                bus.emit(self.events['deleted'], instance)
+                bus.emit(self.mutation_events.deleted, instance)
         except Exception as e:
             logger.error(f"Failed to delete {instance.id}: ERROR: {e}")
             raise e
