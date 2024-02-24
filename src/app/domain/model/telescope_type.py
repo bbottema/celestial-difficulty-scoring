@@ -1,9 +1,7 @@
 from enum import Enum
 
-from app.utils.indexed_enum import IndexedEnumMixin
 
-
-class TelescopeType(IndexedEnumMixin, Enum):
+class TelescopeType(Enum):
     def __init__(self, label, summary):
         self.label = label
         self.summary = summary

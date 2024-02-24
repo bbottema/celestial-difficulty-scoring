@@ -1,9 +1,7 @@
 from enum import Enum
 
-from app.utils.indexed_enum import IndexedEnumMixin
 
-
-class LightPollution(IndexedEnumMixin, Enum):
+class LightPollution(Enum):
     BORTLE_1 = "Bortle 1 - Excellent dark-sky site"
     BORTLE_2 = "Bortle 2 - Typical truly dark site"
     BORTLE_3 = "Bortle 3 - Rural sky"
