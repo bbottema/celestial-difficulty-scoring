@@ -1,5 +1,3 @@
-import sys
-
 from PySide6.QtWidgets import QPushButton, QTableWidget, QLabel, QDoubleSpinBox, QVBoxLayout, QComboBox, QSpinBox
 
 from app.domain.model.telescope_type import TelescopeType
@@ -31,8 +29,8 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     focal_ratio_input: QDoubleSpinBox
 
     def __init__(self, telescope_service: TelescopeService, observation_site_service: ObservationSiteService):
+        self.telescope_service = telescope_service  # is used in the super().__init__ call
         super().__init__(Telescope, observation_site_service)
-        self.telescope_service = telescope_service
 
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
@@ -43,7 +41,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         for i, telescope in enumerate(data):
             self.equipment_table.insertRow(i)
             self.equipment_table.setItem(i, self.COLUMN_NAME, centered_table_widget_item(telescope.name, telescope))
-            self.equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type.value))
+            self.equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type.label))
             self.equipment_table.setItem(i, self.COLUMN_APERTURE, centered_table_widget_item(f'{telescope.aperture} mm'))
             self.equipment_table.setItem(i, self.COLUMN_FOCAL_LENGTH, centered_table_widget_item(f'{telescope.focal_length} mm'))
             self.equipment_table.setItem(i, self.COLUMN_FOCAL_RATIO, centered_table_widget_item(f'f/{telescope.focal_ratio}'))
@@ -150,7 +148,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
 
     def handle_select_equipment(self, telescope: Telescope):
         self.name_edit.setText(telescope.name)
-        self.telescope_type_combo.setCurrentIndex(telescope.type.index)
+        self.telescope_type_combo.setCurrentText(telescope.type.label)
         self.aperture_input.setValue(telescope.aperture)
         self.focal_length_input.setValue(telescope.focal_length)
         self.focal_ratio_input.setValue(telescope.focal_ratio)

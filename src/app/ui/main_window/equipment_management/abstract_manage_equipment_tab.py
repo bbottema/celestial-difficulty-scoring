@@ -26,6 +26,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         self.observation_site_service = observation_site_service
         self.selected_equipment = None
         self.setup_equipment_tab()
+        self.populate_equipment_table(self.equipment_table)
 
     # noinspection PyAttributeOutsideInit
     def setup_equipment_tab(self):

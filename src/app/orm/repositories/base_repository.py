@@ -4,6 +4,8 @@ from typing import Generic, TypeVar, Protocol, Type
 from sqlalchemy import type_coerce, TypeCoerce, Integer
 from sqlalchemy.orm import Session
 
+from app.utils.orm_util import eager_load_all_relationships
+
 
 class SupportsID(Protocol):
     id: int
@@ -23,12 +25,14 @@ class BaseRepository(Generic[T]):
         return instance
 
     def get_all(self, session: Session) -> list[T]:
-        return session.query(self.entity).all()
+        load_options = eager_load_all_relationships(self.entity)
+        return session.query(self.entity).options(*load_options).all()
 
     def get_by_id(self, session: Session, instance_id: int) -> T | None:
         a: TypeCoerce = type_coerce(self.entity.id, Integer)
         b: TypeCoerce = type_coerce(instance_id, Integer)
-        return session.query(self.entity).filter(a == b).first()
+        load_options = eager_load_all_relationships(self.entity)
+        return session.query(self.entity).filter(a == b).options(*load_options).first()
 
     def update(self, session: Session, instance_id: int, updated_object: T) -> T:
         persisted_object: T | None = self.get_by_id(session, instance_id)
