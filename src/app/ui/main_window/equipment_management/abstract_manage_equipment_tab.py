@@ -38,7 +38,7 @@ class ManageEquipmentTab(QWidget, ABC, metaclass=MetaQWidgetABCMeta):
         self.define_equipment_form_controls(form_layout)
 
         self._add_observation_sites_dropdown(form_layout)
-        form_layout.addItem(QSpacerItem(20, 40))
+        form_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self._add_save_button(form_layout)
 
     def _add_new_equipment_button(self, form_layout):
