@@ -35,20 +35,20 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
 
-    def populate_equipment_table(self, *args) -> None:
-        self.equipment_table.setRowCount(0)
+    def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
+        equipment_table.setRowCount(0)
         data: list[Telescope] = self.telescope_service.get_all()
         for i, telescope in enumerate(data):
-            self.equipment_table.insertRow(i)
-            self.equipment_table.setItem(i, self.COLUMN_NAME, centered_table_widget_item(telescope.name, telescope))
-            self.equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type.label))
-            self.equipment_table.setItem(i, self.COLUMN_APERTURE, centered_table_widget_item(f'{telescope.aperture} mm'))
-            self.equipment_table.setItem(i, self.COLUMN_FOCAL_LENGTH, centered_table_widget_item(f'{telescope.focal_length} mm'))
-            self.equipment_table.setItem(i, self.COLUMN_FOCAL_RATIO, centered_table_widget_item(f'f/{telescope.focal_ratio}'))
-            self.equipment_table.setItem(i, self.COLUMN_OBSERVATION_SITE, centered_table_widget_item(
-                ', '.join([site.name for site in telescope.observation_sites])
+            equipment_table.insertRow(i)
+            equipment_table.setItem(i, self.COLUMN_NAME, centered_table_widget_item(telescope.name, telescope))
+            equipment_table.setItem(i, self.COLUMN_TYPE, centered_table_widget_item(telescope.type.label, telescope))
+            equipment_table.setItem(i, self.COLUMN_APERTURE, centered_table_widget_item(f'{telescope.aperture} mm', telescope))
+            equipment_table.setItem(i, self.COLUMN_FOCAL_LENGTH, centered_table_widget_item(f'{telescope.focal_length} mm', telescope))
+            equipment_table.setItem(i, self.COLUMN_FOCAL_RATIO, centered_table_widget_item(f'f/{telescope.focal_ratio}', telescope))
+            equipment_table.setItem(i, self.COLUMN_OBSERVATION_SITE, centered_table_widget_item(
+                ', '.join([site.name for site in telescope.observation_sites]), telescope
             ))
-            self.equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
+            equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
 
     def _create_delete_button(self, telescope):
         delete_button = QPushButton("Delete")
