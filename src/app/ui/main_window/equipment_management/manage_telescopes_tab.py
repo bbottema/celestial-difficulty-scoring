@@ -1,4 +1,5 @@
 import sys
+from typing import Tuple
 
 from PySide6.QtWidgets import QPushButton, QTableWidget, QLabel, QDoubleSpinBox, QVBoxLayout, QComboBox
 
@@ -16,6 +17,12 @@ class ManageTelescopesTab(ManageEquipmentTab):
     COLUMN_FOCAL_LENGTH = 4
     COLUMN_FOCAL_RATIO = 5
     COLUMN_BUTTONS = 6
+
+    # form controls
+    telescope_type_combo: QComboBox
+    aperture_input: QDoubleSpinBox
+    focal_length_input: QDoubleSpinBox
+    focal_ratio_input: QDoubleSpinBox
 
     def __init__(self, telescope_service, observation_site_service):
         super().__init__('Telescope', observation_site_service)
@@ -93,22 +100,34 @@ class ManageTelescopesTab(ManageEquipmentTab):
         pass
 
     def _add_equipment_type_input(self, form_layout: QVBoxLayout):
-        # dropdown using TelescopeType enum
         telescope_type_label = QLabel("Type:")
-        telescope_type_combo = QComboBox()
-        telescope_type_combo.addItems([telescope_type.name for telescope_type in TelescopeType])
+        self.telescope_type_combo = QComboBox()
+        self.telescope_type_combo.addItems([telescope_type.name for telescope_type in TelescopeType])
         form_layout.addWidget(telescope_type_label)
-        form_layout.addWidget(telescope_type_combo)
+        form_layout.addWidget(self.telescope_type_combo)
         pass
 
     def _calculate_focal_length(self, new_ratio_value: float):
+        # FIXME move calculations to a utility class
         if not self.focal_length_input.hasFocus() and new_ratio_value != 0:
             self.focal_length_input.setValue(self.aperture_input.value() * new_ratio_value)
 
     def _calculate_focal_ratio(self, new_focal_length_value: float):
+        # FIXME move calculations to a utility class
         if not self.focal_ratio_input.hasFocus() and new_focal_length_value != 0:
             self.focal_ratio_input.setValue(new_focal_length_value / self.aperture_input.value())
 
     def _calculate_focal_length_from_aperture(self, new_aperture_value: float):
+        # FIXME move calculations to a utility class
         if not self.focal_length_input.hasFocus() and new_aperture_value != 0:
             self.focal_length_input.setValue(new_aperture_value * self.focal_ratio_input.value())
+
+    def handle_new_equipment_button_click(self) -> None:
+        self.clear_form_to_defaults()
+
+    def clear_form_to_defaults(self):
+        self.name_edit.clear()
+        self.telescope_type_combo.setCurrentIndex(TelescopeType.ACHROMATIC_REFRACTOR.index)
+        self.aperture_input.setValue(80)
+        self.focal_length_input.setValue(900)
+        self.focal_ratio_input.setValue(11.3)

@@ -10,6 +10,9 @@ class MetaQWidgetABCMeta(type(QWidget), ABCMeta):  # type: ignore
 
 class ManageEquipmentTab(QWidget, ABC, metaclass=MetaQWidgetABCMeta):
 
+    name_edit: QLineEdit
+    equipment_table: QTableWidget
+
     def __init__(self, equipment_type, observation_site_service):
         super().__init__()
         self.equipment_type = equipment_type
@@ -42,12 +45,14 @@ class ManageEquipmentTab(QWidget, ABC, metaclass=MetaQWidgetABCMeta):
         self._add_save_button(form_layout)
 
     def _add_new_equipment_button(self, form_layout):
-        form_layout.addWidget(QPushButton(f"New {self.equipment_type}"))
+        new_equipment_button = QPushButton(f"New {self.equipment_type}")
+        new_equipment_button.clicked.connect(self.handle_new_equipment_button_click)
+        form_layout.addWidget(new_equipment_button)
 
     def _add_equipment_name_input(self, form_layout):
-        name_edit = QLineEdit()
+        self.name_edit = QLineEdit()
         form_layout.addWidget(QLabel(f"{self.equipment_type.capitalize()} Name:"))
-        form_layout.addWidget(name_edit)
+        form_layout.addWidget(self.name_edit)
 
     def _add_observation_sites_dropdown(self, form_layout):
         form_layout.addWidget(QLabel("Observation Site:"))
@@ -68,9 +73,13 @@ class ManageEquipmentTab(QWidget, ABC, metaclass=MetaQWidgetABCMeta):
         pass
 
     @abstractmethod
-    def populate_equipment_table(self, equipment_table: QTableWidget):
+    def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
         pass
 
     @abstractmethod
-    def define_equipment_form_controls(self, form_layout: QVBoxLayout):
+    def define_equipment_form_controls(self, form_layout: QVBoxLayout) -> None:
+        pass
+
+    @abstractmethod
+    def handle_new_equipment_button_click(self) -> None:
         pass
