@@ -27,7 +27,6 @@ def session_scope():
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
-        # rais error with text "A database error occurred."
-        raise Exception("A database error occurred.")
+        raise e
     finally:
         session.close()

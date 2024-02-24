@@ -12,7 +12,7 @@ class ObservationSiteDetailsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Observation Site Details")
         self.setMinimumWidth(500)
-        self.observation_site_id = observation_site.id if observation_site else None
+        self.observation_site_id: int | None = observation_site.id if observation_site else None
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.init_ui(layout, observation_site)

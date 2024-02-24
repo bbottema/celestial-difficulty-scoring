@@ -4,6 +4,7 @@ from typing import Generic, TypeVar, Protocol
 from app.config.database import session_scope
 from app.config.event_bus_config import bus
 from app.orm.repositories.base_repository import BaseRepository
+from app.utils.assume import verify_not_none
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class BaseService(Generic[T]):
     def __init__(self, repository: BaseRepository, events):
         self.repository = repository
         self.events = events
+        self.entity_type = self.repository.entity.__class__.__name__
 
     def add(self, instance: T) -> T:
         try:
@@ -40,10 +42,10 @@ class BaseService(Generic[T]):
             logger.error("Failed to get instances: ERROR: {e}")
             raise e
 
-    def get_by_id(self, instance_id) -> T | None:
+    def get_by_id(self, instance_id) -> T:
         try:
             with session_scope() as session:
-                return self.repository.get_by_id(session, instance_id)
+                return verify_not_none(self.repository.get_by_id(session, instance_id), self.entity_type)
         except Exception as e:
             logger.error(f"Failed to get instance {instance_id}: ERROR: {e}")
             raise e
@@ -58,6 +60,17 @@ class BaseService(Generic[T]):
                 return updated_instance
         except Exception as e:
             logger.error(f"Failed to update {instance}: ERROR: {e}")
+            raise e
+
+    def delete_by_id(self, entity_id: int) -> None:
+        try:
+            with session_scope() as session:
+                instance: T = self.get_by_id(entity_id)
+                self.delete(instance)
+                session.commit()
+                bus.emit(self.events['deleted'], instance)
+        except Exception as e:
+            logger.error(f"Failed to delete {entity_id}: ERROR: {e}")
             raise e
 
     def delete(self, instance: T) -> None:

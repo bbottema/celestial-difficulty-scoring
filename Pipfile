@@ -11,11 +11,11 @@ sqlalchemy = "*"
 alembic = "*"
 injector = "*"
 mypy = "*"
-pandas-stubs = "*"
-pyside6-stubs = "*"
 
 [dev-packages]
 assertpy = "*"
+pandas-stubs = "*"
+pyside6-stubs = "*"
 
 [requires]
 python_version = "3"

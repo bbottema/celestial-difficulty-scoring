@@ -1,10 +1,13 @@
 import signal
+from typing import Any
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import Qt, QFont
 from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView
 
 from app.utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
+
+DATA_ROLE = Qt.ItemDataRole.UserRole + 1
 
 
 def configure_close_signal_handler():
@@ -37,7 +40,9 @@ def default_table(labels: list[str]) -> QTableWidget:
     return table
 
 
-def centered_table_widget_item(value: str) -> QTableWidgetItem:
+def centered_table_widget_item(value: str, data: Any = None) -> QTableWidgetItem:
     item = QTableWidgetItem(value)
     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    if data is not None:
+        item.setData(DATA_ROLE, data)
     return item

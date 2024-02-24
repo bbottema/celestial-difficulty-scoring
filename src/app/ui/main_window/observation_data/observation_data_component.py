@@ -92,16 +92,19 @@ class ObservationDataComponent(QWidget):
             self.table.setItem(i, 6, centered_table_widget_item(str(celestial_object.observability_score.normalized_score)))
 
     def add_telescope(self):
+        # FIXME: Implement this method or delete it
         # Open dialog to input telescope details
         # Update observability index accordingly
         pass
 
     def add_eyepiece(self):
+        # FIXME: Implement this method or delete it
         # Open dialog to input eyepiece details
         # Update observability index accordingly
         pass
 
     def add_barlow_lens(self):
+        # FIXME: Implement this method or delete it
         # Open dialog to input Barlow lens details
         # Update observability index accordingly
         pass
