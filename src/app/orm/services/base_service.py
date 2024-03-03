@@ -2,7 +2,7 @@ import logging
 from typing import Generic, TypeVar, Protocol
 
 from app.config.database import session_scope
-from app.config.event_bus_config import bus, CelestialEvent
+from app.config.event_bus_config import bus
 from app.orm.repositories.base_repository import BaseRepository
 from app.utils.assume import verify_not_none
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class MutationEvents:
-    def __init__(self, added: CelestialEvent, updated: CelestialEvent, deleted: CelestialEvent) -> None:
+    def __init__(self, added: str, updated: str, deleted: str) -> None:
         self.added = added
         self.updated = updated
         self.deleted = deleted
@@ -47,6 +47,14 @@ class BaseService(Generic[T]):
                 return self.repository.get_all(session)
         except Exception as e:
             logger.error("Failed to get instances: ERROR: {e}")
+            raise e
+
+    def get_for_names(self, names: list[str]) -> list[T]:
+        try:
+            with session_scope() as session:
+                return self.repository.get_for_names(session, names)
+        except Exception as e:
+            logger.error(f"Failed to get instances for name {names}: ERROR: {e}")
             raise e
 
     def get_by_id(self, instance_id) -> T:

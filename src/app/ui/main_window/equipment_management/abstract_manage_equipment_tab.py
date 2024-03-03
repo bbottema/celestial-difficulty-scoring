@@ -4,6 +4,7 @@ from typing import TypeVar, Generic, Type
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
+from app.orm.services.observation_site_service import ObservationSiteService
 from app.utils.assume import verify_not_none
 from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles
 
@@ -19,8 +20,9 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     equipment_table: QTableWidget
     equipment_type: Type[T]
     selected_equipment: T | None
+    observation_site_list_widget: QListWidget
 
-    def __init__(self, equipment_type: Type[T], observation_site_service):
+    def __init__(self, equipment_type: Type[T], observation_site_service: ObservationSiteService):
         super().__init__()
         self.equipment_type = equipment_type
         self.observation_site_service = observation_site_service
@@ -72,14 +74,14 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
 
     def _add_observation_sites_dropdown(self, form_layout):
         form_layout.addWidget(QLabel("Observation Site:"))
-        observation_site_list_widget = QListWidget()
-        observation_site_list_widget.setSelectionMode(QListWidget.MultiSelection)
+        self.observation_site_list_widget = QListWidget()
+        self.observation_site_list_widget.setSelectionMode(QListWidget.MultiSelection)
         for observation_site in self.observation_site_service.get_all():
             item = QListWidgetItem(observation_site.name)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Unchecked)
-            observation_site_list_widget.addItem(item)
-        form_layout.addWidget(observation_site_list_widget)
+            self.observation_site_list_widget.addItem(item)
+        form_layout.addWidget(self.observation_site_list_widget)
 
     def _add_save_button(self, form_layout):
         save_equipment_button = QPushButton("Save")

@@ -1,17 +1,18 @@
 from abc import abstractmethod
-from typing import Generic, TypeVar, Protocol, Type
+from typing import Generic, TypeVar, Protocol, Type, cast
 
-from sqlalchemy import type_coerce, TypeCoerce, Integer
+from sqlalchemy import type_coerce, TypeCoerce, Integer, Column
 from sqlalchemy.orm import Session
 
 from app.utils.orm_util import eager_load_all_relationships
 
 
-class SupportsID(Protocol):
-    id: int
+class NamedEntity(Protocol):
+    id: int | None
+    name: str
 
 
-T = TypeVar('T', bound=SupportsID)
+T = TypeVar('T', bound=NamedEntity)
 
 
 # noinspection PyMethodMayBeStatic
@@ -28,6 +29,10 @@ class BaseRepository(Generic[T]):
         load_options = eager_load_all_relationships(self.entity)
         return session.query(self.entity).options(*load_options).all()
 
+    def get_for_names(self, session: Session, names: list[str]) -> list[T]:
+        load_options = eager_load_all_relationships(self.entity)
+        return session.query(self.entity).filter(cast(Column, self.entity.name).in_(names)).options(*load_options).all()
+
     def get_by_id(self, session: Session, instance_id: int) -> T | None:
         a: TypeCoerce = type_coerce(self.entity.id, Integer)
         b: TypeCoerce = type_coerce(instance_id, Integer)
@@ -38,12 +43,12 @@ class BaseRepository(Generic[T]):
         persisted_object: T | None = self.get_by_id(session, instance_id)
         if not persisted_object:
             raise Exception(f"{self.entity.__class__.__name__} with ID {instance_id} not found.")
-        self.handle_update(persisted_object, updated_object)
+        self.handle_update(persisted_object, updated_object, session)
         return persisted_object
 
     def delete(self, session: Session, instance: T) -> None:
         session.delete(instance)
 
     @abstractmethod
-    def handle_update(self, persisted_object: T, updated_object: T) -> None:
+    def handle_update(self, persisted_object: T, updated_object: T, session: Session) -> None:
         pass

@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton, QTableWidget, QLabel, QDoubleSpinBox, QVBoxLayout, QComboBox, QSpinBox
 
 from app.domain.model.telescope_type import TelescopeType
@@ -15,11 +16,11 @@ MAX_SPINNER_VALUE = 2147483647  # Maximum for a 32-bit signed integer, the max f
 
 class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     COLUMN_NAME = 0
-    COLUMN_OBSERVATION_SITE = 1
-    COLUMN_TYPE = 2
-    COLUMN_APERTURE = 3
-    COLUMN_FOCAL_LENGTH = 4
-    COLUMN_FOCAL_RATIO = 5
+    COLUMN_TYPE = 1
+    COLUMN_APERTURE = 2
+    COLUMN_FOCAL_LENGTH = 3
+    COLUMN_FOCAL_RATIO = 4
+    COLUMN_OBSERVATION_SITE = 5
     COLUMN_BUTTONS = 6
 
     # form controls
@@ -132,6 +133,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         self.focal_ratio_input.setValue(11.3)
 
     def handle_save_equipment_button_click(self) -> None:
+        site_names = self._get_selected_observation_sites_names()
         telescope = Telescope(
             id=self.selected_equipment.id if self.selected_equipment else None,
             name=self.name_edit.text(),
@@ -139,12 +141,18 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
             aperture=(verify_not_none(parse_str_int(self.aperture_input.cleanText()), "Aperture")),
             focal_length=verify_not_none(parse_str_int(self.focal_length_input.cleanText()), "Focal length"),
             focal_ratio=verify_not_none(parse_str_float(self.focal_ratio_input.cleanText()), "Focal ratio"),
+            observation_sites=self.observation_site_service.get_for_names(site_names)
         )
 
         if telescope.id:
             self.telescope_service.update(telescope)
         else:
             self.telescope_service.add(telescope)
+
+    def _get_selected_observation_sites_names(self) -> list[str]:
+        osl_widget = self.observation_site_list_widget
+        return [osl_widget.item(i).text() for i in range(osl_widget.count())
+                if osl_widget.item(i).checkState() == Qt.CheckState.Checked]
 
     def handle_select_equipment(self, telescope: Telescope):
         self.name_edit.setText(telescope.name)
