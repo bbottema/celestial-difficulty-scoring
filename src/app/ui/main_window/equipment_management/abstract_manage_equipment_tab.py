@@ -1,14 +1,19 @@
+import logging
 from abc import abstractmethod, ABC, ABCMeta
 from typing import TypeVar, Generic, Type
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
+from app.orm.repositories.base_equipment_repository import EquipmentEntity
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.utils.assume import verify_not_none
 from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles
 
-T = TypeVar('T')
+Checked: Qt.CheckState = Qt.CheckState.Checked
+Unchecked: Qt.CheckState = Qt.CheckState.Unchecked
+
+T = TypeVar('T', bound=EquipmentEntity)
 
 
 class MetaQWidgetABCMeta(type(QWidget), ABCMeta):  # type: ignore
@@ -45,6 +50,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _select_equipment(self, item: QTableWidgetItem):
         apply_row_selection_styles(self.equipment_table, item.row())
         self.selected_equipment = item.data(DATA_ROLE)
+        self._populate_observation_sites_dropdown(self.observation_site_list_widget)
         self.handle_select_equipment(verify_not_none(self.selected_equipment, f"selected {self.equipment_type.__name__}"))
 
     def _create_form_on_the_right(self, horizontal_layout: QHBoxLayout):
@@ -55,9 +61,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
 
         self._add_new_equipment_button(form_layout)
         self._add_equipment_name_input(form_layout)
-
         self.define_equipment_form_controls(form_layout)
-
         self._add_observation_sites_dropdown(form_layout)
         form_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self._add_save_button(form_layout)
@@ -75,13 +79,17 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _add_observation_sites_dropdown(self, form_layout):
         form_layout.addWidget(QLabel("Observation Site:"))
         self.observation_site_list_widget = QListWidget()
-        self.observation_site_list_widget.setSelectionMode(QListWidget.MultiSelection)
+        self.observation_site_list_widget.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self._populate_observation_sites_dropdown(self.observation_site_list_widget)
+        form_layout.addWidget(self.observation_site_list_widget)
+
+    def _populate_observation_sites_dropdown(self, observation_site_list_widget: QListWidget):
+        observation_site_list_widget.clear()
         for observation_site in self.observation_site_service.get_all():
             item = QListWidgetItem(observation_site.name)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
-            self.observation_site_list_widget.addItem(item)
-        form_layout.addWidget(self.observation_site_list_widget)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Checked if self.selected_equipment and observation_site in self.selected_equipment else Unchecked)
+            observation_site_list_widget.addItem(item)
 
     def _add_save_button(self, form_layout):
         save_equipment_button = QPushButton("Save")

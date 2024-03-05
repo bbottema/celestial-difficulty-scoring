@@ -1,16 +1,11 @@
 from abc import abstractmethod
-from typing import Generic, TypeVar, Protocol, Type, cast
+from typing import Generic, TypeVar, Type, cast
 
 from sqlalchemy import type_coerce, TypeCoerce, Integer, Column
 from sqlalchemy.orm import Session
 
+from app.orm.entities import NamedEntity
 from app.utils.orm_util import eager_load_all_relationships
-
-
-class NamedEntity(Protocol):
-    id: int | None
-    name: str
-
 
 T = TypeVar('T', bound=NamedEntity)
 
