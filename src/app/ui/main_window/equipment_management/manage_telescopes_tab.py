@@ -123,6 +123,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
             self.focal_length_input.setValue(calculate_focal_length_from_aperture(new_aperture_value, self.focal_ratio_input.value()))
 
     def handle_new_equipment_button_click(self) -> None:
+        super().handle_new_equipment_button_click()
         self.clear_form_to_defaults()
 
     def clear_form_to_defaults(self):

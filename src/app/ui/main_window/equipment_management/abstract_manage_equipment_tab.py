@@ -8,7 +8,7 @@ from PySide6.QtWidgets import *
 from app.orm.repositories.base_equipment_repository import EquipmentEntity
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.utils.assume import verify_not_none
-from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles
+from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles, clear_table_row_selection_styles
 
 Checked: Qt.CheckState = Qt.CheckState.Checked
 Unchecked: Qt.CheckState = Qt.CheckState.Unchecked
@@ -118,7 +118,8 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
 
     @abstractmethod
     def handle_new_equipment_button_click(self) -> None:
-        pass
+        self.equipment_table.clearSelection()
+        clear_table_row_selection_styles(self.equipment_table)
 
     @abstractmethod
     def handle_save_equipment_button_click(self) -> None:
