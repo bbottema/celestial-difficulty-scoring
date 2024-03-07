@@ -1,7 +1,7 @@
-import logging
 from abc import abstractmethod, ABC, ABCMeta
 from typing import TypeVar, Generic, Type
 
+from PySide6 import QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
@@ -14,6 +14,8 @@ Checked: Qt.CheckState = Qt.CheckState.Checked
 Unchecked: Qt.CheckState = Qt.CheckState.Unchecked
 
 T = TypeVar('T', bound=EquipmentEntity)
+
+SELECTED_ROW_BACKGROUND_COLOR = QtGui.QColor(173, 216, 230)
 
 
 class MetaQWidgetABCMeta(type(QWidget), ABCMeta):  # type: ignore
@@ -43,12 +45,18 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
 
     def _create_table_on_the_left(self, horizontal_layout: QHBoxLayout):
         self.equipment_table = self.create_equipment_table()
+        self.equipment_table.setStyleSheet("""
+            QTableWidget::item:selected { color: inherit; background-color: {SELECTED_ROW_BACKGROUND_COLOR.name()}; }
+            QHeaderView::section:selected { color: inherit; background-color: {SELECTED_ROW_BACKGROUND_COLOR.name()}; }
+        """)
+        self.equipment_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.equipment_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
         self.equipment_table.itemClicked.connect(self._select_equipment)
         self.selected_row_style = "background-color: lightblue;"
         horizontal_layout.addWidget(self.equipment_table, 2)
 
     def _select_equipment(self, item: QTableWidgetItem):
-        apply_row_selection_styles(self.equipment_table, item.row())
+        apply_row_selection_styles(self.equipment_table, item.row(), SELECTED_ROW_BACKGROUND_COLOR)
         self.selected_equipment = item.data(DATA_ROLE)
         self._populate_observation_sites_dropdown(self.observation_site_list_widget)
         self.handle_select_equipment(verify_not_none(self.selected_equipment, f"selected {self.equipment_type.__name__}"))

@@ -1,9 +1,8 @@
 import signal
 from typing import Any
 
-from PySide6 import QtGui
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import Qt, QFont
+from PySide6.QtGui import Qt, QFont, QColor
 from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView
 
 from app.utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
@@ -57,7 +56,7 @@ def clear_table_row_selection_styles(table: QTableWidget, color: Qt.GlobalColor 
                 item.setBackground(color)
 
 
-def apply_row_selection_styles(table: QTableWidget, row, color=QtGui.QColor(173, 216, 230)):
+def apply_row_selection_styles(table: QTableWidget, row, color: QColor):
     clear_table_row_selection_styles(table)
     for column in range(table.columnCount()):
         row_item = table.item(row, column)
