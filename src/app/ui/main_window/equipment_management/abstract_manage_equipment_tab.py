@@ -5,7 +5,9 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
+from app.config.event_bus_config import bus, CelestialEvent
 from app.orm.repositories.base_equipment_repository import EquipmentEntity
+from app.orm.services.base_service import MutationEvents
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.utils.assume import verify_not_none
 from app.utils.gui_helper import DATA_ROLE, apply_row_selection_styles, clear_table_row_selection_styles
@@ -29,13 +31,22 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     selected_equipment: T | None
     observation_site_list_widget: QListWidget
 
-    def __init__(self, equipment_type: Type[T], observation_site_service: ObservationSiteService):
+    def __init__(self, equipment_type: Type[T], observation_site_service: ObservationSiteService, equipment_events: MutationEvents):
         super().__init__()
         self.equipment_type = equipment_type
         self.observation_site_service = observation_site_service
         self.selected_equipment = None
         self.setup_equipment_tab()
         self.populate_equipment_table(self.equipment_table)
+
+        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+
+        bus.on(equipment_events.added, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(equipment_events.updated, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(equipment_events.deleted, lambda *args: self._repopulate_equipment_table_on_repo_changes())
 
     # noinspection PyAttributeOutsideInit
     def setup_equipment_tab(self):
@@ -108,9 +119,20 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def create_equipment_table(self) -> QTableWidget:
         pass
 
+    def _repopulate_equipment_table_on_repo_changes(self):
+        self.populate_equipment_table(self.equipment_table)
+        self._reselect_current_active_equipment(self.equipment_table)
+
     @abstractmethod
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
         pass
+
+    def _reselect_current_active_equipment(self, equipment_table: QTableWidget) -> None:
+        if self.selected_equipment:
+            for row in range(equipment_table.rowCount()):
+                if equipment_table.item(row, 0).data(DATA_ROLE) == self.selected_equipment:
+                    apply_row_selection_styles(equipment_table, row, SELECTED_ROW_BACKGROUND_COLOR)
+                    break
 
     @abstractmethod
     def define_equipment_form_controls(self, form_layout: QVBoxLayout) -> None:

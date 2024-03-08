@@ -29,9 +29,9 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     focal_length_input: QSpinBox
     focal_ratio_input: QDoubleSpinBox
 
-    def __init__(self, telescope_service: TelescopeService, observation_site_service: ObservationSiteService):
+    def __init__(self, observation_site_service: ObservationSiteService, telescope_service: TelescopeService):
         self.telescope_service = telescope_service  # is used in the super().__init__ call
-        super().__init__(Telescope, observation_site_service)
+        super().__init__(Telescope, observation_site_service, telescope_service.mutation_events)
 
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
@@ -50,6 +50,8 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
                 ', '.join([site.name for site in telescope.observation_sites]), telescope
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
+
+        super()._reselect_current_active_equipment(equipment_table)
 
     def _create_delete_button(self, telescope):
         delete_button = QPushButton("Delete")
