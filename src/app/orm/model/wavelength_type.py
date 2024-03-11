@@ -6,8 +6,8 @@ import json
 
 @dataclass
 class Wavelength:
-    from_wavelength: float
-    to_wavelength: float
+    from_wavelength: int
+    to_wavelength: int
 
 
 class WavelengthType(TypeDecorator):

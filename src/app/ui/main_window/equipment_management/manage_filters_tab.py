@@ -1,3 +1,5 @@
+from typing import cast
+
 from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QSpinBox, QLabel
 
 from app.orm.model.entities import Filter
@@ -6,6 +8,7 @@ from app.orm.services.filter_service import FilterService
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.ui.main_window.equipment_management.abstract_manage_equipment_tab import ManageEquipmentTab
 from app.utils.gui_helper import default_table, centered_table_widget_item, remove_table_row_by_contained_widget
+from app.utils.input_value_helper import parse_str_int
 
 
 class ManageFiltersTab(ManageEquipmentTab):
@@ -72,8 +75,19 @@ class ManageFiltersTab(ManageEquipmentTab):
 
         row_position = self.wavelength_table.rowCount()
         self.wavelength_table.insertRow(row_position)
-        self.wavelength_table.setItem(row_position, 0, QTableWidgetItem("0"))
-        self.wavelength_table.setItem(row_position, 1, QTableWidgetItem("0"))
+
+        spin_from = QSpinBox()
+        spin_from.setMinimum(0)
+        spin_from.setSingleStep(10)
+        spin_from.setMaximum(2500)
+
+        spin_to = QSpinBox()
+        spin_to.setMinimum(0)
+        spin_to.setSingleStep(10)
+        spin_to.setMaximum(2500)
+
+        self.wavelength_table.setCellWidget(row_position, 0, spin_from)
+        self.wavelength_table.setCellWidget(row_position, 1, spin_to)
         self.wavelength_table.setCellWidget(row_position, 2, create_delete_row_button())
 
     def clear_form_to_defaults(self) -> None:
@@ -82,6 +96,11 @@ class ManageFiltersTab(ManageEquipmentTab):
 
     def populate_form_for_selected_equipment(self, filter: Filter) -> None:
         self.minimum_exit_pupil_input.setValue(filter.minimum_exit_pupil if filter.minimum_exit_pupil else 1)
+        self.wavelength_table.setRowCount(0)
+        for i, wavelength in enumerate(filter.wavelengths):
+            self.add_wavelength_entry_row()
+            cast(QSpinBox, self.wavelength_table.cellWidget(i, 0)).setValue(wavelength.from_wavelength)
+            cast(QSpinBox, self.wavelength_table.cellWidget(i, 1)).setValue(wavelength.to_wavelength)
 
     def create_or_update_equipment_entity(self, equipment_id: int | None, name: str, site_names: list[str]) -> Filter:
         return Filter(
@@ -89,8 +108,8 @@ class ManageFiltersTab(ManageEquipmentTab):
             name=name,
             minimum_exit_pupil=self.minimum_exit_pupil_input.value(),
             wavelengths=[Wavelength(
-                from_wavelength=int(self.wavelength_table.item(row, 0).text()),
-                to_wavelength=int(self.wavelength_table.item(row, 1).text())
+                from_wavelength=parse_str_int(cast(QSpinBox, self.wavelength_table.cellWidget(row, 0)).cleanText()),
+                to_wavelength=parse_str_int(cast(QSpinBox, self.wavelength_table.cellWidget(row, 1)).cleanText())
             ) for row in range(self.wavelength_table.rowCount())],
             observation_sites=self.observation_site_service.get_for_names(site_names)
         )
