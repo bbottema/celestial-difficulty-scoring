@@ -3,7 +3,7 @@ from typing import Any
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import Qt, QFont, QColor
-from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView
+from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView, QWidget
 
 from app.utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
 
@@ -62,3 +62,7 @@ def apply_row_selection_styles(table: QTableWidget, row, color: QColor):
         row_item = table.item(row, column)
         if row_item is not None:
             row_item.setBackground(color)
+
+
+def remove_table_row_by_contained_widget(table: QTableWidget, row_widget: QWidget) -> None:
+    table.removeRow(table.indexAt(row_widget.pos()).row())
