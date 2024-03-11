@@ -1,5 +1,5 @@
 from app.config.autowire import component
-from app.orm.entities import Imager
+from app.orm.model.entities import Imager
 from app.orm.repositories.base_equipment_repository import BaseEquipmentRepository
 
 

@@ -3,7 +3,7 @@ from injector import inject
 
 from app.config.autowire import component
 from app.config.event_bus_config import CelestialEvent, database_ready_bus, bus
-from app.orm.entities import ObservationSite
+from app.orm.model.entities import ObservationSite
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
 from app.utils.gui_helper import default_table, centered_table_widget_item

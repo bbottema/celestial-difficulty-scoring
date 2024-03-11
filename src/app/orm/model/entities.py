@@ -1,12 +1,13 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, cast, Protocol
+from typing import Any, cast, Protocol, List
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
 from sqlalchemy.orm import declarative_base, relationship, DeclarativeMeta
 
 from app.domain.model.light_pollution import LightPollution
 from app.domain.model.telescope_type import TelescopeType
+from app.orm.model.wavelength_type import WavelengthType, Wavelength
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,11 @@ class ObservationSite(Base):
     longitude: float | None = cast(float, Column(Float, nullable=True))
     light_pollution: LightPollution = cast(LightPollution, Column(Enum(LightPollution), nullable=False))
 
-    telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites")
-    eyepieces = relationship("Eyepiece", secondary=observation_site_eyepiece_association, back_populates="observation_sites")
-    optical_aids = relationship("OpticalAid", secondary=observation_site_optical_aid_association, back_populates="observation_sites")
-    filters = relationship("Filter", secondary=observation_site_filter_association, back_populates="observation_sites")
-    imagers = relationship("Imager", secondary=observation_site_imager_association, back_populates="observation_sites")
+    telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites", cascade="")
+    eyepieces = relationship("Eyepiece", secondary=observation_site_eyepiece_association, back_populates="observation_sites", cascade="")
+    optical_aids = relationship("OpticalAid", secondary=observation_site_optical_aid_association, back_populates="observation_sites", cascade="")
+    filters = relationship("Filter", secondary=observation_site_filter_association, back_populates="observation_sites", cascade="")
+    imagers = relationship("Imager", secondary=observation_site_imager_association, back_populates="observation_sites", cascade="")
 
     def __post_init__(self):
         self.validate_coordinates()
@@ -85,7 +86,7 @@ class Telescope(Base, EquipmentEntity):
     focal_ratio: float = cast(float, Column(Float, nullable=False))  # f/number
 
     observation_sites = cast(list[ObservationSite],
-                             relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes"))
+                             relationship("ObservationSite", secondary=observation_site_telescope_association, back_populates="telescopes", cascade=""))
 
 
 @dataclass
@@ -96,7 +97,7 @@ class Eyepiece(Base, EquipmentEntity):
     name: str = cast(str, Column(String, unique=True, nullable=False))
 
     observation_sites = cast(list[ObservationSite],
-                             relationship("ObservationSite", secondary=observation_site_eyepiece_association, back_populates="eyepieces"))
+                             relationship("ObservationSite", secondary=observation_site_eyepiece_association, back_populates="eyepieces", cascade=""))
 
 
 @dataclass
@@ -107,7 +108,7 @@ class OpticalAid(Base, EquipmentEntity):
     name: str = cast(str, Column(String, unique=True, nullable=False))
 
     observation_sites = cast(list[ObservationSite],
-                             relationship("ObservationSite", secondary=observation_site_optical_aid_association, back_populates="optical_aids"))
+                             relationship("ObservationSite", secondary=observation_site_optical_aid_association, back_populates="optical_aids", cascade=""))
 
 
 @dataclass
@@ -116,8 +117,11 @@ class Filter(Base, EquipmentEntity):
 
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
+    minimum_exit_pupil: float | None = cast(float, Column(Float, nullable=True))  # in mm
+    wavelengths: List[Wavelength] = Column(WavelengthType)  # type: ignore
 
-    observation_sites = cast(list[ObservationSite], relationship("ObservationSite", secondary=observation_site_filter_association, back_populates="filters"))
+    observation_sites = cast(list[ObservationSite],
+                             relationship("ObservationSite", secondary=observation_site_filter_association, back_populates="filters", cascade=""))
 
 
 @dataclass
@@ -127,4 +131,5 @@ class Imager(Base, EquipmentEntity):
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
 
-    observation_sites = cast(list[ObservationSite], relationship("ObservationSite", secondary=observation_site_imager_association, back_populates="imagers"))
+    observation_sites = cast(list[ObservationSite],
+                             relationship("ObservationSite", secondary=observation_site_imager_association, back_populates="imagers", cascade=""))

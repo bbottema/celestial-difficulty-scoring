@@ -4,7 +4,7 @@ from injector import inject
 
 from app.config.autowire import component
 from app.config.event_bus_config import CelestialEvent
-from app.orm.entities import Eyepiece, Imager
+from app.orm.model.entities import Imager
 from app.orm.repositories.imager_repository import ImagerRepository
 from app.orm.services.base_service import BaseService, MutationEvents
 

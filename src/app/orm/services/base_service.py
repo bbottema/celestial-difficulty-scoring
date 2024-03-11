@@ -1,9 +1,11 @@
 import logging
 from typing import Generic, TypeVar, cast
 
+from sqlalchemy.orm import Session
+
 from app.config.database import session_scope
 from app.config.event_bus_config import bus
-from app.orm.entities import EquipmentEntity
+from app.orm.model.entities import EquipmentEntity
 from app.orm.repositories.base_repository import BaseRepository
 from app.utils.assume import verify_not_none
 
@@ -95,7 +97,6 @@ class BaseService(Generic[T]):
             logger.error(f"Failed to delete {instance.id}: ERROR: {e}")
             raise e
 
-    def _handle_observation_site_relations(self, instance: T, session, operation):
+    def _handle_observation_site_relations(self, instance: T, session: Session, operation):
         if operation in ['add', 'update'] and instance.observation_sites is not None:
-            for observation_site in instance.observation_sites:
-                session.merge(observation_site)
+            instance.observation_sites = [session.merge(observation_site) for observation_site in instance.observation_sites]

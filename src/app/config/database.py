@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from app.orm.entities import Base
+from app.orm.model.entities import Base
 from app.config.event_bus_config import database_ready_bus
 
 _engine = create_engine("sqlite:///celestial.db", echo=False, future=True)

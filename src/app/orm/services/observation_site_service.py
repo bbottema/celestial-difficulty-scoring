@@ -4,7 +4,7 @@ from injector import inject
 
 from app.config.autowire import component
 from app.config.event_bus_config import CelestialEvent
-from app.orm.entities import ObservationSite
+from app.orm.model.entities import ObservationSite
 from app.orm.repositories.observation_site_repository import ObservationSiteRepository
 from app.orm.services.base_service import BaseService, MutationEvents
 
@@ -27,17 +27,12 @@ class ObservationSiteService(BaseService[ObservationSite]):
     def _handle_observation_site_relations(self, instance: ObservationSite, session, operation):
         if operation in ['add', 'update']:
             if instance.telescopes is not None:
-                for telescope in instance.telescopes:
-                    session.merge(telescope)
+                instance.telescopes = [session.merge(telescope) for telescope in instance.telescopes]
             if instance.eyepieces is not None:
-                for eyepiece in instance.eyepieces:
-                    session.merge(eyepiece)
+                instance.eyepieces = [session.merge(eyepiece) for eyepiece in instance.eyepieces]
             if instance.imagers is not None:
-                for imager in instance.imagers:
-                    session.merge(imager)
+                instance.imagers = [session.merge(imager) for imager in instance.imagers]
             if instance.filters is not None:
-                for filter in instance.filters:
-                    session.merge(filter)
+                instance.filters = [session.merge(filter_item) for filter_item in instance.filters]
             if instance.optical_aids is not None:
-                for optical_aid in instance.optical_aids:
-                    session.merge(optical_aid)
+                instance.optical_aids = [session.merge(optical_aid) for optical_aid in instance.optical_aids]

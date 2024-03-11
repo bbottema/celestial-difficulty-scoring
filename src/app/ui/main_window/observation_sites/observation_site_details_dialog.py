@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QCom
 from PySide6.QtWidgets import QMessageBox
 
 from app.domain.model.light_pollution import LightPollution
-from app.orm.entities import ObservationSite
+from app.orm.model.entities import ObservationSite
 from app.utils.input_value_helper import parse_float_str, parse_str_float
 
 

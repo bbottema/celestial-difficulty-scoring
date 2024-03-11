@@ -4,7 +4,7 @@ from typing import Generic, TypeVar, Type, cast
 from sqlalchemy import type_coerce, TypeCoerce, Integer, Column
 from sqlalchemy.orm import Session
 
-from app.orm.entities import NamedEntity
+from app.orm.model.entities import NamedEntity
 from app.utils.orm_util import eager_load_all_relationships
 
 T = TypeVar('T', bound=NamedEntity)

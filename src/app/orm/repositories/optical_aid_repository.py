@@ -1,5 +1,5 @@
 from app.config.autowire import component
-from app.orm.entities import OpticalAid
+from app.orm.model.entities import OpticalAid
 from app.orm.repositories.base_equipment_repository import BaseEquipmentRepository
 
 

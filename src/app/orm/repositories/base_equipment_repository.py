@@ -3,7 +3,7 @@ from typing import TypeVar, Type
 from sqlalchemy.orm import Session
 
 from app.config.autowire import component
-from app.orm.entities import ObservationSite, EquipmentEntity
+from app.orm.model.entities import ObservationSite, EquipmentEntity
 from app.orm.repositories.base_repository import BaseRepository
 
 T = TypeVar('T', bound=EquipmentEntity)

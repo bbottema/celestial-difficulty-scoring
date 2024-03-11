@@ -4,7 +4,7 @@ from injector import inject
 
 from app.config.autowire import component
 from app.config.event_bus_config import CelestialEvent
-from app.orm.entities import Telescope
+from app.orm.model.entities import Telescope
 from app.orm.repositories.telescope_repository import TelescopeRepository
 from app.orm.services.base_service import BaseService, MutationEvents
 
