@@ -51,6 +51,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
 
+        equipment_table.resizeRowsToContents()
         super()._reselect_current_active_equipment(equipment_table)
 
     def _create_delete_button(self, telescope):

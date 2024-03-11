@@ -42,7 +42,7 @@ def default_table(labels: list[str]) -> QTableWidget:
 
 def centered_table_widget_item(value: str, data: Any = None) -> QTableWidgetItem:
     item = QTableWidgetItem(value)
-    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    item.setTextAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
     if data is not None:
         item.setData(DATA_ROLE, data)
     return item
