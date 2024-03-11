@@ -115,14 +115,12 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
                 self.focal_length_input.setValue(calculate_focal_length(self.aperture_input.value(), new_ratio_value))
 
     def clear_form_to_defaults(self):
-        self.name_edit.clear()
         self.telescope_type_combo.setCurrentText(TelescopeType.ACHROMATIC_REFRACTOR.label)
         self.aperture_input.setValue(80)
         self.focal_length_input.setValue(900)
         self.focal_ratio_input.setValue(11.3)
 
-    def populate_form_for_selected_equipment(self, telescope: Telescope):
-        self.name_edit.setText(telescope.name)
+    def populate_form_for_selected_equipment(self, telescope: Telescope) -> None:
         self.telescope_type_combo.setCurrentText(telescope.type.label)
         self.aperture_input.setValue(telescope.aperture)
         self.focal_length_input.setValue(telescope.focal_length)

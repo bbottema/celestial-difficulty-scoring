@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QSpinBox, QLabel
 
 from app.orm.model.entities import Filter
+from app.orm.model.wavelength_type import Wavelength
 from app.orm.services.filter_service import FilterService
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.ui.main_window.equipment_management.abstract_manage_equipment_tab import ManageEquipmentTab
@@ -16,7 +17,7 @@ class ManageFiltersTab(ManageEquipmentTab):
 
     # form controls
     wavelength_table: QTableWidget
-    minimum_exit_pupil: QSpinBox
+    minimum_exit_pupil_input: QSpinBox
     add_wavelength_button: QPushButton
 
     def __init__(self, filter_service: FilterService, observation_site_service: ObservationSiteService):
@@ -48,12 +49,12 @@ class ManageFiltersTab(ManageEquipmentTab):
         min_exit_pupil_label = QLabel("Minimum Exit Pupil:")
         form_layout.addWidget(min_exit_pupil_label)
 
-        self.min_exit_pupil_spinbox = QSpinBox()
-        self.min_exit_pupil_spinbox.setSuffix(" mm")
-        self.min_exit_pupil_spinbox.setMinimum(1)
-        self.min_exit_pupil_spinbox.setMaximum(100)
-        self.min_exit_pupil_spinbox.setSingleStep(1)
-        form_layout.addWidget(self.min_exit_pupil_spinbox)
+        self.minimum_exit_pupil_input = QSpinBox()
+        self.minimum_exit_pupil_input.setSuffix(" mm")
+        self.minimum_exit_pupil_input.setMinimum(1)
+        self.minimum_exit_pupil_input.setMaximum(100)
+        self.minimum_exit_pupil_input.setSingleStep(1)
+        form_layout.addWidget(self.minimum_exit_pupil_input)
 
         form_layout.addWidget(QLabel("Bandpass wavelengths:"))
         self.wavelength_table = default_table(['From', 'To', ''])
@@ -74,3 +75,22 @@ class ManageFiltersTab(ManageEquipmentTab):
         self.wavelength_table.setItem(row_position, 0, QTableWidgetItem("0"))
         self.wavelength_table.setItem(row_position, 1, QTableWidgetItem("0"))
         self.wavelength_table.setCellWidget(row_position, 2, create_delete_row_button())
+
+    def clear_form_to_defaults(self) -> None:
+        self.minimum_exit_pupil_input.setValue(1)
+        self.wavelength_table.setRowCount(0)
+
+    def populate_form_for_selected_equipment(self, filter: Filter) -> None:
+        self.minimum_exit_pupil_input.setValue(filter.minimum_exit_pupil if filter.minimum_exit_pupil else 1)
+
+    def create_or_update_equipment_entity(self, equipment_id: int | None, name: str, site_names: list[str]) -> Filter:
+        return Filter(
+            id=equipment_id,
+            name=name,
+            minimum_exit_pupil=self.minimum_exit_pupil_input.value(),
+            wavelengths=[Wavelength(
+                from_wavelength=int(self.wavelength_table.item(row, 0).text()),
+                to_wavelength=int(self.wavelength_table.item(row, 1).text())
+            ) for row in range(self.wavelength_table.rowCount())],
+            observation_sites=self.observation_site_service.get_for_names(site_names)
+        )

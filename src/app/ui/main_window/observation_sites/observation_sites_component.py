@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from injector import inject
 
@@ -32,14 +34,15 @@ class ObservationSitesComponent(QWidget):
         layout.addWidget(self.table)
         layout.addWidget(self.define_new_button)
 
-        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, self.populate_table)
-        bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, self.populate_table)
-        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, self.populate_table)
+        for event in CelestialEvent:
+            logging.getLogger(__name__).info(f"Subscribing to {event}")
+            bus.on(event, self.populate_table)
 
         database_ready_bus.subscribe(self.populate_table)
 
     # noinspection PyUnusedLocal
     def populate_table(self, *args) -> None:
+        logging.getLogger(__name__).info("Populating observation site table")
         self.table.setRowCount(0)
         data: list[ObservationSite] = self.observation_site_service.get_all()
         for i, observation_site in enumerate(data):

@@ -6,7 +6,16 @@ bus = RxBus()
 database_ready_bus: ReplaySubject = ReplaySubject()
 
 
-class CelestialEvent:
+class MetaCelestialEvent(type):
+    def __iter__(cls):
+        for attr in dir(cls):
+            if not attr.startswith("__"):
+                value = getattr(cls, attr)
+                if isinstance(value, str):
+                    yield value
+
+
+class CelestialEvent(metaclass=MetaCelestialEvent):
     OBSERVATION_SITE_ADDED = "observation_site_added"
     OBSERVATION_SITE_UPDATED = "observation_site_updated"
     OBSERVATION_SITE_DELETED = "observation_site_deleted"

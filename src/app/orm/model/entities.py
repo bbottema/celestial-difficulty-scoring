@@ -117,7 +117,7 @@ class Filter(Base, EquipmentEntity):
 
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
-    minimum_exit_pupil: float | None = cast(float, Column(Float, nullable=True))  # in mm
+    minimum_exit_pupil: int | None = cast(int, Column(Integer, nullable=True))  # in mm
     wavelengths: List[Wavelength] = Column(WavelengthType)  # type: ignore
 
     observation_sites = cast(list[ObservationSite],

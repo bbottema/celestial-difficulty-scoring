@@ -42,7 +42,6 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         self.setup_equipment_tab()
         self.populate_equipment_table(self.equipment_table)
 
-        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
         bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
         bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
         bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
@@ -76,7 +75,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         apply_row_selection_styles(self.equipment_table, item.row(), SELECTED_ROW_BACKGROUND_COLOR)
         self.selected_equipment = item.data(DATA_ROLE)
         self._populate_observation_sites_dropdown(self.observation_site_list_widget)
-        self.populate_form_for_selected_equipment(verify_not_none(self.selected_equipment, f"selected {self.equipment_type.__name__}"))
+        self._populate_form_for_selected_equipment(verify_not_none(self.selected_equipment, f"selected {self.equipment_type.__name__}"))
+
+    def _populate_form_for_selected_equipment(self, selected_equipment: T):
+        self.name_edit.setText(selected_equipment.name)
+        self.populate_form_for_selected_equipment(selected_equipment)
 
     @final
     def _create_form_on_the_right(self, horizontal_layout: QHBoxLayout):
@@ -92,6 +95,13 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         form_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self._add_save_button(form_layout)
 
+        self._clear_form_to_defaults()
+
+    @final
+    def _clear_form_to_defaults(self) -> None:
+        self.name_edit.clear()
+        for i in range(self.observation_site_list_widget.count()):
+            self.observation_site_list_widget.item(i).setCheckState(Unchecked)
         self.clear_form_to_defaults()
 
     @final
@@ -133,6 +143,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _repopulate_equipment_table_on_repo_changes(self):
         self.populate_equipment_table(self.equipment_table)
         self._reselect_current_active_equipment(self.equipment_table)
+        self._populate_observation_sites_dropdown(self.observation_site_list_widget)
 
     @final
     def _reselect_current_active_equipment(self, equipment_table: QTableWidget) -> None:
@@ -147,7 +158,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         self.selected_equipment = None
         self.equipment_table.clearSelection()
         clear_table_row_selection_styles(self.equipment_table)
-        self.clear_form_to_defaults()
+        self._clear_form_to_defaults()
 
     @final
     def _handle_save_equipment_button_click(self) -> None:
@@ -157,7 +168,6 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
                       if self.observation_site_list_widget.item(i).checkState() == Qt.CheckState.Checked]
 
         updated_equipment: T = self.create_or_update_equipment_entity(equipment_id, name, site_names)
-
 
         if updated_equipment.id:
             self.equipment_service.update(updated_equipment)
@@ -187,7 +197,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         pass
 
     @abstractmethod
-    def populate_form_for_selected_equipment(self, selected_equipment: T):
+    def populate_form_for_selected_equipment(self, selected_equipment: T) -> None:
         pass
 
     @abstractmethod
