@@ -1,8 +1,9 @@
 import logging
-from typing import Generic, TypeVar, Protocol
+from typing import Generic, TypeVar, cast
 
 from app.config.database import session_scope
 from app.config.event_bus_config import bus
+from app.orm.entities import EquipmentEntity
 from app.orm.repositories.base_repository import BaseRepository
 from app.utils.assume import verify_not_none
 
@@ -16,11 +17,7 @@ class MutationEvents:
         self.deleted = deleted
 
 
-class SupportsID(Protocol):
-    id: int
-
-
-T = TypeVar('T', bound=SupportsID)
+T = TypeVar('T', bound=EquipmentEntity)
 
 
 class BaseService(Generic[T]):
@@ -32,7 +29,7 @@ class BaseService(Generic[T]):
     def add(self, instance: T) -> T:
         try:
             with session_scope() as session:
-                self.handle_relations(instance, session, 'add')
+                self._handle_observation_site_relations(instance, session, 'add')
                 new_instance: T = self.repository.add(session, instance)
                 session.commit()
                 bus.emit(self.mutation_events.added, new_instance)
@@ -68,8 +65,8 @@ class BaseService(Generic[T]):
     def update(self, instance: T) -> T:
         try:
             with session_scope() as session:
-                self.handle_relations(instance, session, 'update')
-                updated_instance: T = self.repository.update(session, instance.id, instance)
+                self._handle_observation_site_relations(instance, session, 'update')
+                updated_instance: T = self.repository.update(session, cast(int, instance.id), instance)
                 session.commit()
                 bus.emit(self.mutation_events.updated, updated_instance)
                 return updated_instance
@@ -98,5 +95,7 @@ class BaseService(Generic[T]):
             logger.error(f"Failed to delete {instance.id}: ERROR: {e}")
             raise e
 
-    def handle_relations(self, instance, session, operation) -> None:
-        pass
+    def _handle_observation_site_relations(self, instance: T, session, operation):
+        if operation in ['add', 'update'] and instance.observation_sites is not None:
+            for observation_site in instance.observation_sites:
+                session.merge(observation_site)

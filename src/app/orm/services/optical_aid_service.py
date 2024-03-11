@@ -24,8 +24,3 @@ class OpticalAidService(BaseService[OpticalAid]):
                 deleted=CelestialEvent.EQUIPMENT_OPTICAL_AID_DELETED
             )
         )
-
-    def handle_relations(self, instance: Filter, session, operation):
-        if operation in ['add', 'update'] and instance.observation_sites is not None:
-            for observation_site in instance.observation_sites:
-                session.merge(observation_site)

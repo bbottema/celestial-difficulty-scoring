@@ -24,8 +24,3 @@ class ImagerService(BaseService[Imager]):
                 deleted=CelestialEvent.EQUIPMENT_IMAGER_DELETED
             )
         )
-
-    def handle_relations(self, instance: Eyepiece, session, operation):
-        if operation in ['add', 'update'] and instance.observation_sites is not None:
-            for observation_site in instance.observation_sites:
-                session.merge(observation_site)

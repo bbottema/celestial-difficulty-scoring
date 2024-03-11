@@ -24,8 +24,3 @@ class FilterService(BaseService[Filter]):
                 deleted=CelestialEvent.EQUIPMENT_FILTER_DELETED
             )
         )
-
-    def handle_relations(self, instance: Filter, session, operation):
-        if operation in ['add', 'update'] and instance.observation_sites is not None:
-            for observation_site in instance.observation_sites:
-                session.merge(observation_site)
