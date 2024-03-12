@@ -53,24 +53,11 @@ class ObservationDataComponent(QWidget):
             'Observability Index',
             '(normalized)'])
 
-        # Buttons for adding equipment
-        self.add_telescope_button = QPushButton("Add Telescope")
-        self.add_eyepiece_button = QPushButton("Add Eyepiece")
-        self.add_barlow_lens_button = QPushButton("Add Barlow Lens")
-
-        # Connect equipment buttons to methods
-        self.add_telescope_button.clicked.connect(self.add_telescope)
-        self.add_eyepiece_button.clicked.connect(self.add_eyepiece)
-        self.add_barlow_lens_button.clicked.connect(self.add_barlow_lens)
-
         # Add components to the layout
         self.layout.addWidget(self.import_button)
         self.layout.addWidget(weather_widget)
         self.layout.addWidget(date_time_widget)
         self.layout.addWidget(self.table)
-        self.layout.addWidget(self.add_telescope_button)
-        self.layout.addWidget(self.add_eyepiece_button)
-        self.layout.addWidget(self.add_barlow_lens_button)
 
     def import_data(self) -> None:
         # Open a dialog to select an Excel file and import data
@@ -90,21 +77,3 @@ class ObservationDataComponent(QWidget):
             self.table.setItem(i, 4, centered_table_widget_item(str(celestial_object.altitude)))
             self.table.setItem(i, 5, centered_table_widget_item(str(celestial_object.observability_score.score)))
             self.table.setItem(i, 6, centered_table_widget_item(str(celestial_object.observability_score.normalized_score)))
-
-    def add_telescope(self):
-        # FIXME: Implement this method or delete it
-        # Open dialog to input telescope details
-        # Update observability index accordingly
-        pass
-
-    def add_eyepiece(self):
-        # FIXME: Implement this method or delete it
-        # Open dialog to input eyepiece details
-        # Update observability index accordingly
-        pass
-
-    def add_barlow_lens(self):
-        # FIXME: Implement this method or delete it
-        # Open dialog to input Barlow lens details
-        # Update observability index accordingly
-        pass
