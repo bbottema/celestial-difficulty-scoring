@@ -1,6 +1,6 @@
 from typing import cast
 
-from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QSpinBox, QLabel
+from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QSpinBox, QLabel, QHeaderView
 
 from app.orm.model.entities import Filter
 from app.orm.model.wavelength_type import Wavelength
@@ -77,11 +77,13 @@ class ManageFiltersTab(ManageEquipmentTab):
         self.wavelength_table.insertRow(row_position)
 
         spin_from = QSpinBox()
+        spin_from.setSuffix(" nm")
         spin_from.setMinimum(0)
         spin_from.setSingleStep(10)
         spin_from.setMaximum(2500)
 
         spin_to = QSpinBox()
+        spin_to.setSuffix(" nm")
         spin_to.setMinimum(0)
         spin_to.setSingleStep(10)
         spin_to.setMaximum(2500)
@@ -89,6 +91,9 @@ class ManageFiltersTab(ManageEquipmentTab):
         self.wavelength_table.setCellWidget(row_position, 0, spin_from)
         self.wavelength_table.setCellWidget(row_position, 1, spin_to)
         self.wavelength_table.setCellWidget(row_position, 2, create_delete_row_button())
+
+        self.wavelength_table.setColumnWidth(2, 40)
+        self.wavelength_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
 
     def clear_form_to_defaults(self) -> None:
         self.minimum_exit_pupil_input.setValue(1)
