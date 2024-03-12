@@ -11,6 +11,7 @@ sqlalchemy = "*"
 alembic = "*"
 injector = "*"
 mypy = "*"
+qt-material = "*"
 
 [dev-packages]
 assertpy = "*"

@@ -1,6 +1,8 @@
+import os
 import signal
 from typing import Any
 
+from PySide6 import QtWidgets
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import Qt, QFont, QColor
 from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView, QWidget
@@ -27,9 +29,13 @@ def configure_close_signal_handler():
     timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
 
 
-def default_table(labels: list[str]) -> QTableWidget:
+def default_table(labels: list[str], editable=False) -> QTableWidget:
     table = QTableWidget(0, len(labels))
+    table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
     table.setHorizontalHeaderLabels(labels)
+    table.verticalHeader().setVisible(False)
+    if not editable:
+        table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     header_font = QFont()  # Create a new font object
     header_font.setBold(True)  # Set the font to bold
@@ -48,21 +54,23 @@ def centered_table_widget_item(value: str, data: Any = None) -> QTableWidgetItem
     return item
 
 
-def clear_table_row_selection_styles(table: QTableWidget, color: Qt.GlobalColor = Qt.GlobalColor.white):
-    for row in range(table.rowCount()):
-        for column in range(table.columnCount()):
-            item = table.item(row, column)
-            if item is not None:
-                item.setBackground(color)
-
-
-def apply_row_selection_styles(table: QTableWidget, row, color: QColor):
-    clear_table_row_selection_styles(table)
-    for column in range(table.columnCount()):
-        row_item = table.item(row, column)
-        if row_item is not None:
-            row_item.setBackground(color)
-
-
 def remove_table_row_by_contained_widget(table: QTableWidget, row_widget: QWidget) -> None:
     table.removeRow(table.indexAt(row_widget.pos()).row())
+
+
+def get_selection_background_colour() -> QColor:
+    return get_qt_material_colour('QTMATERIAL_PRIMARYCOLOR', 0.2)
+
+
+def get_selection_foreground_colour() -> QColor:
+    return get_qt_material_colour('QTMATERIAL_SECONDARYTEXTCOLOR')
+
+
+def get_qt_material_colour(qt_material_colour_name: str, alpha_f: float = 1.0) -> QColor:
+    colour = QColor(os.environ.get(qt_material_colour_name))
+    colour.setAlphaF(alpha_f)
+    return colour
+
+
+def colour_as_rgba(color: QColor) -> str:
+    return f'rgba({color.red()}, {color.green()}, {color.blue()}, {color.alphaF()})'
