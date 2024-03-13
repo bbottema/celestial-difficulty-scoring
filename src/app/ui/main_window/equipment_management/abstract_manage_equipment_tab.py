@@ -99,7 +99,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _clear_form_to_defaults(self) -> None:
         self.name_edit.clear()
         for i in range(self.observation_site_list_widget.count()):
-            self.observation_site_list_widget.item(i).setCheckState(Unchecked)
+            item = self.observation_site_list_widget.item(i)
+            checkbox = self.observation_site_list_widget.itemWidget(item)
+            if isinstance(checkbox, QCheckBox):
+                checkbox.setChecked(False)
+
         self.clear_form_to_defaults()
 
     @final
@@ -126,10 +130,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _populate_observation_sites_dropdown(self, observation_site_list_widget: QListWidget):
         observation_site_list_widget.clear()
         for observation_site in self.observation_site_service.get_all():
-            item = QListWidgetItem(observation_site.name)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Checked if self.selected_equipment and observation_site in self.selected_equipment else Unchecked)
+            item = QListWidgetItem()
+            checkbox = QCheckBox(observation_site.name)
+            checkbox.setChecked(True if self.selected_equipment and observation_site in self.selected_equipment.observation_sites else False)
             observation_site_list_widget.addItem(item)
+            observation_site_list_widget.setItemWidget(item, checkbox)
 
     @final
     def _add_save_button(self, form_layout):
@@ -147,8 +152,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _reselect_current_active_equipment(self, equipment_table: QTableWidget) -> None:
         if self.selected_equipment:
             for row in range(equipment_table.rowCount()):
-                if equipment_table.item(row, 0).data(DATA_ROLE) == self.selected_equipment:
+                equipment_associated_with_row = equipment_table.item(row, 0).data(DATA_ROLE)
+                if equipment_associated_with_row == self.selected_equipment:
                     equipment_table.selectRow(row)
+                    # update selected equipment, so the content is up-to-date (in case the table was rebuilt due to a repo event)
+                    self.selected_equipment = equipment_associated_with_row
                     return
 
     @final
@@ -162,8 +170,13 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
     def _handle_save_equipment_button_click(self) -> None:
         equipment_id = self.selected_equipment.id if self.selected_equipment else None
         name = self.name_edit.text()
-        site_names = [self.observation_site_list_widget.item(i).text() for i in range(self.observation_site_list_widget.count())
-                      if self.observation_site_list_widget.item(i).checkState() == Qt.CheckState.Checked]
+
+        site_names = []
+        for i in range(self.observation_site_list_widget.count()):
+            item = self.observation_site_list_widget.item(i)
+            widget = self.observation_site_list_widget.itemWidget(item)
+            if isinstance(widget, QCheckBox) and widget.isChecked():
+                site_names.append(widget.text())
 
         updated_equipment: T = self.create_or_update_equipment_entity(equipment_id, name, site_names)
 
