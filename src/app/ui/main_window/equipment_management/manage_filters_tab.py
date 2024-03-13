@@ -37,7 +37,7 @@ class ManageFiltersTab(ManageEquipmentTab):
             equipment_table.setItem(i, self.COLUMN_NAME, centered_table_widget_item(filter.name, filter))
             equipment_table.setItem(i, self.COLUMN_MINIMUM_EXIT_PUPIL, centered_table_widget_item(f'{filter.minimum_exit_pupil} mm', filter))
             equipment_table.setItem(i, self.COLUMN_BANDPASS_WAVELENGTH, centered_table_widget_item(
-                ', '.join([f'{wavelength.from_wavelength}-{wavelength.to_wavelength}' for wavelength in filter.wavelengths]), filter
+                ', '.join([f'{wavelength.from_wavelength}-{wavelength.to_wavelength} nm' for wavelength in filter.wavelengths]), filter
             ))
             equipment_table.setItem(i, self.COLUMN_OBSERVATION_SITE, centered_table_widget_item(
                 ', '.join([site.name for site in filter.observation_sites]), filter
@@ -61,6 +61,8 @@ class ManageFiltersTab(ManageEquipmentTab):
 
         form_layout.addWidget(QLabel("Bandpass wavelengths:"))
         self.wavelength_table = default_table(['From', 'To', ''])
+        self.wavelength_table.verticalScrollBar().setObjectName("wavelengths_scrollbar")
+        self.wavelength_table.setStyleSheet("QScrollBar#wavelengths_scrollbar { width: 15px; }")
         form_layout.addWidget(self.wavelength_table)
 
         self.add_wavelength_button = QPushButton('+')
