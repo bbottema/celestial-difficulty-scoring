@@ -1,6 +1,6 @@
 from typing import cast
 
-from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QSpinBox, QLabel, QHeaderView
+from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QSpinBox, QLabel, QHeaderView
 
 from app.orm.model.entities import Filter
 from app.orm.model.wavelength_type import Wavelength
@@ -115,8 +115,13 @@ class ManageFiltersTab(ManageEquipmentTab):
             name=name,
             minimum_exit_pupil=self.minimum_exit_pupil_input.value(),
             wavelengths=[Wavelength(
-                from_wavelength=parse_str_int(cast(QSpinBox, self.wavelength_table.cellWidget(row, 0)).cleanText()),
-                to_wavelength=parse_str_int(cast(QSpinBox, self.wavelength_table.cellWidget(row, 1)).cleanText())
+                from_wavelength=self.read_wavelength_value(self.wavelength_table, row, 0),
+                to_wavelength=self.read_wavelength_value(self.wavelength_table, row, 1)
             ) for row in range(self.wavelength_table.rowCount())],
             observation_sites=self.observation_site_service.get_for_names(site_names)
         )
+
+    @staticmethod
+    def read_wavelength_value(table: QTableWidget, row: int, column: int) -> int:
+        spinbox: QSpinBox = cast(QSpinBox, table.cellWidget(row, column))
+        return parse_str_int(spinbox.cleanText()) if spinbox.cleanText() else 0
