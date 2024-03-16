@@ -186,9 +186,9 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
             self.equipment_service.add(updated_equipment)
 
     @final
-    def _create_delete_button(self, telescope):
+    def _create_delete_button(self, equipment):
         delete_button = QPushButton("Delete")
-        delete_button.clicked.connect(lambda *args, telescope_id=telescope.id: self.equipment_service.delete_by_id(telescope_id))
+        delete_button.clicked.connect(lambda *args, equipment_id=equipment.id: self.equipment_service.delete_by_id(equipment_id))
         return delete_button
 
     @abstractmethod
