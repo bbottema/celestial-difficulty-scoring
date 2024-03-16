@@ -34,3 +34,4 @@ class CelestialEvent(metaclass=MetaCelestialEvent):
     EQUIPMENT_IMAGER_ADDED = "equipment_imager_added"
     EQUIPMENT_IMAGER_UPDATED = "equipment_imager_updated"
     EQUIPMENT_IMAGER_DELETED = "equipment_imager_deleted"
+    CELESTIAL_APP_STARTED = "app_started"

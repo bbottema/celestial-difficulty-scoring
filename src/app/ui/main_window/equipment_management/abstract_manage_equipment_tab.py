@@ -36,7 +36,9 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         self.observation_site_service = observation_site_service
         self.selected_equipment = None
         self.setup_equipment_tab()
-        self.populate_equipment_table(self.equipment_table)
+
+        # necessary delay because the calls to resizeRowsToContents() only work after the app has been rendered
+        bus.on(CelestialEvent.CELESTIAL_APP_STARTED, lambda *args: self._populate_equipment_table(self.equipment_table))
 
         bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
         bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
@@ -144,8 +146,7 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
 
     @final
     def _repopulate_equipment_table_on_repo_changes(self):
-        self.populate_equipment_table(self.equipment_table)
-        self._reselect_current_active_equipment(self.equipment_table)
+        self._populate_equipment_table(self.equipment_table)
         self._populate_observation_sites_dropdown(self.observation_site_list_widget)
 
     @final
@@ -184,6 +185,12 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
             self.equipment_service.update(updated_equipment)
         else:
             self.equipment_service.add(updated_equipment)
+
+    def _populate_equipment_table(self, equipment_table: QTableWidget) -> None:
+        equipment_table.setRowCount(0)
+        self.populate_equipment_table(equipment_table)
+        equipment_table.resizeRowsToContents()
+        self._reselect_current_active_equipment(equipment_table)
 
     @final
     def _create_delete_button(self, equipment):

@@ -30,7 +30,6 @@ class ManageFiltersTab(ManageEquipmentTab):
         return default_table(['Name', 'Min. Exit Pupil', 'wavelengths', 'Observation sites', ''])
 
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
-        equipment_table.setRowCount(0)
         data: list[Filter] = self.equipment_service.get_all()
         for i, filter in enumerate(data):
             equipment_table.insertRow(i)
@@ -43,9 +42,6 @@ class ManageFiltersTab(ManageEquipmentTab):
                 ', '.join([site.name for site in filter.observation_sites]), filter
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(filter))
-
-        equipment_table.resizeRowsToContents()
-        super()._reselect_current_active_equipment(equipment_table)
 
     # noinspection PyAttributeOutsideInit
     def define_equipment_form_controls(self, form_layout: QVBoxLayout):

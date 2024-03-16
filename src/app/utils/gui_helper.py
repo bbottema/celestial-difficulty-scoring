@@ -5,7 +5,7 @@ from typing import Any
 from PySide6 import QtWidgets
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import Qt, QFont, QColor
-from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView, QWidget
+from PySide6.QtWidgets import QTableWidgetItem, QTableWidget, QHeaderView, QWidget, QHBoxLayout, QLayout, QBoxLayout, QSpinBox
 
 from app.utils.ui_debug_clipboard_watch import UiDebugClipBoardWatch
 
@@ -74,3 +74,22 @@ def get_qt_material_colour(qt_material_colour_name: str, alpha_f: float = 1.0) -
 
 def colour_as_rgba(color: QColor) -> str:
     return f'rgba({color.red()}, {color.green()}, {color.blue()}, {color.alphaF()})'
+
+
+def add_to_layout_aligned_right(layout: QBoxLayout, widget: QWidget):
+    align_right_layout = QHBoxLayout()
+    align_right_layout.addStretch()
+    align_right_layout.addWidget(widget)
+    layout.addLayout(align_right_layout)
+
+
+def add_qspinbox_with_suffix_to_layout(layout: QLayout, prefix: str | None, suffix: str | None, min_value: int, max_value: int) -> QSpinBox:
+    spin_box = QSpinBox()
+    if prefix:
+        spin_box.setPrefix(prefix)
+    if suffix:
+        spin_box.setSuffix(suffix)
+    spin_box.setMinimum(min_value)
+    spin_box.setMaximum(max_value)
+    layout.addWidget(spin_box)
+    return spin_box

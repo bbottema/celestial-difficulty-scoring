@@ -4,6 +4,7 @@ from PySide6.QtWidgets import *
 
 from app.config.autowire import autowire, injector
 from app.config.database import initialize_database
+from app.config.event_bus_config import bus, CelestialEvent
 from app.config.init_logging import configure_logging
 from app.config.theme import apply_theme
 from app.ui.main_window.main_window import MainWindow
@@ -22,4 +23,5 @@ if __name__ == '__main__':
 
     window = injector.get(MainWindow)
     window.show()
+    bus.emit(CelestialEvent.CELESTIAL_APP_STARTED, None)
     sys.exit(app.exec())

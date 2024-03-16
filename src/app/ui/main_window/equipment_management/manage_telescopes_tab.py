@@ -35,7 +35,6 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
 
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
-        equipment_table.setRowCount(0)
         data: list[Telescope] = self.equipment_service.get_all()
         for i, telescope in enumerate(data):
             equipment_table.insertRow(i)
@@ -48,9 +47,6 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
                 ', '.join([site.name for site in telescope.observation_sites]), telescope
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
-
-        equipment_table.resizeRowsToContents()
-        super()._reselect_current_active_equipment(equipment_table)
 
     def define_equipment_form_controls(self, form_layout: QVBoxLayout):
         self._add_equipment_type_input(form_layout)

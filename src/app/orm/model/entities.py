@@ -8,6 +8,7 @@ from sqlalchemy.orm import declarative_base, relationship, DeclarativeMeta
 from app.domain.model.light_pollution import LightPollution
 from app.domain.model.telescope_type import TelescopeType
 from app.orm.model.wavelength_type import WavelengthType, Wavelength
+from app.utils.imager_calculator import calculate_sensor_size
 
 logger = logging.getLogger(__name__)
 
@@ -131,5 +132,33 @@ class Imager(Base, EquipmentEntity):
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
 
+    main_pixel_size_width: int = cast(int, Column(Integer, nullable=False))
+    main_pixel_size_height: int = cast(int, Column(Integer, nullable=False))
+    main_number_of_pixels_width: int = cast(int, Column(Integer, nullable=False))
+    main_number_of_pixels_height: int = cast(int, Column(Integer, nullable=False))
+
+    guide_pixel_size_width: int | None = cast(int, Column(Integer, nullable=True))
+    guide_pixel_size_height: int | None = cast(int, Column(Integer, nullable=True))
+    guide_number_of_pixels_width: int | None = cast(int, Column(Integer, nullable=True))
+    guide_number_of_pixels_height: int | None = cast(int, Column(Integer, nullable=True))
+
     observation_sites = cast(list[ObservationSite],
                              relationship("ObservationSite", secondary=observation_site_imager_association, back_populates="imagers", cascade=""))
+
+    def has_guide_sensor(self) -> bool:
+        return (self.guide_pixel_size_width is not None and
+                self.guide_pixel_size_height is not None and
+                self.guide_number_of_pixels_width is not None and
+                self.guide_number_of_pixels_height is not None)
+
+    def main_sensor_size_width_mm(self) -> float:
+        return calculate_sensor_size(self.main_pixel_size_width, self.main_number_of_pixels_width)
+
+    def main_sensor_size_height_mm(self) -> float:
+        return calculate_sensor_size(self.main_pixel_size_height, self.main_number_of_pixels_height)
+
+    def guide_sensor_size_width_mm(self) -> float:
+        return calculate_sensor_size(self.guide_pixel_size_width, self.guide_number_of_pixels_width)
+
+    def guide_sensor_size_height_mm(self) -> float:
+        return calculate_sensor_size(self.guide_pixel_size_height, self.guide_number_of_pixels_height)
