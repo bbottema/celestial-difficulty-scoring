@@ -138,6 +138,7 @@ class ManageImagersTab(ManageEquipmentTab):
         self.pixel_size_input_guide_h.setValue(1)
         self.number_of_pixels_input_guide_w.setValue(1)
         self.number_of_pixels_input_guide_h.setValue(1)
+        self.guide_sensor_checkbox.setChecked(False)
 
     def populate_form_for_selected_equipment(self, imager: Imager) -> None:
         self.pixel_size_input_main_w.setValue(imager.main_pixel_size_width)
