@@ -15,7 +15,7 @@ def apply_theme(app: QApplication):
         'warning': '#ffc107',
         'success': '#17a2b8',
         'font_family': 'Roboto',
-        'density_scale': '-2',
+        'density_scale': '-1',
         'button_shape': 'default'
     }
 
