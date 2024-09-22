@@ -12,6 +12,7 @@ alembic = "*"
 injector = "*"
 mypy = "*"
 qt-material = "*"
+overrides = "*"
 
 [dev-packages]
 assertpy = "*"

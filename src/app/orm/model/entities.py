@@ -96,6 +96,9 @@ class Eyepiece(Base, EquipmentEntity):
 
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
+    focal_length: int = cast(int, Column(Integer, nullable=False))  # in mm
+    barrel_size: float = cast(float, Column(Float, nullable=False))  # in inches
+    apparent_field_of_view: int = cast(int, Column(Integer, nullable=False))  # in degrees
 
     observation_sites = cast(list[ObservationSite],
                              relationship("ObservationSite", secondary=observation_site_eyepiece_association, back_populates="eyepieces", cascade=""))
@@ -107,6 +110,7 @@ class OpticalAid(Base, EquipmentEntity):
 
     id: int | None = cast(int, Column(Integer, primary_key=True))
     name: str = cast(str, Column(String, unique=True, nullable=False))
+    magnification: float = cast(float, Column(Float, nullable=False))
 
     observation_sites = cast(list[ObservationSite],
                              relationship("ObservationSite", secondary=observation_site_optical_aid_association, back_populates="optical_aids", cascade=""))

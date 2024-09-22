@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (QTableWidget, QVBoxLayout, QLabel, QSpinBox, QCheckBox, QHBoxLayout)
+from overrides import overrides
 
 from app.orm.model.entities import Imager
 from app.orm.services.imager_service import ImagerService
@@ -36,9 +37,11 @@ class ManageImagersTab(ManageEquipmentTab):
     def __init__(self, imager_service: ImagerService, observation_site_service: ObservationSiteService):
         super().__init__(Imager, imager_service, observation_site_service, imager_service.mutation_events)
 
+    @overrides
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Main Sensor', 'Guide Sensor', 'Observation sites', ''])
 
+    @overrides
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
         imagers: list[Imager] = self.equipment_service.get_all()
         for i, imager in enumerate(imagers):
@@ -58,6 +61,7 @@ class ManageImagersTab(ManageEquipmentTab):
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(imager))
 
+    @overrides
     def define_equipment_form_controls(self, form_layout: QVBoxLayout) -> None:
         # Add controls for Main Sensor
         form_layout.addWidget(QLabel("Main Sensor Pixel Size (μm):"))
@@ -129,6 +133,7 @@ class ManageImagersTab(ManageEquipmentTab):
             guide_sensor_height_mm = calculate_sensor_size(self.pixel_size_input_guide_h.value(), self.number_of_pixels_input_guide_h.value())
             self.guide_sensor_size_label.setText(f"Sensor Size: {guide_sensor_width_mm:.2f} x {guide_sensor_height_mm:.2f} mm")
 
+    @overrides
     def clear_form_to_defaults(self) -> None:
         self.pixel_size_input_main_w.setValue(1)
         self.pixel_size_input_main_h.setValue(1)
@@ -140,18 +145,20 @@ class ManageImagersTab(ManageEquipmentTab):
         self.number_of_pixels_input_guide_h.setValue(1)
         self.guide_sensor_checkbox.setChecked(False)
 
-    def populate_form_for_selected_equipment(self, imager: Imager) -> None:
-        self.pixel_size_input_main_w.setValue(imager.main_pixel_size_width)
-        self.pixel_size_input_main_h.setValue(imager.main_pixel_size_height)
-        self.number_of_pixels_input_main_w.setValue(imager.main_number_of_pixels_width)
-        self.number_of_pixels_input_main_h.setValue(imager.main_number_of_pixels_height)
-        if imager.guide_pixel_size_width and imager.guide_pixel_size_height:
+    @overrides
+    def populate_form_for_selected_equipment(self, selected_equipment: Imager) -> None:
+        self.pixel_size_input_main_w.setValue(selected_equipment.main_pixel_size_width)
+        self.pixel_size_input_main_h.setValue(selected_equipment.main_pixel_size_height)
+        self.number_of_pixels_input_main_w.setValue(selected_equipment.main_number_of_pixels_width)
+        self.number_of_pixels_input_main_h.setValue(selected_equipment.main_number_of_pixels_height)
+        if selected_equipment.guide_pixel_size_width and selected_equipment.guide_pixel_size_height:
             self.guide_sensor_checkbox.setChecked(True)
-            self.pixel_size_input_guide_w.setValue(verify_not_none(imager.guide_pixel_size_width, "Guide pixel size width"))
-            self.pixel_size_input_guide_h.setValue(verify_not_none(imager.guide_pixel_size_height, "Guide pixel size height"))
-            self.number_of_pixels_input_guide_w.setValue(verify_not_none(imager.guide_number_of_pixels_width, "Guide number of pixels width"))
-            self.number_of_pixels_input_guide_h.setValue(verify_not_none(imager.guide_number_of_pixels_height, "Guide number of pixels height"))
+            self.pixel_size_input_guide_w.setValue(verify_not_none(selected_equipment.guide_pixel_size_width, "Guide pixel size width"))
+            self.pixel_size_input_guide_h.setValue(verify_not_none(selected_equipment.guide_pixel_size_height, "Guide pixel size height"))
+            self.number_of_pixels_input_guide_w.setValue(verify_not_none(selected_equipment.guide_number_of_pixels_width, "Guide number of pixels width"))
+            self.number_of_pixels_input_guide_h.setValue(verify_not_none(selected_equipment.guide_number_of_pixels_height, "Guide number of pixels height"))
 
+    @overrides
     def create_or_update_equipment_entity(self, equipment_id: int | None, name: str, site_names: list[str]) -> Imager:
         return Imager(
             id=equipment_id,

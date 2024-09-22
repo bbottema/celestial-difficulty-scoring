@@ -1,6 +1,7 @@
 from typing import cast
 
 from PySide6.QtWidgets import QTableWidget, QVBoxLayout, QPushButton, QSpinBox, QLabel, QHeaderView
+from overrides import overrides
 
 from app.orm.model.entities import Filter
 from app.orm.model.wavelength_type import Wavelength
@@ -26,9 +27,11 @@ class ManageFiltersTab(ManageEquipmentTab):
     def __init__(self, filter_service: FilterService, observation_site_service: ObservationSiteService):
         super().__init__(Filter, filter_service, observation_site_service, filter_service.mutation_events)
 
+    @overrides
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Min. Exit Pupil', 'wavelengths', 'Observation sites', ''])
 
+    @overrides
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
         data: list[Filter] = self.equipment_service.get_all()
         for i, filter in enumerate(data):
@@ -43,6 +46,7 @@ class ManageFiltersTab(ManageEquipmentTab):
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(filter))
 
+    @overrides
     # noinspection PyAttributeOutsideInit
     def define_equipment_form_controls(self, form_layout: QVBoxLayout):
         min_exit_pupil_label = QLabel("Minimum Exit Pupil:")
@@ -93,18 +97,21 @@ class ManageFiltersTab(ManageEquipmentTab):
         self.wavelength_table.setColumnWidth(2, 40)
         self.wavelength_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
 
+    @overrides
     def clear_form_to_defaults(self) -> None:
         self.minimum_exit_pupil_input.setValue(1)
         self.wavelength_table.setRowCount(0)
 
-    def populate_form_for_selected_equipment(self, filter: Filter) -> None:
-        self.minimum_exit_pupil_input.setValue(filter.minimum_exit_pupil if filter.minimum_exit_pupil else 1)
+    @overrides
+    def populate_form_for_selected_equipment(self, selected_equipment: Filter) -> None:
+        self.minimum_exit_pupil_input.setValue(selected_equipment.minimum_exit_pupil if selected_equipment.minimum_exit_pupil else 1)
         self.wavelength_table.setRowCount(0)
-        for i, wavelength in enumerate(filter.wavelengths):
+        for i, wavelength in enumerate(selected_equipment.wavelengths):
             self.add_wavelength_entry_row()
             cast(QSpinBox, self.wavelength_table.cellWidget(i, 0)).setValue(wavelength.from_wavelength)
             cast(QSpinBox, self.wavelength_table.cellWidget(i, 1)).setValue(wavelength.to_wavelength)
 
+    @overrides
     def create_or_update_equipment_entity(self, equipment_id: int | None, name: str, site_names: list[str]) -> Filter:
         return Filter(
             id=equipment_id,

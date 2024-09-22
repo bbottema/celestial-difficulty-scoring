@@ -43,6 +43,6 @@ class EquipmentManagementComponent(QWidget):
         equipment_tabs.addTab(ManageEyepiecesTab(self.eyepiece_service, self.observation_site_service), "Eyepieces")
         equipment_tabs.addTab(ManageFiltersTab(self.filter_service, self.observation_site_service), "Filters")
         equipment_tabs.addTab(ManageImagersTab(self.imager_service, self.observation_site_service), "Imagers")
-        equipment_tabs.addTab(ManageOpticalAidsTab(self.telescope_service, self.observation_site_service), "Optical Aids")
+        equipment_tabs.addTab(ManageOpticalAidsTab(self.optical_aid_service, self.observation_site_service), "Optical Aids")
 
         self.layout.addWidget(equipment_tabs)

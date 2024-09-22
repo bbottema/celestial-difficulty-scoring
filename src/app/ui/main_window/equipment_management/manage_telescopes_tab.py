@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QTableWidget, QLabel, QDoubleSpinBox, QVBoxLayout, QComboBox, QSpinBox
+from overrides import overrides
 
 from app.domain.model.telescope_type import TelescopeType
 from app.orm.model.entities import Telescope
@@ -31,9 +32,11 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
     def __init__(self, telescope_service: TelescopeService, observation_site_service: ObservationSiteService):
         super().__init__(Telescope, telescope_service, observation_site_service, telescope_service.mutation_events)
 
+    @overrides
     def create_equipment_table(self) -> QTableWidget:
         return default_table(['Name', 'Type', 'Aperture', 'Focal Length', 'Focal Ratio', 'Observation sites', ''])
 
+    @overrides
     def populate_equipment_table(self, equipment_table: QTableWidget) -> None:
         data: list[Telescope] = self.equipment_service.get_all()
         for i, telescope in enumerate(data):
@@ -48,6 +51,7 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
             ))
             equipment_table.setCellWidget(i, self.COLUMN_BUTTONS, self._create_delete_button(telescope))
 
+    @overrides
     def define_equipment_form_controls(self, form_layout: QVBoxLayout):
         self._add_equipment_type_input(form_layout)
         self._add_equipment_aperture_input(form_layout)
@@ -110,18 +114,21 @@ class ManageTelescopesTab(ManageEquipmentTab[Telescope]):
             if not self.focal_length_input.hasFocus():
                 self.focal_length_input.setValue(calculate_focal_length(self.aperture_input.value(), new_ratio_value))
 
+    @overrides
     def clear_form_to_defaults(self):
         self.telescope_type_combo.setCurrentText(TelescopeType.ACHROMATIC_REFRACTOR.label)
         self.aperture_input.setValue(80)
         self.focal_length_input.setValue(900)
         self.focal_ratio_input.setValue(11.3)
 
-    def populate_form_for_selected_equipment(self, telescope: Telescope) -> None:
-        self.telescope_type_combo.setCurrentText(telescope.type.label)
-        self.aperture_input.setValue(telescope.aperture)
-        self.focal_length_input.setValue(telescope.focal_length)
-        self.focal_ratio_input.setValue(telescope.focal_ratio)
+    @overrides
+    def populate_form_for_selected_equipment(self, selected_equipment: Telescope) -> None:
+        self.telescope_type_combo.setCurrentText(selected_equipment.type.label)
+        self.aperture_input.setValue(selected_equipment.aperture)
+        self.focal_length_input.setValue(selected_equipment.focal_length)
+        self.focal_ratio_input.setValue(selected_equipment.focal_ratio)
 
+    @overrides
     def create_or_update_equipment_entity(self, equipment_id: int | None, name: str, site_names: list[str]) -> Telescope:
         return Telescope(
             id=equipment_id,
