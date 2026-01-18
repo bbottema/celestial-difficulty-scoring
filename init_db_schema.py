@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import create_engine, text
@@ -10,8 +11,19 @@ def get_project_root(project_root: Optional[str] = None) -> str:
     return project_root or os.path.dirname(os.path.abspath(__file__))
 
 
+def get_database_path(project_root: Optional[str] = None) -> Path:
+    root = Path(get_project_root(project_root))
+    return root / "data" / "celestial.db"
+
+
+def get_database_url(project_root: Optional[str] = None) -> str:
+    db_path = get_database_path(project_root)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{db_path.as_posix()}"
+
+
 def clear_alembic_version_history():
-    engine = create_engine("sqlite:///celestial.db")
+    engine = create_engine(get_database_url())
     with engine.connect() as conn:
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
         print("Cleared Alembic version history.")

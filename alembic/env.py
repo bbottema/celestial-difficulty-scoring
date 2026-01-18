@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -13,6 +14,13 @@ from app.config.alembic_render import render_item
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+
+def _set_sqlalchemy_url_to_project_db() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    db_path = project_root / "data" / "celestial.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path.as_posix()}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -43,6 +51,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
+    _set_sqlalchemy_url_to_project_db()
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -63,6 +72,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    _set_sqlalchemy_url_to_project_db()
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
