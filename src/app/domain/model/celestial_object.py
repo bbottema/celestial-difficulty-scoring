@@ -17,7 +17,7 @@ class CelestialObjectScore:
 
 
 @dataclass
-class CelestialObjectData:
+class ScoredCelestialObject:
     name: str
     object_type: str
     magnitude: float
@@ -26,4 +26,5 @@ class CelestialObjectData:
     observability_score: CelestialObjectScore
 
 
-CelestialsList = list[CelestialObjectData]
+CelestialsList = list[CelestialObject]
+ScoredCelestialsList = list[ScoredCelestialObject]

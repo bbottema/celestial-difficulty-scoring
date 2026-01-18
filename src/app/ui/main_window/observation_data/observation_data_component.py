@@ -1,10 +1,12 @@
 from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout
 )
+from injector import inject
 
 from app.config.autowire import component
-from app.domain.model.celestial_object import CelestialsList
+from app.domain.model.celestial_object import ScoredCelestialsList, CelestialsList
 from app.domain.model.weather_conditions import WeatherConditions
+from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 from app.utils.gui_helper import default_table, centered_table_widget_item
 from app.utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
@@ -12,8 +14,10 @@ from app.utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
 
 @component
 class ObservationDataComponent(QWidget):
-    def __init__(self):
+    @inject
+    def __init__(self, observability_calculation_service: ObservabilityCalculationService):
         super().__init__(None)
+        self.observability_calculation_service = observability_calculation_service
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
@@ -64,10 +68,11 @@ class ObservationDataComponent(QWidget):
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")
         if file_path:
-            data: CelestialsList = AstroPlannerExcelImporter(file_path).import_data()
-            self.populate_table(data)
+            celestial_objects: CelestialsList = AstroPlannerExcelImporter(file_path).import_data()
+            scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(celestial_objects)
+            self.populate_table(scored_celestial_objects)
 
-    def populate_table(self, data: CelestialsList):
+    def populate_table(self, data: ScoredCelestialsList):
         for i, celestial_object in enumerate(data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(celestial_object.name))

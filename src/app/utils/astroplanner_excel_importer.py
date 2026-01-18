@@ -1,7 +1,6 @@
 import pandas as pd
 
-# Assuming the CelestialObject class and observability_calculation_service are defined elsewhere
-from app.domain.model.celestial_object import CelestialObject, CelestialsList, CelestialObjectData
+from app.domain.model.celestial_object import CelestialObject, CelestialsList
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 
 observability_calculation_service = ObservabilityCalculationService()
@@ -38,17 +37,9 @@ class AstroPlannerExcelImporter:
         celestial_objects_data: CelestialsList = []
         for _, row in filtered_df.iterrows():
             try:
-                celestial_object = self.read_row_as_celestial_object(row)
-                print('processing celestial object:', celestial_object)
-                celestial_object_data: CelestialObjectData = CelestialObjectData(
-                    name=celestial_object.name,
-                    object_type=celestial_object.object_type,
-                    magnitude=celestial_object.magnitude,
-                    size=celestial_object.size,
-                    altitude=celestial_object.altitude,
-                    observability_score=observability_calculation_service.calculate_observability_score(celestial_object)
-                )
-                celestial_objects_data.append(celestial_object_data)
+                celestial_object: CelestialObject = self.read_row_as_celestial_object(row)
+                print('read celestial object:', celestial_object)
+                celestial_objects_data.append(celestial_object)
             except ValueError as e:
                 # Handle the case where conversion to float fails
                 print(f"Warning: Could not convert data for row: {row}. Error: {e}")
@@ -57,7 +48,7 @@ class AstroPlannerExcelImporter:
         return celestial_objects_data
 
     @staticmethod
-    def read_row_as_celestial_object(row):
+    def read_row_as_celestial_object(row) -> CelestialObject:
         try:
             return CelestialObject(
                 name=(row['ID']),

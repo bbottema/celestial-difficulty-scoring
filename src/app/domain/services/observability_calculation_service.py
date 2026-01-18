@@ -1,12 +1,21 @@
 import math
 
-from app.domain.model.celestial_object import CelestialObjectScore
+from app.domain.model.celestial_object import CelestialObjectScore, ScoredCelestialObject, CelestialsList, \
+    ScoredCelestialsList
 from app.domain.services.strategies import *
 
 
 class ObservabilityCalculationService:
 
-    def calculate_observability_score(self, celestial_object: CelestialObject) -> CelestialObjectScore:
+    def score_celestial_objects(self, celestial_objects: CelestialsList) -> ScoredCelestialsList:
+        return [self.score_celestial_object(celestial_object) for celestial_object in celestial_objects]
+
+    def score_celestial_object(self, celestial_object: CelestialObject) -> ScoredCelestialObject:
+        return ScoredCelestialObject(celestial_object.name, celestial_object.object_type, celestial_object.magnitude,
+                                     celestial_object.size, celestial_object.altitude,
+                                     self._calculate_observability_score(celestial_object))
+
+    def _calculate_observability_score(self, celestial_object: CelestialObject) -> CelestialObjectScore:
         strategy = self._determine_scoring_strategy(celestial_object)
         base_score = strategy.calculate_score(celestial_object)
         altitude_adjusted_score = base_score  # adjust_for_altitude(base_score, celestial_object.altitude)
