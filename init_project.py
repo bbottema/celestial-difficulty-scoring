@@ -246,9 +246,43 @@ def install_pipenv(python_path: str):
         subprocess.run([python_path, "-m", "pip", "install", "pipenv"], check=True)
 
 
+def get_pipenv_env_python_major_minor(python_path: str, project_root: str):
+    """Return (major, minor) for the project's Pipenv environment, best-effort."""
+    try:
+        completed = subprocess.run(
+            [
+                python_path,
+                "-m",
+                "pipenv",
+                "run",
+                "python",
+                "-c",
+                "import sys; v=sys.version_info; print(f'{v[0]}.{v[1]}')",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+    out = (completed.stdout or "").strip()
+    parts = out.split(".")
+    if len(parts) < 2:
+        return None
+    try:
+        return int(parts[0]), int(parts[1])
+    except ValueError:
+        return None
+
+
 def run_pipenv_sync(python_path: str, project_root: str):
     """Create/select the pipenv environment for the given Python and sync dependencies from Pipfile.lock."""
     print(f"Using Python interpreter: {python_path}")
+
+    required = parse_required_python_version(os.path.join(project_root, "Pipfile"))
+    required_major_minor = required[:2] if required and len(required) >= 2 else None
 
     # Avoid forcing pipenv to recreate/retarget the environment if it already exists.
     env_exists = False
@@ -262,7 +296,19 @@ def run_pipenv_sync(python_path: str, project_root: str):
         )
         venv_path = (completed.stdout or "").strip()
         env_exists = (completed.returncode == 0 and bool(venv_path))
-        if env_exists:
+        if env_exists and required_major_minor:
+            env_mm = get_pipenv_env_python_major_minor(python_path, project_root)
+            if env_mm == tuple(required_major_minor):
+                print("Existing Pipenv environment detected, skipping --python selection.")
+            else:
+                req_str = f"{required_major_minor[0]}.{required_major_minor[1]}"
+                env_str = f"{env_mm[0]}.{env_mm[1]}" if env_mm else "unknown"
+                print(
+                    "Existing Pipenv environment detected but Python version does not match Pipfile "
+                    f"(env: {env_str}, required: {req_str}); running --python selection."
+                )
+                env_exists = False
+        elif env_exists:
             print("Existing Pipenv environment detected, skipping --python selection.")
     except (subprocess.CalledProcessError, FileNotFoundError):
         env_exists = False
