@@ -18,6 +18,19 @@ From the project root:
 python init_project.py
 ```
 
+If you need to force a specific interpreter (e.g., multiple Pythons installed):
+
+```bash
+python init_project.py --python C:\\Path\\To\\python.exe
+```
+
+Or via environment variable:
+
+```bash
+set PROJECT_PYTHON=C:\\Path\\To\\python.exe
+python init_project.py
+```
+
 What it does:
 
 * Ensures `pipenv` is available (installs it if missing)
