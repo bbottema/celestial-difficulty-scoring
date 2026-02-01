@@ -4,8 +4,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import create_engine, text
-
 
 def get_project_root(project_root: Optional[str] = None) -> str:
     return project_root or os.path.dirname(os.path.abspath(__file__))
@@ -22,11 +20,13 @@ def get_database_url(project_root: Optional[str] = None) -> str:
     return f"sqlite:///{db_path.as_posix()}"
 
 
-def clear_alembic_version_history():
-    engine = create_engine(get_database_url())
-    with engine.connect() as conn:
-        conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
-        print("Cleared Alembic version history.")
+def clear_database(project_root: Optional[str] = None):
+    db_path = get_database_path(project_root)
+    if db_path.exists():
+        db_path.unlink()
+        print(f"Deleted existing database: {db_path}")
+    else:
+        print("No existing database to clear.")
 
 
 def clear_migrations_folder(project_root: Optional[str] = None):
@@ -69,6 +69,6 @@ if __name__ == "__main__":
     clear_migrations_folder(project_root)
     env = os.environ.copy()
     env["PYTHONPATH"] = os.path.join(project_root, "src")
-    clear_alembic_version_history()
+    clear_database(project_root)
     regenerate_initial_migration(env, project_root)
     apply_migration(env, project_root)
