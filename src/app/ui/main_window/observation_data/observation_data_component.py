@@ -80,36 +80,9 @@ class ObservationDataComponent(QWidget):
         button_widget.setLayout(button_layout)
         self.layout.addWidget(button_widget)
 
-        # Widgets for weather and date/time
-        weather_widget = QWidget()
-        weather_layout = QHBoxLayout(weather_widget)
-        weather_layout.addWidget(QLabel("Weather Conditions:"))
-        weather_conditions_combo = QComboBox()
-        weather_conditions_combo.setProperty(CUSTOM_NAME_PROPERTY, "ObservationData_WeatherCombo")
-        weather_layout.addWidget(weather_conditions_combo)
-
-        for wc in WeatherConditions:
-            weather_conditions_combo.addItem(wc.value, wc.name)
-        weather_conditions_combo.setCurrentText(WeatherConditions.CLEAR.value)
-
-        date_time_widget = QWidget()
-        date_time_layout = QHBoxLayout(date_time_widget)
-        date_time_layout.addWidget(QLabel("Date/time:"))
-
-        # Date picker - default to today
-        date_picker = QDateEdit()
-        date_picker.setCalendarPopup(True)
-        date_picker.setDate(QDate.currentDate())
-        date_picker.setDisplayFormat("yyyy-MM-dd")
-        date_time_layout.addWidget(date_picker)
-
-        # Time picker - default to current time
-        time_input = QTimeEdit()
-        time_input.setTime(QTime.currentTime())
-        time_input.setDisplayFormat("HH:mm")
-        date_time_layout.addWidget(time_input)
-
-        date_time_layout.addStretch()
+        # Create unified Observation Planning panel
+        planning_panel = self._create_observation_planning_panel()
+        self.layout.addWidget(planning_panel)
 
         # Table to display celestial objects
         self.table = default_table([
@@ -160,8 +133,6 @@ class ObservationDataComponent(QWidget):
         self.data_source_label.hide()  # Hidden until data is loaded
 
         # Add components to the layout
-        self.layout.addWidget(weather_widget)
-        self.layout.addWidget(date_time_widget)
         self.layout.addWidget(self.data_source_label)
         self.layout.addWidget(self.empty_state_label)
         self.layout.addWidget(self.table)
@@ -176,7 +147,13 @@ class ObservationDataComponent(QWidget):
         file_path, _ = file_dialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)")
         if file_path:
             celestial_objects: CelestialsList = AstroPlannerExcelImporter(file_path).import_data()
-            scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(celestial_objects)
+
+            # Get selected equipment
+            telescope, eyepiece, site = self._get_selected_equipment()
+
+            # Score with equipment
+            scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(
+                celestial_objects, telescope, eyepiece, site)
 
             # Extract filename from path
             import os
@@ -200,8 +177,209 @@ class ObservationDataComponent(QWidget):
             CelestialObject(name="M51 - Whirlpool Galaxy", object_type="DeepSky", magnitude=8.4, size=11.0, altitude=68.0),
         ]
 
-        scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(sample_objects)
+        # Get selected equipment
+        telescope, eyepiece, site = self._get_selected_equipment()
+
+        # Score with equipment
+        scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(
+            sample_objects, telescope, eyepiece, site)
         self.populate_table(scored_celestial_objects, data_source="Sample Data (10 popular celestial objects)")
+
+    def _create_observation_planning_panel(self) -> QFrame:
+        """Create the unified Observation Planning panel with When/Where/Equipment sections"""
+        panel = QFrame()
+        panel.setFrameShape(QFrame.StyledPanel)
+        panel.setFrameShadow(QFrame.Raised)
+        panel_layout = QVBoxLayout(panel)
+
+        # Panel title
+        title = QLabel("📋 Observation Planning")
+        title.setStyleSheet("font-weight: bold; font-size: 13px; padding: 5px;")
+        panel_layout.addWidget(title)
+
+        # WHEN section
+        when_layout = QHBoxLayout()
+        when_layout.addWidget(QLabel("📅 When:"))
+
+        self.date_picker = QDateEdit()
+        self.date_picker.setCalendarPopup(True)
+        self.date_picker.setDate(QDate.currentDate())
+        self.date_picker.setDisplayFormat("yyyy-MM-dd")
+        self.date_picker.dateChanged.connect(self._on_datetime_changed)
+        when_layout.addWidget(self.date_picker)
+
+        self.time_picker = QTimeEdit()
+        self.time_picker.setTime(QTime.currentTime())
+        self.time_picker.setDisplayFormat("HH:mm")
+        self.time_picker.timeChanged.connect(self._on_datetime_changed)
+        when_layout.addWidget(self.time_picker)
+
+        when_layout.addStretch()
+        panel_layout.addLayout(when_layout)
+
+        # Weather sub-section (indented under WHEN)
+        weather_layout = QHBoxLayout()
+        weather_layout.addSpacing(20)  # Indent
+        weather_layout.addWidget(QLabel("☁️  Weather:"))
+
+        self.weather_status_label = QLabel("Checking...")
+        self.weather_status_label.setStyleSheet("color: #888; font-style: italic;")
+        weather_layout.addWidget(self.weather_status_label)
+
+        weather_layout.addWidget(QLabel("→"))
+
+        self.weather_combo = QComboBox()
+        for wc in WeatherConditions:
+            self.weather_combo.addItem(wc.value, wc.name)
+        self.weather_combo.setCurrentText(WeatherConditions.CLEAR.value)
+        weather_layout.addWidget(self.weather_combo)
+
+        weather_layout.addStretch()
+        panel_layout.addLayout(weather_layout)
+
+        # WHERE section
+        where_layout = QHBoxLayout()
+        where_layout.addWidget(QLabel("📍 Where:"))
+
+        self.site_combo = QComboBox()
+        self.site_combo.addItem("(None)", None)
+        self.site_combo.currentIndexChanged.connect(self._on_site_changed)
+        where_layout.addWidget(self.site_combo)
+
+        where_layout.addStretch()
+        panel_layout.addLayout(where_layout)
+
+        # Light pollution sub-section (indented under WHERE)
+        light_poll_layout = QHBoxLayout()
+        light_poll_layout.addSpacing(20)  # Indent
+        light_poll_layout.addWidget(QLabel("🌃 Light Pollution:"))
+
+        self.light_pollution_status_label = QLabel("From site")
+        self.light_pollution_status_label.setStyleSheet("color: #888; font-style: italic;")
+        light_poll_layout.addWidget(self.light_pollution_status_label)
+
+        light_poll_layout.addWidget(QLabel("→"))
+
+        self.light_pollution_combo = QComboBox()
+        from app.domain.model.light_pollution import LightPollution
+        for lp in LightPollution:
+            if lp != LightPollution.UNKNOWN:
+                self.light_pollution_combo.addItem(lp.value, lp)
+        light_poll_layout.addWidget(self.light_pollution_combo)
+
+        light_poll_layout.addStretch()
+        panel_layout.addLayout(light_poll_layout)
+
+        # EQUIPMENT section
+        equipment_layout = QHBoxLayout()
+        equipment_layout.addWidget(QLabel("🔭 Equipment:"))
+
+        self.telescope_combo = QComboBox()
+        self.telescope_combo.addItem("(None)", None)
+        equipment_layout.addWidget(self.telescope_combo)
+
+        self.eyepiece_combo = QComboBox()
+        self.eyepiece_combo.addItem("(None)", None)
+        equipment_layout.addWidget(self.eyepiece_combo)
+
+        equipment_layout.addStretch()
+        panel_layout.addLayout(equipment_layout)
+
+        # Populate equipment dropdowns
+        self._populate_equipment_dropdowns()
+
+        # Initial weather status
+        self._update_weather_status()
+        self._update_light_pollution_status()
+
+        return panel
+
+    def _on_datetime_changed(self):
+        """Called when date or time changes - trigger weather API"""
+        self._update_weather_status()
+
+    def _update_weather_status(self):
+        """Update weather status label (will call API in future)"""
+        # TODO: Call weather API
+        # For now, show placeholder
+        date = self.date_picker.date()
+        time = self.time_picker.time()
+        days_ahead = QDate.currentDate().daysTo(date)
+
+        if days_ahead > 10:
+            self.weather_status_label.setText("Unknown (too far ahead)")
+            self.weather_status_label.setStyleSheet("color: #ff9800; font-style: italic;")
+        elif days_ahead < 0:
+            self.weather_status_label.setText("Historical data unavailable")
+            self.weather_status_label.setStyleSheet("color: #888; font-style: italic;")
+        else:
+            # Placeholder for API call
+            self.weather_status_label.setText(f"Forecast: {days_ahead}d ahead")
+            self.weather_status_label.setStyleSheet("color: #4caf50; font-style: italic;")
+
+    def _update_light_pollution_status(self):
+        """Update light pollution status based on selected site"""
+        site = self.site_combo.currentData()
+        if site and hasattr(site, 'light_pollution'):
+            # Extract Bortle number
+            bortle_name = site.light_pollution.value
+            self.light_pollution_status_label.setText(f"From site ({bortle_name})")
+            self.light_pollution_status_label.setStyleSheet("color: #4caf50; font-style: italic;")
+
+            # Pre-select in dropdown
+            for i in range(self.light_pollution_combo.count()):
+                if self.light_pollution_combo.itemData(i) == site.light_pollution:
+                    self.light_pollution_combo.setCurrentIndex(i)
+                    break
+        else:
+            self.light_pollution_status_label.setText("No site selected")
+            self.light_pollution_status_label.setStyleSheet("color: #888; font-style: italic;")
+
+    def _populate_equipment_dropdowns(self):
+        """Populate dropdowns with available equipment"""
+        # Populate observation sites
+        sites = self.observation_site_service.get_all()
+        for site in sites:
+            self.site_combo.addItem(site.name, site)
+
+        # Populate telescopes
+        telescopes = self.telescope_service.get_all()
+        for telescope in telescopes:
+            self.telescope_combo.addItem(telescope.name, telescope)
+
+        # Populate eyepieces
+        eyepieces = self.eyepiece_service.get_all()
+        for eyepiece in eyepieces:
+            self.eyepiece_combo.addItem(f"{eyepiece.name} ({eyepiece.focal_length}mm)", eyepiece)
+
+    def _on_site_changed(self, index):
+        """When observation site changes, load its default equipment and update light pollution"""
+        site = self.site_combo.itemData(index)
+        if site and hasattr(site, 'telescopes') and hasattr(site, 'eyepieces'):
+            # If site has equipment, select the first telescope and eyepiece
+            if site.telescopes:
+                # Find this telescope in the combo
+                for i in range(self.telescope_combo.count()):
+                    if self.telescope_combo.itemData(i) == site.telescopes[0]:
+                        self.telescope_combo.setCurrentIndex(i)
+                        break
+
+            if site.eyepieces:
+                # Find this eyepiece in the combo
+                for i in range(self.eyepiece_combo.count()):
+                    if self.eyepiece_combo.itemData(i) == site.eyepieces[0]:
+                        self.eyepiece_combo.setCurrentIndex(i)
+                        break
+
+        # Update light pollution status when site changes
+        self._update_light_pollution_status()
+
+    def _get_selected_equipment(self):
+        """Get currently selected equipment from dropdowns"""
+        telescope = self.telescope_combo.currentData()
+        eyepiece = self.eyepiece_combo.currentData()
+        site = self.site_combo.currentData()
+        return telescope, eyepiece, site
 
     def _create_guidance_section(self) -> QFrame:
         """Creates the guidance panel with setup status and instructions"""
@@ -330,15 +508,56 @@ class ObservationDataComponent(QWidget):
             self.table.setItem(i, 6, centered_table_widget_item(str(celestial_object.observability_score.normalized_score)))
 
     def _subscribe_to_events(self):
-        """Subscribe to equipment and site events to refresh configuration status"""
+        """Subscribe to equipment and site events to refresh configuration status and dropdowns"""
         # Observation site events
-        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda _: self._update_configuration_status())
-        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda _: self._update_configuration_status())
+        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda _: self._on_equipment_changed())
 
         # Telescope events
-        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_ADDED, lambda _: self._update_configuration_status())
-        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_DELETED, lambda _: self._update_configuration_status())
+        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_DELETED, lambda _: self._on_equipment_changed())
 
         # Eyepiece events
-        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_ADDED, lambda _: self._update_configuration_status())
-        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_DELETED, lambda _: self._update_configuration_status())
+        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_DELETED, lambda _: self._on_equipment_changed())
+
+    def _on_equipment_changed(self):
+        """Refresh configuration status and equipment dropdowns when equipment changes"""
+        self._update_configuration_status()
+        self._refresh_equipment_dropdowns()
+
+    def _refresh_equipment_dropdowns(self):
+        """Refresh all equipment dropdowns (preserve selections if possible)"""
+        # Save current selections
+        current_site = self.site_combo.currentData()
+        current_telescope = self.telescope_combo.currentData()
+        current_eyepiece = self.eyepiece_combo.currentData()
+
+        # Clear and repopulate
+        self.site_combo.clear()
+        self.site_combo.addItem("(None)", None)
+        self.telescope_combo.clear()
+        self.telescope_combo.addItem("(None)", None)
+        self.eyepiece_combo.clear()
+        self.eyepiece_combo.addItem("(None)", None)
+
+        self._populate_equipment_dropdowns()
+
+        # Restore selections if items still exist
+        if current_site:
+            for i in range(self.site_combo.count()):
+                if self.site_combo.itemData(i) == current_site:
+                    self.site_combo.setCurrentIndex(i)
+                    break
+
+        if current_telescope:
+            for i in range(self.telescope_combo.count()):
+                if self.telescope_combo.itemData(i) == current_telescope:
+                    self.telescope_combo.setCurrentIndex(i)
+                    break
+
+        if current_eyepiece:
+            for i in range(self.eyepiece_combo.count()):
+                if self.eyepiece_combo.itemData(i) == current_eyepiece:
+                    self.eyepiece_combo.setCurrentIndex(i)
+                    break

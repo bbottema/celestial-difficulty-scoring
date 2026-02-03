@@ -1,26 +1,49 @@
 import math
+from typing import Optional
 
 from app.domain.model.celestial_object import CelestialObjectScore, ScoredCelestialObject, CelestialsList, \
     ScoredCelestialsList
+from app.domain.model.scoring_context import ScoringContext
 from app.domain.services.strategies import *
+from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 
 
 class ObservabilityCalculationService:
 
-    def score_celestial_objects(self, celestial_objects: CelestialsList) -> ScoredCelestialsList:
-        return [self.score_celestial_object(celestial_object) for celestial_object in celestial_objects]
+    def score_celestial_objects(self,
+                                celestial_objects: CelestialsList,
+                                telescope: Optional[Telescope] = None,
+                                eyepiece: Optional[Eyepiece] = None,
+                                observation_site: Optional[ObservationSite] = None) -> ScoredCelestialsList:
+        return [self.score_celestial_object(celestial_object, telescope, eyepiece, observation_site)
+                for celestial_object in celestial_objects]
 
-    def score_celestial_object(self, celestial_object: CelestialObject) -> ScoredCelestialObject:
+    def score_celestial_object(self,
+                               celestial_object: CelestialObject,
+                               telescope: Optional[Telescope] = None,
+                               eyepiece: Optional[Eyepiece] = None,
+                               observation_site: Optional[ObservationSite] = None) -> ScoredCelestialObject:
         return ScoredCelestialObject(celestial_object.name, celestial_object.object_type, celestial_object.magnitude,
                                      celestial_object.size, celestial_object.altitude,
-                                     self._calculate_observability_score(celestial_object))
+                                     self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site))
 
-    def _calculate_observability_score(self, celestial_object: CelestialObject) -> CelestialObjectScore:
+    def _calculate_observability_score(self,
+                                       celestial_object: CelestialObject,
+                                       telescope: Optional[Telescope] = None,
+                                       eyepiece: Optional[Eyepiece] = None,
+                                       observation_site: Optional[ObservationSite] = None) -> CelestialObjectScore:
+        # Build scoring context with equipment and site data
+        context = ScoringContext(
+            telescope=telescope,
+            eyepiece=eyepiece,
+            observation_site=observation_site,
+            altitude=celestial_object.altitude
+        )
+
         strategy = self._determine_scoring_strategy(celestial_object)
-        base_score = strategy.calculate_score(celestial_object)
-        altitude_adjusted_score = base_score  # adjust_for_altitude(base_score, celestial_object.altitude)
+        final_score = strategy.calculate_score(celestial_object, context)
 
-        return CelestialObjectScore(altitude_adjusted_score, self._normalize_score(altitude_adjusted_score))
+        return CelestialObjectScore(final_score, self._normalize_score(final_score))
 
     @staticmethod
     def _determine_scoring_strategy(celestial_object: CelestialObject) -> IObservabilityScoringStrategy:
@@ -33,14 +56,6 @@ class ObservabilityCalculationService:
                 return DeepSkyScoringStrategy()
         else:
             raise ValueError(f'Unknown celestial object type: {celestial_object.object_type}')
-
-    # TODO: incorporate altitude into scoring
-    @staticmethod
-    def _adjust_for_altitude(score, altitude):
-        # Assuming altitude is given in degrees from the horizon.
-        # Exponential decay factor can be adjusted based on observational preferences.
-        altitude_factor = math.exp(-0.03 * (optimal_altitude - altitude))
-        return score * altitude_factor
 
     @staticmethod
     def _normalize_score(score) -> float:
