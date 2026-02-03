@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
-    QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout, QFrame
+    QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout, QFrame,
+    QDateEdit, QTimeEdit
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDate, QTime
 from injector import inject
 
 from app.config.autowire import component
@@ -94,20 +95,54 @@ class ObservationDataComponent(QWidget):
         date_time_widget = QWidget()
         date_time_layout = QHBoxLayout(date_time_widget)
         date_time_layout.addWidget(QLabel("Date/time:"))
-        date_picker = QLabel("localized date picker here")  # ??
+
+        # Date picker - default to today
+        date_picker = QDateEdit()
+        date_picker.setCalendarPopup(True)
+        date_picker.setDate(QDate.currentDate())
+        date_picker.setDisplayFormat("yyyy-MM-dd")
         date_time_layout.addWidget(date_picker)
-        time_input = QLabel("localized time editor here")  # ??
+
+        # Time picker - default to current time
+        time_input = QTimeEdit()
+        time_input.setTime(QTime.currentTime())
+        time_input.setDisplayFormat("HH:mm")
         date_time_layout.addWidget(time_input)
+
+        date_time_layout.addStretch()
 
         # Table to display celestial objects
         self.table = default_table([
-            'Name',
+            'Object Name',
             'Type',
             'Magnitude',
-            'Size in arcminutes',
-            'Altitude',
-            'Observability Index',
-            '(normalized)'])
+            'Size (arcmin)',
+            'Altitude (°)',
+            'Observability Score',
+            'Normalized Score (0-25)'])
+
+        # Add tooltips to column headers
+        self.table.horizontalHeaderItem(0).setToolTip("Name of the celestial object")
+        self.table.horizontalHeaderItem(1).setToolTip("Object type (Planet, DeepSky, Moon, etc.)")
+        self.table.horizontalHeaderItem(2).setToolTip("Apparent magnitude - lower numbers are brighter")
+        self.table.horizontalHeaderItem(3).setToolTip("Angular size in arcminutes")
+        self.table.horizontalHeaderItem(4).setToolTip("Current altitude above horizon in degrees")
+        self.table.horizontalHeaderItem(5).setToolTip("Raw observability score based on brightness and size")
+        self.table.horizontalHeaderItem(6).setToolTip("Normalized difficulty score - higher is easier to observe")
+
+        # Enable sorting by clicking column headers
+        self.table.setSortingEnabled(True)
+
+        # Adjust column widths for better readability
+        from PySide6.QtWidgets import QHeaderView
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Object Name - stretch to fill
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Type
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Magnitude
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Size
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Altitude
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Observability Score
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Normalized Score
 
         # Empty state placeholder
         self.empty_state_label = QLabel(
