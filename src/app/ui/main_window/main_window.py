@@ -45,10 +45,10 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
-        self.tabs.addTab(self.observation_data_component, "Observation Data")
-        self.tabs.addTab(self.observation_sites_component, "Manage Observation Sites")
-        self.tabs.addTab(self.equipment_management_component, "Manage Equipment")
-        self.tabs.addTab(self.observation_preferences_component, "Observation Preferences")
+        self.tabs.addTab(self.observation_data_component, "Plan Tonight's Session")
+        self.tabs.addTab(self.observation_sites_component, "Setup: Observation Sites")
+        self.tabs.addTab(self.equipment_management_component, "Setup: Equipment")
+        self.tabs.addTab(self.observation_preferences_component, "Setup: Preferences")
 
     def closeEvent(self, event):
         # Save the current geometry of the window before closing
