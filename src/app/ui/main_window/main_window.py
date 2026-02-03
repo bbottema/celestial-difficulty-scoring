@@ -50,6 +50,9 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.equipment_management_component, "Setup: Equipment")
         self.tabs.addTab(self.observation_preferences_component, "Setup: Preferences")
 
+        # Pass tab widget reference to observation data component for navigation
+        self.observation_data_component.set_tab_widget(self.tabs)
+
     def closeEvent(self, event):
         # Save the current geometry of the window before closing
         self.settings.setValue("geometry", self.saveGeometry())

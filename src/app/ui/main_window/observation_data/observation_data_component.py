@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout, QFrame
 )
+from PySide6.QtCore import Qt
 from injector import inject
 
 from app.config.autowire import component
@@ -29,10 +30,15 @@ class ObservationDataComponent(QWidget):
         self.observation_site_service = observation_site_service
         self.telescope_service = telescope_service
         self.eyepiece_service = eyepiece_service
+        self.tab_widget = None  # Will be set by MainWindow
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
         self._subscribe_to_events()
+
+    def set_tab_widget(self, tab_widget):
+        """Set reference to the parent tab widget for navigation"""
+        self.tab_widget = tab_widget
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):
@@ -49,10 +55,23 @@ class ObservationDataComponent(QWidget):
         # Import buttons
         button_layout = QHBoxLayout()
         self.import_button = QPushButton("Import AstroPlanner's Excel export")
+        self.import_button.setToolTip(
+            "Import an Excel file (.xlsx) exported from AstroPlanner.\n\n"
+            "Required columns:\n"
+            "• ID - Object name\n"
+            "• Type - Object type (Planet, DeepSky, etc.)\n"
+            "• Mag - Magnitude (brightness)\n"
+            "• Size - Size in arcminutes or arcseconds\n"
+            "• Altitude - Current altitude in degrees"
+        )
         self.import_button.clicked.connect(self.import_data)
         button_layout.addWidget(self.import_button)
 
         self.sample_data_button = QPushButton("Try with Sample Data")
+        self.sample_data_button.setToolTip(
+            "Load sample celestial objects to see how the app works.\n"
+            "Includes popular targets like M31, M42, Jupiter, and Saturn."
+        )
         self.sample_data_button.clicked.connect(self.load_sample_data)
         button_layout.addWidget(self.sample_data_button)
 
@@ -90,10 +109,31 @@ class ObservationDataComponent(QWidget):
             'Observability Index',
             '(normalized)'])
 
+        # Empty state placeholder
+        self.empty_state_label = QLabel(
+            "📊 No observation data loaded yet.\n\n"
+            "Import your AstroPlanner data or try the sample data above to see "
+            "which celestial objects are easiest to observe."
+        )
+        self.empty_state_label.setAlignment(Qt.AlignCenter)
+        self.empty_state_label.setStyleSheet("color: #888; font-size: 13px; padding: 40px;")
+        self.empty_state_label.setWordWrap(True)
+
+        # Data source indicator
+        self.data_source_label = QLabel()
+        self.data_source_label.setStyleSheet("color: #666; font-style: italic; padding: 5px;")
+        self.data_source_label.hide()  # Hidden until data is loaded
+
         # Add components to the layout
         self.layout.addWidget(weather_widget)
         self.layout.addWidget(date_time_widget)
+        self.layout.addWidget(self.data_source_label)
+        self.layout.addWidget(self.empty_state_label)
         self.layout.addWidget(self.table)
+
+        # Initially hide the table and show the empty state
+        self.table.hide()
+        self.empty_state_label.show()
 
     def import_data(self) -> None:
         # Open a dialog to select an Excel file and import data
@@ -102,7 +142,11 @@ class ObservationDataComponent(QWidget):
         if file_path:
             celestial_objects: CelestialsList = AstroPlannerExcelImporter(file_path).import_data()
             scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(celestial_objects)
-            self.populate_table(scored_celestial_objects)
+
+            # Extract filename from path
+            import os
+            filename = os.path.basename(file_path)
+            self.populate_table(scored_celestial_objects, data_source=f"Imported from: {filename}")
 
     def load_sample_data(self) -> None:
         """Load sample celestial objects to demonstrate the functionality"""
@@ -122,7 +166,7 @@ class ObservationDataComponent(QWidget):
         ]
 
         scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(sample_objects)
-        self.populate_table(scored_celestial_objects)
+        self.populate_table(scored_celestial_objects, data_source="Sample Data (10 popular celestial objects)")
 
     def _create_guidance_section(self) -> QFrame:
         """Creates the guidance panel with setup status and instructions"""
@@ -143,43 +187,102 @@ class ObservationDataComponent(QWidget):
         instructions.setWordWrap(True)
         layout.addWidget(instructions)
 
-        # Configuration status
-        self.status_label = QLabel()
-        self.status_label.setWordWrap(True)
+        # Configuration status container
+        self.status_container = QWidget()
+        self.status_layout = QVBoxLayout(self.status_container)
+        self.status_layout.setContentsMargins(0, 0, 0, 0)
         self._update_configuration_status()
-        layout.addWidget(self.status_label)
+        layout.addWidget(self.status_container)
 
         return frame
 
     def _update_configuration_status(self):
         """Check and display configuration status"""
+        # Clear existing widgets
+        while self.status_layout.count():
+            child = self.status_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
         sites = self.observation_site_service.get_all()
         telescopes = self.telescope_service.get_all()
         eyepieces = self.eyepiece_service.get_all()
 
-        warnings = []
+        has_warnings = False
+
+        # Check and add warning buttons for missing configuration
         if not sites:
-            warnings.append("⚠️  No observation sites configured")
+            warning_widget = self._create_warning_widget(
+                "⚠️  No observation sites configured",
+                "Add Observation Site",
+                lambda: self._switch_to_tab(1)  # Tab index 1 = Setup: Observation Sites
+            )
+            self.status_layout.addWidget(warning_widget)
+            has_warnings = True
+
         if not telescopes:
-            warnings.append("⚠️  No telescopes added")
+            warning_widget = self._create_warning_widget(
+                "⚠️  No telescopes added",
+                "Add Telescope",
+                lambda: self._switch_to_tab(2)  # Tab index 2 = Setup: Equipment
+            )
+            self.status_layout.addWidget(warning_widget)
+            has_warnings = True
+
         if not eyepieces:
-            warnings.append("⚠️  No eyepieces added")
+            warning_widget = self._create_warning_widget(
+                "⚠️  No eyepieces added",
+                "Add Eyepiece",
+                lambda: self._switch_to_tab(2)  # Tab index 2 = Setup: Equipment
+            )
+            self.status_layout.addWidget(warning_widget)
+            has_warnings = True
 
-        if warnings:
-            status_text = "\n".join(warnings) + "\n\nVisit the Setup tabs to configure your equipment and sites."
-            self.status_label.setStyleSheet("color: #ff9800;")
-        else:
-            status_text = "✓ Setup complete! You can now import observation data."
-            self.status_label.setStyleSheet("color: #4caf50;")
+        if not has_warnings:
+            success_label = QLabel("✓ Setup complete! You can now import observation data.")
+            success_label.setStyleSheet("color: #4caf50;")
+            self.status_layout.addWidget(success_label)
 
-        self.status_label.setText(status_text)
+    def _switch_to_tab(self, tab_index: int):
+        """Switch to the specified tab in the parent tab widget"""
+        if self.tab_widget:
+            self.tab_widget.setCurrentIndex(tab_index)
 
-    def populate_table(self, data: ScoredCelestialsList):
+    def _create_warning_widget(self, message: str, button_text: str, callback) -> QWidget:
+        """Creates a warning message with an action button"""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 5, 0, 5)
+
+        label = QLabel(message)
+        label.setStyleSheet("color: #ff9800;")
+        layout.addWidget(label)
+
+        button = QPushButton(button_text)
+        button.setMaximumWidth(150)
+        button.clicked.connect(callback)
+        layout.addWidget(button)
+
+        layout.addStretch()
+
+        return widget
+
+    def populate_table(self, data: ScoredCelestialsList, data_source: str = ""):
         # Sort by normalized score (descending - best targets first)
         sorted_data = sorted(data, key=lambda x: x.observability_score.normalized_score, reverse=True)
 
         # Clear existing rows
         self.table.setRowCount(0)
+
+        # Show table and hide empty state when we have data
+        if sorted_data:
+            self.empty_state_label.hide()
+            self.table.show()
+
+            # Update and show data source indicator
+            if data_source:
+                self.data_source_label.setText(f"📂 {data_source}")
+                self.data_source_label.show()
 
         for i, celestial_object in enumerate(sorted_data):
             self.table.insertRow(i)
