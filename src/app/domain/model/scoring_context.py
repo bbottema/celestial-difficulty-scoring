@@ -14,6 +14,7 @@ class ScoringContext:
     eyepiece: Optional[Eyepiece]
     observation_site: Optional[ObservationSite]
     altitude: float  # Object's current altitude in degrees
+    weather: Optional[dict] = None  # Weather conditions: {'condition': str, 'cloud_cover': int}
 
     def has_equipment(self) -> bool:
         """Check if minimum required equipment is present for scoring"""

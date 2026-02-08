@@ -112,25 +112,24 @@ return (magnitude_factor *
 
 ---
 
-### 6. **INCOMPLETE: Weather Not Wired to Scoring**
+### 6. ✅ **FIXED: Weather Now Wired to Scoring**
 
-**Location:** `src/app/ui/main_window/observation_data/observation_data_component.py:365`
+**Location:** `src/app/domain/services/strategies.py`
 
-**Problem:** Weather dropdown exists in UI but selected value not passed to `ObservabilityCalculationService`.
+**Problem:** ~~Weather dropdown exists in UI but selected value not passed to `ObservabilityCalculationService`.~~ **FIXED!**
 
-**Current Code:**
-```python
-scored_celestial_objects = self.observability_calculation_service.score_celestial_objects(
-    celestial_objects, telescope, eyepiece, site)
-# Missing: weather parameter!
-```
+**What Was Fixed:**
+- ✅ Added `weather` parameter to `ScoringContext`
+- ✅ Added `weather` parameter to `ObservabilityCalculationService.score_celestial_object()`
+- ✅ Implemented `_calculate_weather_factor()` as module-level function
+- ✅ Integrated weather factor into all three scoring strategies
+- ✅ Weather tests now passing (6/7 tests)
 
-**Fix:**
-- Add weather parameter to service methods
-- Add weather to ScoringContext
-- Add weather_factor to strategies (cloud cover → severe penalty)
+**Remaining Issue:**
+- 🔴 **Magic numbers everywhere** - hardcoded thresholds (100, 75, 50, 25) and factors (0.05, 0.25, 0.50, 0.75)
+- 🔴 **See Phase 7** for comprehensive magic number cleanup
 
-**Priority:** 🔴 CRITICAL - Half-implemented feature confuses users
+**Priority:** ✅ COMPLETE (but needs Phase 7 refactor for readability)
 
 ---
 
@@ -677,20 +676,196 @@ def test_sun_always_ranks_highest():
     - Test with real astronomical databases
     - Validate scores against expert observations
 
-### Phase 7: Advanced Features (Future)
+### Phase 7: Code Quality - Eliminate Magic Numbers (Week 7)
+**Goal:** Replace ALL magic numbers with named constants (Uncle Bob would approve!)
+
+20. 🔴 **Extract weather threshold constants**
+    - File: `src/app/utils/scoring_constants.py` (new file)
+    - Replace hardcoded thresholds in `_calculate_weather_factor()`:
+      ```python
+      # BEFORE (current mess):
+      if cloud_cover >= 100:
+          return 0.05  # What does 0.05 mean? Why 0.05?
+      elif cloud_cover >= 75:
+          return 0.25  # Magic!
+
+      # AFTER (readable):
+      WEATHER_CLOUD_COVER_OVERCAST = 100
+      WEATHER_CLOUD_COVER_MOSTLY_CLOUDY = 75
+      WEATHER_CLOUD_COVER_PARTLY_CLOUDY = 50
+      WEATHER_CLOUD_COVER_FEW_CLOUDS = 25
+
+      WEATHER_FACTOR_OVERCAST = 0.05  # Nearly impossible to observe
+      WEATHER_FACTOR_MOSTLY_CLOUDY = 0.25  # 75% reduction
+      WEATHER_FACTOR_PARTLY_CLOUDY = 0.50  # 50% reduction
+      WEATHER_FACTOR_FEW_CLOUDS = 0.75  # 25% reduction
+      WEATHER_FACTOR_CLEAR = 1.0  # No penalty
+
+      if cloud_cover >= WEATHER_CLOUD_COVER_OVERCAST:
+          return WEATHER_FACTOR_OVERCAST
+      elif cloud_cover >= WEATHER_CLOUD_COVER_MOSTLY_CLOUDY:
+          return WEATHER_FACTOR_MOSTLY_CLOUDY
+      # etc...
+      ```
+
+21. 🔴 **Extract altitude threshold constants**
+    - Replace hardcoded altitude thresholds:
+      ```python
+      # BEFORE:
+      if altitude >= 30:
+          return 1.0  # What's special about 30?
+      elif altitude >= 20:
+          return 0.85  # Why 0.85?
+
+      # AFTER:
+      ALTITUDE_OPTIMAL_MIN = 30  # Degrees - minimal atmospheric distortion
+      ALTITUDE_GOOD_MIN = 20  # Degrees - acceptable viewing
+      ALTITUDE_POOR_MIN = 10  # Degrees - significant atmospheric effects
+
+      ALTITUDE_FACTOR_OPTIMAL = 1.0  # No atmospheric penalty
+      ALTITUDE_FACTOR_GOOD = 0.85  # 15% atmospheric reduction
+      ALTITUDE_FACTOR_POOR = 0.65  # 35% atmospheric reduction
+      ALTITUDE_FACTOR_VERY_POOR = 0.4  # 60% atmospheric reduction
+      ```
+
+22. 🔴 **Extract magnification threshold constants**
+    - Replace planetary magnification magic numbers:
+      ```python
+      # BEFORE:
+      if 150 <= magnification <= 300:
+          return 1.2  # Bonus for... what exactly?
+      elif magnification < 50:
+          return 0.7  # Why 50? Why 0.7?
+
+      # AFTER:
+      MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 150  # Minimum for planetary detail
+      MAGNIFICATION_PLANETARY_OPTIMAL_MAX = 300  # Maximum before seeing degrades
+      MAGNIFICATION_PLANETARY_TOO_LOW = 50  # Insufficient for detail
+      MAGNIFICATION_LARGE_OBJECT_MAX = 50  # Maximum before FOV too narrow
+
+      MAGNIFICATION_FACTOR_OPTIMAL = 1.2  # 20% bonus for ideal magnification
+      MAGNIFICATION_FACTOR_ACCEPTABLE = 1.0  # No bonus/penalty
+      MAGNIFICATION_FACTOR_TOO_LOW = 0.7  # 30% penalty for insufficient mag
+      MAGNIFICATION_FACTOR_TOO_HIGH = 0.6  # 40% penalty for excessive mag
+      ```
+
+23. 🔴 **Extract aperture threshold constants**
+    - Replace aperture comparison magic numbers:
+      ```python
+      # BEFORE:
+      if aperture >= 200:
+          return 1.3  # Why 200mm? Why 1.3x?
+      elif aperture >= 100:
+          return 1.1
+
+      # AFTER:
+      APERTURE_LARGE = 200  # mm - professional/serious amateur range
+      APERTURE_MEDIUM = 100  # mm - standard amateur range
+      APERTURE_SMALL = 70  # mm - beginner range
+
+      APERTURE_FACTOR_LARGE = 1.3  # 30% bonus for light gathering
+      APERTURE_FACTOR_MEDIUM = 1.1  # 10% bonus
+      APERTURE_FACTOR_SMALL = 1.0  # No bonus
+      APERTURE_FACTOR_INSUFFICIENT = 0.8  # 20% penalty for tiny scope
+      ```
+
+24. 🔴 **Extract light pollution penalty constants**
+    - Replace Bortle scale multipliers:
+      ```python
+      # BEFORE:
+      penalty_per_bortle = 0.10  # What does this represent?
+
+      # AFTER:
+      LIGHT_POLLUTION_PENALTY_PER_BORTLE = 0.10  # 10% reduction per Bortle level
+      LIGHT_POLLUTION_DEFAULT_BORTLE = 5  # Suburban baseline
+
+      # Better yet, use limiting magnitude mapping:
+      BORTLE_TO_LIMITING_MAGNITUDE = {
+          1: 7.6, 2: 7.1, 3: 6.6, 4: 6.1, 5: 5.6,
+          6: 5.1, 7: 4.6, 8: 4.1, 9: 3.6
+      }
+      ```
+
+25. 🔴 **Extract equipment penalty constants**
+    - Replace "no equipment" magic penalties:
+      ```python
+      # BEFORE:
+      return 0.5  # Why half? Why not 0.3 or 0.7?
+      return 0.3  # Different penalty? Why?
+
+      # AFTER:
+      EQUIPMENT_PENALTY_BRIGHT_OBJECTS = 0.5  # 50% - bright objects visible naked eye
+      EQUIPMENT_PENALTY_MEDIUM_OBJECTS = 0.3  # 70% - medium objects need equipment
+      EQUIPMENT_PENALTY_FAINT_OBJECTS = 0.1  # 90% - faint objects nearly impossible
+      ```
+
+26. 🔴 **Extract normalization constants**
+    - Replace score normalization magic:
+      ```python
+      # BEFORE:
+      base_score = (0.4 * magnitude_score) + (0.6 * size_score)  # Why 40/60 split?
+      base_score = min(base_score, max_observable_score) / 10  # Why divide by 10?
+
+      # AFTER:
+      WEIGHT_MAGNITUDE_LARGE_OBJECTS = 0.4  # 40% weight - size matters more
+      WEIGHT_SIZE_LARGE_OBJECTS = 0.6  # 60% weight - large objects prioritize size
+
+      WEIGHT_MAGNITUDE_COMPACT_OBJECTS = 0.7  # 70% weight - magnitude dominant
+      WEIGHT_SIZE_COMPACT_OBJECTS = 0.3  # 30% weight
+
+      NORMALIZATION_DIVISOR = 10  # Scale to 0-1 range
+      ```
+
+27. 🔴 **Document constant derivations**
+    - Add comprehensive docstrings to `scoring_constants.py`:
+      ```python
+      # Weather thresholds based on meteorological standards
+      WEATHER_CLOUD_COVER_OVERCAST = 100  # percent
+      """
+      100% cloud cover = overcast conditions.
+      Based on meteorological standards where 87.5%+ coverage = overcast.
+      Factor of 0.05 allows only brightest objects (Sun/Moon) to be barely visible.
+      """
+
+      # Altitude thresholds based on atmospheric physics
+      ALTITUDE_OPTIMAL_MIN = 30  # degrees
+      """
+      30° altitude provides optimal viewing with minimal atmospheric distortion.
+      Below 30°, airmass increases: airmass ≈ 1/sin(altitude)
+      At 30°: airmass = 2.0 (double atmosphere to penetrate)
+      At 20°: airmass = 2.9 (triple atmosphere)
+      """
+      ```
+
+28. 🔴 **Audit entire codebase for remaining magic numbers**
+    - Search patterns to find:
+      - Bare numeric literals in conditionals: `if x >= 100:`
+      - Bare numeric literals in return statements: `return 0.85`
+      - Bare numeric literals in calculations: `score * 1.2`
+    - Exceptions allowed:
+      - Mathematical constants: `0`, `1`, `2` (when used for basic arithmetic)
+      - Obvious percentages: `/ 100` (but prefer constant for clarity)
+      - Array indices: `[0]`, `[1]`
+    - Create `MAGIC_NUMBER_AUDIT.md` documenting:
+      - Every magic number found
+      - Its location
+      - Its meaning
+      - Proposed constant name
+
+### Phase 8: Advanced Features (Future)
 **Goal:** Add surface brightness and other advanced factors
 
-20. 🔮 **Surface brightness calculation**
+29. 🔮 **Surface brightness calculation**
     - Formula: `surface_brightness = magnitude + 2.5 * log10(size_arcmin²)`
     - Low surface brightness objects harder to see even if bright total magnitude
     - Add to LargeFaintObjectScoringStrategy
 
-21. 🔮 **Atmospheric extinction**
+30. 🔮 **Atmospheric extinction**
     - More sophisticated altitude model
     - Include zenith extinction coefficient
     - Wavelength-dependent effects
 
-22. 🔮 **Telescope-specific optimization**
+31. 🔮 **Telescope-specific optimization**
     - Obstruction ratio (central obstruction in reflectors)
     - Optical quality factor
     - Coating reflectivity

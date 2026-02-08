@@ -14,30 +14,34 @@ class ObservabilityCalculationService:
                                 celestial_objects: CelestialsList,
                                 telescope: Optional[Telescope] = None,
                                 eyepiece: Optional[Eyepiece] = None,
-                                observation_site: Optional[ObservationSite] = None) -> ScoredCelestialsList:
-        return [self.score_celestial_object(celestial_object, telescope, eyepiece, observation_site)
+                                observation_site: Optional[ObservationSite] = None,
+                                weather: Optional[dict] = None) -> ScoredCelestialsList:
+        return [self.score_celestial_object(celestial_object, telescope, eyepiece, observation_site, weather)
                 for celestial_object in celestial_objects]
 
     def score_celestial_object(self,
                                celestial_object: CelestialObject,
                                telescope: Optional[Telescope] = None,
                                eyepiece: Optional[Eyepiece] = None,
-                               observation_site: Optional[ObservationSite] = None) -> ScoredCelestialObject:
+                               observation_site: Optional[ObservationSite] = None,
+                               weather: Optional[dict] = None) -> ScoredCelestialObject:
         return ScoredCelestialObject(celestial_object.name, celestial_object.object_type, celestial_object.magnitude,
                                      celestial_object.size, celestial_object.altitude,
-                                     self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site))
+                                     self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site, weather))
 
     def _calculate_observability_score(self,
                                        celestial_object: CelestialObject,
                                        telescope: Optional[Telescope] = None,
                                        eyepiece: Optional[Eyepiece] = None,
-                                       observation_site: Optional[ObservationSite] = None) -> CelestialObjectScore:
+                                       observation_site: Optional[ObservationSite] = None,
+                                       weather: Optional[dict] = None) -> CelestialObjectScore:
         # Build scoring context with equipment and site data
         context = ScoringContext(
             telescope=telescope,
             eyepiece=eyepiece,
             observation_site=observation_site,
-            altitude=celestial_object.altitude
+            altitude=celestial_object.altitude,
+            weather=weather
         )
 
         strategy = self._determine_scoring_strategy(celestial_object)

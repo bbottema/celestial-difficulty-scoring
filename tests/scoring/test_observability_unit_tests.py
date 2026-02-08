@@ -25,7 +25,7 @@ class TestFixtures:
         return Telescope(
             id=None,
             name="80mm Refractor",
-            type=TelescopeType.REFRACTOR,
+            type=TelescopeType.ACHROMATIC_REFRACTOR,
             aperture=80,
             focal_length=600,
             focal_ratio=7.5

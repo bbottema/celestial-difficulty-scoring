@@ -7,6 +7,32 @@ if TYPE_CHECKING:
     from app.domain.model.scoring_context import ScoringContext
 
 
+def _calculate_weather_factor(context: 'ScoringContext') -> float:
+    """
+    Weather impact on observability.
+    Cloud cover reduces visibility proportionally.
+    Shared across all strategies since weather affects everything equally.
+    """
+    if not context.weather:
+        return 1.0  # No weather data = assume clear
+
+    cloud_cover = context.weather.get('cloud_cover', 0)
+
+    # Cloud cover is 0-100 percentage
+    # 0% = clear (factor 1.0)
+    # 100% = overcast (factor 0.05, nearly impossible)
+    if cloud_cover >= 100:
+        return 0.05  # Overcast - nearly impossible
+    elif cloud_cover >= 75:
+        return 0.25  # Mostly cloudy - very difficult
+    elif cloud_cover >= 50:
+        return 0.50  # Partly cloudy - moderate impact
+    elif cloud_cover >= 25:
+        return 0.75  # Few clouds - minor impact
+    else:
+        return 1.0  # Clear skies
+
+
 class IObservabilityScoringStrategy(ABC):
     @abstractmethod
     def calculate_score(self, celestial_object, context: 'ScoringContext') -> float:
@@ -35,7 +61,10 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         # Altitude factor: atmosphere matters more for planets
         altitude_factor = self._calculate_altitude_factor(context.altitude)
 
-        return base_score * equipment_factor * site_factor * altitude_factor
+        # Weather factor: clouds affect all objects
+        weather_factor = _calculate_weather_factor(context)
+
+        return base_score * equipment_factor * site_factor * altitude_factor * weather_factor
 
     def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
@@ -113,7 +142,10 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         # Altitude factor: higher is better (less atmosphere to penetrate)
         altitude_factor = self._calculate_altitude_factor(context.altitude)
 
-        return base_score * equipment_factor * site_factor * altitude_factor
+        # Weather factor: clouds affect all objects
+        weather_factor = _calculate_weather_factor(context)
+
+        return base_score * equipment_factor * site_factor * altitude_factor * weather_factor
 
     def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
@@ -206,8 +238,8 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
     """
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
-        # Adjust the magnitude score to increase with faintness
-        magnitude_score = max(0, (celestial_object.magnitude - faint_object_magnitude_baseline))
+        # Adjust the magnitude score to increase with brightness (lower magnitude = higher score)
+        magnitude_score = max(0, (faint_object_magnitude_baseline - celestial_object.magnitude))
 
         # Adjust the size score to increase with size
         size_score = min(celestial_object.size / max_deepsky_size, 1)  # Cap the size score at 1
@@ -225,7 +257,10 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         # Altitude factor: higher is better
         altitude_factor = self._calculate_altitude_factor(context.altitude)
 
-        return base_score * equipment_factor * site_factor * altitude_factor
+        # Weather factor: clouds affect all objects
+        weather_factor = _calculate_weather_factor(context)
+
+        return base_score * equipment_factor * site_factor * altitude_factor * weather_factor
 
     def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
