@@ -1,11 +1,8 @@
 from abc import abstractmethod, ABC
-from typing import TYPE_CHECKING
 
+from app.domain.model.scoring_context import ScoringContext
 from app.utils.constants import *
 from app.utils.scoring_constants import *
-
-if TYPE_CHECKING:
-    from app.domain.model.scoring_context import ScoringContext
 
 
 def _calculate_weather_factor(context: 'ScoringContext') -> float:
