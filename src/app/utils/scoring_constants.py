@@ -394,13 +394,14 @@ Friendly preset: slightly higher floor for deep-sky in cities.
 5% minimum - allows some "challenging but possible" ratings for brightest DSOs.
 """
 
-LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.02
+LIGHT_POLLUTION_MIN_FACTOR_LARGE_BASE = 0.02
 """
-Large faint objects become nearly impossible in cities - base value.
+Large faint objects become nearly impossible in cities - reference value (not used in presets).
 Lowered from 0.05 to 0.02 for realism.
 Low surface brightness objects (galaxy halos, faint nebulae, supernova remnants)
 genuinely invisible in Bortle 8-9 regardless of aperture.
 Example: Veil Nebula, California Nebula, outer regions of Andromeda.
+Note: Presets use _FRIENDLY (0.03) or _STRICT (0.00) variants instead.
 """
 
 LIGHT_POLLUTION_MIN_FACTOR_LARGE_FRIENDLY = 0.03

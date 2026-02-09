@@ -6,12 +6,86 @@
 - ✅ Three strategies: Solar System, Deep Sky, Large Faint Objects
 - ✅ All magic numbers extracted to `scoring_constants.py` with full documentation
 - ✅ Weather integration complete
-- ✅ Multi-preset system (Friendly/Strict) implemented
+- ✅ Multi-preset system (Friendly/Strict) implemented with UI selector
 - ✅ Constants validated against astronomical research
 
 **Goal:** Add moon proximity integration and continue improving the scoring system.
 
-**For completed work history, see `NIGHT_SHIFT_PROGRESS.md`**
+---
+
+## Phase 3: Advanced Settings - Custom Preset Overrides 🟢 FUTURE
+
+**Status:** NOT STARTED (Advanced feature, after basic preset selector)
+
+**Goal:** Allow users to create custom presets by overriding individual constants.
+
+**Vision:**
+```
+Settings Tab
+├── Preset Selector: [Friendly Planner ▼]
+└── Advanced Settings (expandable)
+    ├── Weather Factors
+    │   ├── Few Clouds: [0.85] (default: 0.85)
+    │   ├── Partly Cloudy: [0.65] (default: 0.65)
+    │   └── Mostly Cloudy: [0.30] (default: 0.30)
+    ├── Altitude Factors
+    │   └── Very Poor (<20°): [0.45] (default: 0.45)
+    ├── Light Pollution Floors
+    │   ├── Deep-sky minimum: [0.05] (default: 0.05)
+    │   └── Large faint minimum: [0.03] (default: 0.03)
+    └── Aperture Scaling
+        ├── Large bonus: [1.40] (default: 1.40)
+        └── ...
+    [Reset to Preset Defaults]
+    [Save as Custom Preset...]
+```
+
+**Tasks:**
+
+1. **Create CustomPreset model**
+   - Extends `ScoringPreset` with user overrides
+   - Store as dict: `{"weather_factor_partly_cloudy": 0.70, ...}`
+   - Merge with base preset on load
+
+2. **Build advanced settings form**
+   - Group constants by category (Weather, Altitude, Light Pollution, etc.)
+   - Show current value + preset default value
+   - Validation: ensure values are within reasonable ranges
+   - Tooltips explaining what each constant does
+
+3. **Custom preset management**
+   - "Save as Custom Preset" button
+   - User names their custom preset
+   - Saved presets appear in dropdown alongside Friendly/Strict
+   - Delete/rename custom presets
+
+4. **Preset comparison view (optional)**
+   - Side-by-side comparison of Friendly vs Strict
+   - Highlight differences
+   - Help users understand trade-offs
+
+**Architecture:**
+```python
+@dataclass
+class CustomPreset(ScoringPreset):
+    base_preset: str  # "Friendly" or "Strict"
+    overrides: dict[str, float]  # {"weather_factor_partly_cloudy": 0.70}
+
+    def get_value(self, key: str) -> float:
+        return self.overrides.get(key, getattr(base_preset, key))
+```
+
+**Validation Rules:**
+- Weather factors: 0.0 - 1.0
+- Altitude factors: 0.0 - 1.0
+- Light pollution floors: 0.0 - 0.1
+- Aperture factors: 0.5 - 2.0
+
+**User Experience:**
+- Start with preset selection (basic selector already implemented)
+- Advanced users can expand and tweak
+- Changes preview immediately in target list
+- Can always "Reset to Defaults"
 
 ---
 
@@ -46,7 +120,7 @@
 
 ---
 
-## Phase 3: Factor Pipeline Refactor 🟡 OPTIONAL
+## Phase 4: Factor Pipeline Refactor 🟢 FUTURE
 
 **Goal:** Make all scoring factors explicit and visible for debugging.
 
@@ -80,7 +154,7 @@ return (magnitude_factor *
 
 ---
 
-## Phase 4: Limiting Magnitude Model 🟢 FUTURE
+## Phase 5: Limiting Magnitude Model 🟢 FUTURE
 
 **Goal:** Replace arbitrary Bortle penalties with physics-based limiting magnitude model.
 
@@ -107,7 +181,7 @@ factor = 1.0 - (1.0 / (1 + visibility_margin))
 
 ---
 
-## Phase 5: Double Star Splitability 🟢 FUTURE
+## Phase 6: Double Star Splitability 🟢 FUTURE
 
 **Goal:** Score double stars based on whether telescope can split them.
 
