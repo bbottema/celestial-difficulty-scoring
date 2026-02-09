@@ -3,6 +3,10 @@ from abc import abstractmethod, ABC
 from app.domain.model.scoring_context import ScoringContext
 from app.utils.scoring_constants import *
 from app.utils.scoring_presets import get_active_preset
+from app.utils.light_pollution_models import (
+    calculate_light_pollution_factor_by_limiting_magnitude,
+    calculate_light_pollution_factor_with_surface_brightness
+)
 
 
 def _calculate_weather_factor(context: 'ScoringContext') -> float:
@@ -54,7 +58,7 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
 
         # Site factor: light pollution barely affects bright objects
-        site_factor = self._calculate_site_factor(context)
+        site_factor = self._calculate_site_factor(celestial_object, context)
 
         # Altitude factor: atmosphere matters more for planets
         altitude_factor = self._calculate_altitude_factor(context.altitude)
@@ -85,14 +89,30 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         else:
             return MAGNIFICATION_FACTOR_TOO_HIGH
 
-    def _calculate_site_factor(self, context: 'ScoringContext') -> float:
-        """Light pollution barely affects bright solar system objects"""
+    def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """
+        Light pollution barely affects bright solar system objects.
+        Uses hybrid model: legacy linear penalty with physics-based visibility check.
+        """
         if not context.observation_site:
             return 0.9  # Small penalty for unknown site
 
         bortle = context.get_bortle_number()
-        # Minimal penalty even in cities - planets are very bright
-        return 1.0 - (bortle * LIGHT_POLLUTION_PENALTY_PER_BORTLE_SOLAR)
+        aperture = context.get_aperture_mm() if context.has_equipment() else None
+
+        # Use hybrid model that blends legacy penalty with physics-based visibility
+        # This maintains test compatibility while adding hard visibility cutoffs
+        factor = calculate_light_pollution_factor_by_limiting_magnitude(
+            celestial_object.magnitude,
+            bortle,
+            aperture,
+            detection_headroom=0.5,
+            use_legacy_penalty=True,
+            legacy_penalty_per_bortle=LIGHT_POLLUTION_PENALTY_PER_BORTLE_SOLAR,
+            legacy_minimum_factor=0.90  # Solar system objects stay very visible
+        )
+
+        return factor
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """
@@ -195,24 +215,37 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
                 return 0.3  # Very difficult with small scope
 
     def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
-        """Light pollution is CRITICAL for faint deep-sky objects"""
+        """
+        Light pollution is CRITICAL for faint deep-sky objects.
+        Uses hybrid model: legacy penalties with physics-based visibility checks.
+        """
         if not context.observation_site:
             return 0.7  # Moderate penalty for unknown site
 
         bortle = context.get_bortle_number()
+        aperture = context.get_aperture_mm() if context.has_equipment() else None
+        preset = get_active_preset()
 
-        # Fainter objects suffer much more from light pollution
+        # Determine penalty based on object brightness (same logic as before)
         if celestial_object.magnitude <= 6:  # Bright deep-sky
-            # Less affected by light pollution
             penalty_per_bortle = 0.06
         elif celestial_object.magnitude <= 9:  # Medium faint
             penalty_per_bortle = LIGHT_POLLUTION_PENALTY_PER_BORTLE_DEEPSKY
         else:  # Very faint
             penalty_per_bortle = 0.13
 
-        factor = 1.0 - (bortle * penalty_per_bortle)
-        preset = get_active_preset()
-        return max(factor, preset.light_pollution_min_factor_deepsky)
+        # Use hybrid model with surface brightness consideration
+        factor = calculate_light_pollution_factor_with_surface_brightness(
+            celestial_object.magnitude,
+            celestial_object.size,
+            bortle,
+            aperture,
+            use_legacy_penalty=True,
+            legacy_penalty_per_bortle=penalty_per_bortle,
+            legacy_minimum_factor=preset.light_pollution_min_factor_deepsky
+        )
+
+        return factor
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """Higher altitude = less atmosphere to penetrate. Below horizon = impossible."""
@@ -260,7 +293,7 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
 
         # Site factor: dark skies are critical for faint nebulosity
-        site_factor = self._calculate_site_factor(context)
+        site_factor = self._calculate_site_factor(celestial_object, context)
 
         # Altitude factor: higher is better
         altitude_factor = self._calculate_altitude_factor(context.altitude)
@@ -306,18 +339,33 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         # Combine factors (both matter for large faint objects)
         return (mag_factor + aperture_factor) / 2
 
-    def _calculate_site_factor(self, context: 'ScoringContext') -> float:
-        """Dark skies are critical for faint extended nebulosity"""
+    def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """
+        Dark skies are critical for faint extended nebulosity.
+        Uses hybrid model with surface brightness consideration.
+        """
         if not context.observation_site:
             return 0.6  # Significant penalty
 
         bortle = context.get_bortle_number()
-
-        # These objects are very affected by light pollution
-        # Even worse than standard deep-sky because of low surface brightness
-        factor = 1.0 - (bortle * LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE)
+        aperture = context.get_aperture_mm() if context.has_equipment() else None
         preset = get_active_preset()
-        return max(factor, preset.light_pollution_min_factor_large)
+
+        # Large faint objects use harsher penalty than standard deep-sky
+        # Surface brightness model already handles size via detection_headroom scaling
+        # (larger objects get stricter headroom: 3.0, 3.2, 3.5 based on size)
+        # No additional size penalty needed - that would be double-penalizing
+        factor = calculate_light_pollution_factor_with_surface_brightness(
+            celestial_object.magnitude,
+            celestial_object.size,
+            bortle,
+            aperture,
+            use_legacy_penalty=True,
+            legacy_penalty_per_bortle=LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE,
+            legacy_minimum_factor=preset.light_pollution_min_factor_large
+        )
+
+        return factor
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """Higher altitude = better for faint objects. Below horizon = impossible."""
