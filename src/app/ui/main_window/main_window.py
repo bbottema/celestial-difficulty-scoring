@@ -9,6 +9,7 @@ from app.ui.main_window.equipment_management.equipment_management_component impo
 from app.ui.main_window.observation_data.observation_data_component import ObservationDataComponent
 from app.ui.main_window.observation_preferences.observation_preferences_component import ObservationPreferencesComponent
 from app.ui.main_window.observation_sites.observation_sites_component import ObservationSitesComponent
+from app.utils.scoring_presets import get_active_preset
 
 
 class MainWindow(QMainWindow):
@@ -34,11 +35,16 @@ class MainWindow(QMainWindow):
         else:
             self.restoreGeometry(geometry)
 
-        self.setWindowTitle('Celestial Object Observability')
+        self.update_window_title()
         self.init_ui()
 
     def cleanup_event_filter(self):
         QApplication.instance().removeEventFilter(self.eventFilter)
+
+    def update_window_title(self):
+        """Update window title to show active scoring preset."""
+        active_preset = get_active_preset()
+        self.setWindowTitle(f'Celestial Object Observability - {active_preset.name}')
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):
@@ -52,6 +58,11 @@ class MainWindow(QMainWindow):
 
         # Pass tab widget reference to observation data component for navigation
         self.observation_data_component.set_tab_widget(self.tabs)
+
+        # Connect to preference changes to update title
+        self.observation_preferences_component.preset_combo.currentTextChanged.connect(
+            lambda: self.update_window_title()
+        )
 
     def closeEvent(self, event):
         # Save the current geometry of the window before closing
