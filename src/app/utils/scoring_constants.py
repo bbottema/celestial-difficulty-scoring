@@ -333,8 +333,66 @@ Objects > 30 arcmin use LargeFaintObjectScoringStrategy.
 Examples: Andromeda (190'), Pleiades (110'), Veil Nebula (180')
 """
 
-MAX_DEEPSKY_SIZE = 300  # arcminutes
-"""Maximum expected size for deep-sky objects (for normalization)."""
+MAX_DEEPSKY_SIZE_COMPACT = 200  # arcminutes
+"""
+Maximum expected size for compact deep-sky objects (for normalization in DeepSkyScoringStrategy).
+Most deep-sky objects (galaxies, nebulae, clusters) fall within this range.
+Examples: M42 Orion Nebula (~65'), M13 Hercules Cluster (~20'), M51 Whirlpool (~11')
+"""
 
-MAX_SOLAR_SIZE = 35  # arcminutes
-"""Maximum expected angular size for solar system objects (Sun/Moon at ~31')."""
+MAX_DEEPSKY_SIZE_LARGE = 300  # arcminutes
+"""
+Maximum expected size for large extended deep-sky objects (for normalization in LargeFaintObjectScoringStrategy).
+Used for very large objects like supernova remnants and large nebula complexes.
+Examples: Veil Nebula complex (~180'), North America Nebula (~120')
+"""
+
+MAX_SOLAR_SIZE = 31  # arcminutes
+"""
+Maximum angular size for solar system objects (Sun and Moon).
+Both Sun and Moon have angular diameter of approximately 31 arcminutes (0.5 degrees).
+Used for normalization in SolarSystemScoringStrategy.
+"""
+
+# ==============================================================================
+# REFERENCE OBJECTS AND BASELINE VALUES
+# ==============================================================================
+
+SUN_APPARENT_MAGNITUDE = -26.74
+"""Apparent magnitude of the Sun - brightest object visible from Earth."""
+
+SUN_ANGULAR_SIZE = 31.00  # arcminutes
+"""Angular size of the Sun at mean Earth-Sun distance."""
+
+SUN_ALTITUDE_FOR_BASELINE = 90.00  # degrees
+"""Reference altitude (zenith) for baseline calculations."""
+
+SIRIUS_APPARENT_MAGNITUDE = -1.46
+"""Apparent magnitude of Sirius - brightest star in night sky."""
+
+SIRIUS_ANGULAR_SIZE = 0.0001  # arcminutes
+"""Angular size of Sirius - point source for practical purposes."""
+
+# Pre-calculated normalization values for performance
+SUN_MAGNITUDE_SCORE = 49659232145.03358
+"""
+Pre-calculated magnitude score for the Sun.
+Formula: 10 ** (-0.4 * SUN_APPARENT_MAGNITUDE)
+Used to normalize solar system object brightness to 0-25 scale.
+"""
+
+SIRIUS_DEEPSKY_MAGNITUDE_SCORE = 0.015275660582380723
+"""
+Pre-calculated magnitude score for Sirius with deep-sky offset.
+Formula: 10 ** (-0.4 * (SIRIUS_APPARENT_MAGNITUDE + MAGNITUDE_OFFSET_DEEPSKY))
+Used to normalize deep-sky object brightness to 0-25 scale.
+"""
+
+MAX_OBSERVABLE_SCORE = 25
+"""
+Maximum score value for base observability calculations.
+Final scores are normalized to 0-10 range after applying all factors.
+"""
+
+OPTIMAL_ALTITUDE = 90  # degrees
+"""Optimal observing altitude (zenith) - looking straight up."""

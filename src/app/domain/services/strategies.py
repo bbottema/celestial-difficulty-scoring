@@ -1,7 +1,6 @@
 from abc import abstractmethod, ABC
 
 from app.domain.model.scoring_context import ScoringContext
-from app.utils.constants import *
 from app.utils.scoring_constants import *
 
 
@@ -113,11 +112,11 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
     # normalize to 0-10 scale
     @staticmethod
     def _normalize_magnitude(score) -> float:
-        return (score / sun_solar_magnitude_score) * max_observable_score
+        return (score / SUN_MAGNITUDE_SCORE) * MAX_OBSERVABLE_SCORE
 
     @staticmethod
     def _normalize_size(score) -> float:
-        return (score / max_solar_size) * max_observable_score
+        return (score / MAX_SOLAR_SIZE) * MAX_OBSERVABLE_SCORE
 
 
 class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
@@ -225,11 +224,11 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
 
     @staticmethod
     def _normalize_magnitude(score) -> float:
-        return (score / sirius_deepsky_magnitude_score) * max_observable_score
+        return (score / SIRIUS_DEEPSKY_MAGNITUDE_SCORE) * MAX_OBSERVABLE_SCORE
 
     @staticmethod
     def _normalize_size(score) -> float:
-        return (score / max_deepsky_size) * max_observable_score
+        return (score / MAX_DEEPSKY_SIZE_COMPACT) * MAX_OBSERVABLE_SCORE
 
 
 class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
@@ -243,11 +242,11 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         magnitude_score = max(0, (FAINT_OBJECT_MAGNITUDE_BASELINE - celestial_object.magnitude))
 
         # Adjust the size score to increase with size
-        size_score = min(celestial_object.size / MAX_DEEPSKY_SIZE, 1)  # Cap the size score at 1
+        size_score = min(celestial_object.size / MAX_DEEPSKY_SIZE_LARGE, 1)  # Cap the size score at 1
 
         # Combine scores
         base_score = (WEIGHT_MAGNITUDE_LARGE_OBJECTS * magnitude_score) + (WEIGHT_SIZE_LARGE_OBJECTS * size_score)
-        base_score = min(base_score, max_observable_score) / NORMALIZATION_DIVISOR
+        base_score = min(base_score, MAX_OBSERVABLE_SCORE) / NORMALIZATION_DIVISOR
 
         # Equipment factor: need wide field of view (low magnification)
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -273,7 +272,7 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
 
         magnification = context.get_magnification()
 
-        # For large objects (>60 arcmin), we want low magnification
+        # For large objects (>30 arcmin), we want low magnification
         # Optimal: 30-80x for wide field
         if MAGNIFICATION_LARGE_OBJECT_OPTIMAL_MAX <= magnification <= 80:
             return APERTURE_FACTOR_LARGE  # Reuse as bonus for wide field
