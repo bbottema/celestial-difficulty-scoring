@@ -2,6 +2,7 @@ from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
 from app.utils.constants import *
+from app.utils.scoring_constants import *
 
 if TYPE_CHECKING:
     from app.domain.model.scoring_context import ScoringContext
@@ -14,23 +15,20 @@ def _calculate_weather_factor(context: 'ScoringContext') -> float:
     Shared across all strategies since weather affects everything equally.
     """
     if not context.weather:
-        return 1.0  # No weather data = assume clear
+        return WEATHER_FACTOR_CLEAR  # No weather data = assume clear
 
     cloud_cover = context.weather.get('cloud_cover', 0)
 
-    # Cloud cover is 0-100 percentage
-    # 0% = clear (factor 1.0)
-    # 100% = overcast (factor 0.05, nearly impossible)
-    if cloud_cover >= 100:
-        return 0.05  # Overcast - nearly impossible
-    elif cloud_cover >= 75:
-        return 0.25  # Mostly cloudy - very difficult
-    elif cloud_cover >= 50:
-        return 0.50  # Partly cloudy - moderate impact
-    elif cloud_cover >= 25:
-        return 0.75  # Few clouds - minor impact
+    if cloud_cover >= WEATHER_CLOUD_COVER_OVERCAST:
+        return WEATHER_FACTOR_OVERCAST
+    elif cloud_cover >= WEATHER_CLOUD_COVER_MOSTLY_CLOUDY:
+        return WEATHER_FACTOR_MOSTLY_CLOUDY
+    elif cloud_cover >= WEATHER_CLOUD_COVER_PARTLY_CLOUDY:
+        return WEATHER_FACTOR_PARTLY_CLOUDY
+    elif cloud_cover >= WEATHER_CLOUD_COVER_FEW_CLOUDS:
+        return WEATHER_FACTOR_FEW_CLOUDS
     else:
-        return 1.0  # Clear skies
+        return WEATHER_FACTOR_CLEAR
 
 
 class IObservabilityScoringStrategy(ABC):
@@ -72,19 +70,20 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         Target: 150-300x for planets
         """
         if not context.has_equipment():
-            return 0.5  # Significant penalty without equipment
+            return EQUIPMENT_PENALTY_SOLAR_SYSTEM
 
         magnification = context.get_magnification()
 
-        # Optimal magnification range for planets: 150-300x
-        if 150 <= magnification <= 300:
-            return 1.2  # Bonus for ideal magnification
-        elif 100 <= magnification < 150 or 300 < magnification <= 400:
-            return 1.0  # Acceptable magnification
-        elif 50 <= magnification < 100:
-            return 0.8  # Low magnification - less detail
+        # Optimal magnification range for planets
+        if MAGNIFICATION_PLANETARY_OPTIMAL_MIN <= magnification <= MAGNIFICATION_PLANETARY_OPTIMAL_MAX:
+            return MAGNIFICATION_FACTOR_OPTIMAL
+        elif 100 <= magnification < MAGNIFICATION_PLANETARY_OPTIMAL_MIN or \
+             MAGNIFICATION_PLANETARY_OPTIMAL_MAX < magnification <= 400:
+            return MAGNIFICATION_FACTOR_ACCEPTABLE
+        elif MAGNIFICATION_PLANETARY_TOO_LOW <= magnification < 100:
+            return 0.8  # Moderate penalty
         else:
-            return 0.6  # Too low or too high
+            return MAGNIFICATION_FACTOR_TOO_HIGH
 
     def _calculate_site_factor(self, context: 'ScoringContext') -> float:
         """Light pollution barely affects bright solar system objects"""
@@ -93,23 +92,26 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
 
         bortle = context.get_bortle_number()
         # Minimal penalty even in cities - planets are very bright
-        return 1.0 - (bortle * 0.01)  # Max 9% penalty in Bortle 9
+        return 1.0 - (bortle * LIGHT_POLLUTION_PENALTY_PER_BORTLE_SOLAR)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """
         Atmospheric distortion affects planets significantly
         Optimal: 30-80 degrees
+        Below horizon: impossible to observe
         """
-        if altitude >= 80:
-            return 0.95  # Near zenith - some distortion
-        elif altitude >= 30:
-            return 1.0  # Optimal viewing
-        elif altitude >= 20:
-            return 0.85  # More atmosphere
-        elif altitude >= 10:
-            return 0.65  # Significant atmosphere
+        if altitude < ALTITUDE_BELOW_HORIZON:
+            return ALTITUDE_FACTOR_BELOW_HORIZON
+        elif altitude >= ALTITUDE_ZENITH_MAX:
+            return ALTITUDE_FACTOR_NEAR_ZENITH
+        elif altitude >= ALTITUDE_OPTIMAL_MIN_SOLAR:
+            return ALTITUDE_FACTOR_OPTIMAL
+        elif altitude >= ALTITUDE_GOOD_MIN_SOLAR:
+            return ALTITUDE_FACTOR_GOOD_SOLAR
+        elif altitude >= ALTITUDE_POOR_MIN_SOLAR:
+            return ALTITUDE_FACTOR_POOR_SOLAR
         else:
-            return 0.4  # Too low - heavy atmosphere
+            return ALTITUDE_FACTOR_VERY_POOR_SOLAR
 
     # normalize to 0-10 scale
     @staticmethod
@@ -153,7 +155,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         More aperture = see fainter objects
         """
         if not context.has_equipment():
-            return 0.3  # Major penalty - faint objects need equipment
+            return EQUIPMENT_PENALTY_DEEPSKY
 
         aperture = context.get_aperture_mm()
 
@@ -161,31 +163,31 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         # Faint objects benefit much more from large aperture
         if celestial_object.magnitude <= 6:  # Bright deep-sky
             # Even small scopes work
-            if aperture >= 100:
-                return 1.1
-            elif aperture >= 70:
-                return 1.0
+            if aperture >= APERTURE_MEDIUM:
+                return APERTURE_FACTOR_MEDIUM
+            elif aperture >= APERTURE_SMALL:
+                return APERTURE_FACTOR_SMALL
             else:
-                return 0.8
+                return APERTURE_FACTOR_TINY
         elif celestial_object.magnitude <= 9:  # Medium faint
             # Need decent aperture
-            if aperture >= 200:
-                return 1.3
+            if aperture >= APERTURE_LARGE:
+                return APERTURE_FACTOR_LARGE
             elif aperture >= 150:
-                return 1.1
-            elif aperture >= 100:
+                return APERTURE_FACTOR_MEDIUM
+            elif aperture >= APERTURE_MEDIUM:
                 return 0.9
             else:
                 return 0.6
         else:  # Very faint (>9 mag)
             # Really need large aperture
             if aperture >= 250:
-                return 1.4
-            elif aperture >= 200:
-                return 1.2
+                return 1.4  # Extra bonus for very large scopes on faint targets
+            elif aperture >= APERTURE_LARGE:
+                return MAGNIFICATION_FACTOR_OPTIMAL
             elif aperture >= 150:
                 return 0.9
-            elif aperture >= 100:
+            elif aperture >= APERTURE_MEDIUM:
                 return 0.6
             else:
                 return 0.3  # Very difficult with small scope
@@ -202,25 +204,27 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             # Less affected by light pollution
             penalty_per_bortle = 0.06
         elif celestial_object.magnitude <= 9:  # Medium faint
-            penalty_per_bortle = 0.10
+            penalty_per_bortle = LIGHT_POLLUTION_PENALTY_PER_BORTLE_DEEPSKY
         else:  # Very faint
             penalty_per_bortle = 0.13
 
         factor = 1.0 - (bortle * penalty_per_bortle)
-        return max(factor, 0.1)  # Never go below 0.1
+        return max(factor, LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
-        """Higher altitude = less atmosphere to penetrate"""
-        if altitude >= 60:
-            return 1.0  # Optimal
-        elif altitude >= 40:
-            return 0.95
-        elif altitude >= 30:
-            return 0.85
-        elif altitude >= 20:
-            return 0.70
+        """Higher altitude = less atmosphere to penetrate. Below horizon = impossible."""
+        if altitude < ALTITUDE_BELOW_HORIZON:
+            return ALTITUDE_FACTOR_BELOW_HORIZON
+        elif altitude >= ALTITUDE_OPTIMAL_MIN_DEEPSKY:
+            return ALTITUDE_FACTOR_OPTIMAL
+        elif altitude >= ALTITUDE_GOOD_MIN_DEEPSKY:
+            return ALTITUDE_FACTOR_GOOD_DEEPSKY
+        elif altitude >= ALTITUDE_FAIR_MIN_DEEPSKY:
+            return ALTITUDE_FACTOR_FAIR_DEEPSKY
+        elif altitude >= ALTITUDE_POOR_MIN_DEEPSKY:
+            return ALTITUDE_FACTOR_POOR_DEEPSKY
         else:
-            return 0.5  # Low altitude - difficult
+            return ALTITUDE_FACTOR_VERY_POOR_DEEPSKY
 
     @staticmethod
     def _normalize_magnitude(score) -> float:
@@ -239,14 +243,14 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
         # Adjust the magnitude score to increase with brightness (lower magnitude = higher score)
-        magnitude_score = max(0, (faint_object_magnitude_baseline - celestial_object.magnitude))
+        magnitude_score = max(0, (FAINT_OBJECT_MAGNITUDE_BASELINE - celestial_object.magnitude))
 
         # Adjust the size score to increase with size
-        size_score = min(celestial_object.size / max_deepsky_size, 1)  # Cap the size score at 1
+        size_score = min(celestial_object.size / MAX_DEEPSKY_SIZE, 1)  # Cap the size score at 1
 
         # Combine scores
-        base_score = (0.4 * magnitude_score) + (0.6 * size_score)
-        base_score = min(base_score, max_observable_score) / 10
+        base_score = (WEIGHT_MAGNITUDE_LARGE_OBJECTS * magnitude_score) + (WEIGHT_SIZE_LARGE_OBJECTS * size_score)
+        base_score = min(base_score, max_observable_score) / NORMALIZATION_DIVISOR
 
         # Equipment factor: need wide field of view (low magnification)
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -268,20 +272,21 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         Need to fit the entire object in the eyepiece.
         """
         if not context.has_equipment():
-            return 0.4  # Significant penalty
+            return EQUIPMENT_PENALTY_LARGE_FAINT
 
         magnification = context.get_magnification()
 
         # For large objects (>60 arcmin), we want low magnification
         # Optimal: 30-80x for wide field
-        if 30 <= magnification <= 80:
-            return 1.3  # Bonus for wide field
-        elif 20 <= magnification < 30 or 80 < magnification <= 120:
-            return 1.0  # Acceptable
+        if MAGNIFICATION_LARGE_OBJECT_OPTIMAL_MAX <= magnification <= 80:
+            return APERTURE_FACTOR_LARGE  # Reuse as bonus for wide field
+        elif 20 <= magnification < MAGNIFICATION_LARGE_OBJECT_OPTIMAL_MAX or \
+             80 < magnification <= 120:
+            return MAGNIFICATION_FACTOR_ACCEPTABLE
         elif magnification < 20:
             return 0.9  # Too wide - dimmer image
         else:
-            return 0.6  # Too much magnification - can't see whole object
+            return MAGNIFICATION_FACTOR_TOO_HIGH
 
     def _calculate_site_factor(self, context: 'ScoringContext') -> float:
         """Dark skies are critical for faint extended nebulosity"""
@@ -292,17 +297,18 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
 
         # These objects are very affected by light pollution
         # Even worse than standard deep-sky because of low surface brightness
-        penalty_per_bortle = 0.12
-        factor = 1.0 - (bortle * penalty_per_bortle)
-        return max(factor, 0.05)  # Can become nearly impossible in cities
+        factor = 1.0 - (bortle * LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE)
+        return max(factor, LIGHT_POLLUTION_MIN_FACTOR_LARGE)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
-        """Higher altitude = better for faint objects"""
-        if altitude >= 50:
-            return 1.0
-        elif altitude >= 35:
-            return 0.90
-        elif altitude >= 25:
-            return 0.75
+        """Higher altitude = better for faint objects. Below horizon = impossible."""
+        if altitude < ALTITUDE_BELOW_HORIZON:
+            return ALTITUDE_FACTOR_BELOW_HORIZON
+        elif altitude >= ALTITUDE_OPTIMAL_MIN_LARGE:
+            return ALTITUDE_FACTOR_OPTIMAL
+        elif altitude >= ALTITUDE_GOOD_MIN_LARGE:
+            return ALTITUDE_FACTOR_GOOD_LARGE
+        elif altitude >= ALTITUDE_FAIR_MIN_LARGE:
+            return ALTITUDE_FACTOR_FAIR_LARGE
         else:
-            return 0.5
+            return ALTITUDE_FACTOR_POOR_LARGE

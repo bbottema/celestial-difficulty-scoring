@@ -3,9 +3,9 @@ from typing import Optional
 
 from app.domain.model.celestial_object import CelestialObjectScore, ScoredCelestialObject, CelestialsList, \
     ScoredCelestialsList
-from app.domain.model.scoring_context import ScoringContext
 from app.domain.services.strategies import *
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
+from app.utils.scoring_constants import LARGE_OBJECT_SIZE_THRESHOLD
 
 
 class ObservabilityCalculationService:
@@ -54,7 +54,7 @@ class ObservabilityCalculationService:
         if celestial_object.object_type in ['Planet', 'Moon', 'Sun']:
             return SolarSystemScoringStrategy()
         elif celestial_object.object_type == 'DeepSky':
-            if celestial_object.size > large_object_size_threshold_in_arcminutes:
+            if celestial_object.size > LARGE_OBJECT_SIZE_THRESHOLD:
                 return LargeFaintObjectScoringStrategy()
             else:
                 return DeepSkyScoringStrategy()
