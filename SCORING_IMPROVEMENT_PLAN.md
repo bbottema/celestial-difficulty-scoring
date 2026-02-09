@@ -932,6 +932,279 @@ pytest tests/scoring/ --cov=app.domain.services --cov-report=html
 
 ---
 
-*Last Updated: 2026-02-08*
-*Author: Claude (Anthropic)*
+## Phase 8: Constants Validation & Multi-Preset System (Week 8)
+
+**Goal:** Validate constants against astronomical data and implement switchable presets for different user preferences.
+
+**Status:** 🔴 PENDING - Deep research completed by ChatGPT 5.2
+
+### Research Summary (2026-02-09)
+
+A comprehensive constants validation was performed comparing our values against:
+- Atmospheric physics models (airmass, extinction)
+- Meteorological standards (oktas, cloud cover)
+- Amateur astronomy community norms (exit pupil, magnification rules)
+- Bortle scale photometric data (NELM ranges)
+
+**Key Findings:**
+
+#### 1. Weather Constants - Minor Adjustments Needed
+**Problem:** Overcast threshold set to exactly 100%, but weather APIs often report 90-99% for overcast.
+
+**Current:**
+```python
+WEATHER_CLOUD_COVER_OVERCAST = 100  # May under-trigger
+```
+
+**Recommendation:**
+```python
+WEATHER_CLOUD_COVER_OVERCAST = 90  # Matches 7/8 okta standard
+```
+
+**Rationale:** Meteorological "overcast" is 87.5%+ (7/8 oktas). Setting threshold to 90 ensures we catch "effectively overcast" conditions.
+
+**Weather factors validated as reasonable:**
+- Clear: 1.0 ✅
+- Few: 0.75 → **0.85** (more lenient, matches "gap probability")
+- Partly: 0.50 → **0.60-0.65** (matches observer reports)
+- Mostly: 0.25 → **0.20-0.30** (acceptable range)
+- Overcast: 0.05 → **0.02-0.05** (acceptable range)
+
+#### 2. Altitude Constants - Remove Zenith Penalty + Harshen Low Altitude
+**Problem 1:** Near-zenith penalty has no atmospheric basis. Zenith is optimal for airmass.
+
+**Current:**
+```python
+ALTITUDE_FACTOR_NEAR_ZENITH = 0.95  # "Overhead viewing angle" (?)
+```
+
+**Recommendation:**
+```python
+ALTITUDE_FACTOR_NEAR_ZENITH = 1.0  # No atmospheric penalty at zenith
+```
+
+**Rationale:** Airmass is minimal at zenith. Any penalty is mount-specific ergonomics, not observability.
+
+**Problem 2:** Deep-sky <20° penalty too optimistic.
+
+**Current:**
+```python
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.5  # Still gives 50% score
+```
+
+**Recommendation:**
+```python
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.35  # More realistic for contrast loss
+```
+
+**Rationale:** At <20° altitude:
+- Airmass ≈ 2.9-6.0
+- Contrast destruction for low surface brightness objects
+- Light domes near horizon
+- Atmospheric dispersion
+
+Research suggests 0.35-0.45 range is more realistic for planning app (prefer "don't waste your night" over false greens).
+
+**Planetary altitude factors validated:**
+- 30+: 1.0 ✅
+- 20-30: 0.85 ✅
+- 10-20: 0.65 ✅
+- <10: 0.4 ✅
+
+#### 3. Magnification Constants - Shift Range Lower
+**Problem:** 150-300× optimal range assumes 150-250mm scopes. Too aggressive for 70-100mm beginners.
+
+**Current:**
+```python
+MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 150
+MAGNIFICATION_PLANETARY_OPTIMAL_MAX = 300
+```
+
+**Recommendation:**
+```python
+MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 120  # Fits 80mm users at 1.5mm exit pupil
+MAGNIFICATION_PLANETARY_OPTIMAL_MAX = 250  # More conservative seeing limit
+```
+
+**Rationale:**
+- Common rule: 0.5-1.0mm exit pupil for planets
+- 80mm scope: 80-160× typical range, optimal ~120-140×
+- 200mm scope: 200-400× typical range, optimal ~200-250×
+- Shifting range to 120-250× better serves wider user base
+
+#### 4. Aperture Constants - Increase Deep-Sky Scaling
+**Current factors reasonable but could emphasize aperture more for DSO:**
+```python
+APERTURE_FACTOR_LARGE = 1.3   # 200mm+
+APERTURE_FACTOR_MEDIUM = 1.1  # 100-199mm
+APERTURE_FACTOR_SMALL = 1.0   # 70-99mm
+APERTURE_FACTOR_TINY = 0.8    # <70mm
+```
+
+**Recommendation for deep-sky only:**
+```python
+APERTURE_FACTOR_LARGE_DEEPSKY = 1.50     # Aperture really matters
+APERTURE_FACTOR_MEDIUM_DEEPSKY = 1.20
+APERTURE_FACTOR_SMALL_DEEPSKY = 1.00
+APERTURE_FACTOR_TINY_DEEPSKY = 0.70
+
+# Keep current values for solar system (seeing dominates)
+```
+
+**Rationale:** Light grasp scales as D². 200mm vs 100mm = 4× light = ~1.5 mag deeper. This should be more pronounced in scoring for faint DSOs.
+
+#### 5. Light Pollution - Lower Minimum Floors
+**Problem:** Minimum factors too generous for bright-sky scenarios.
+
+**Current:**
+```python
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.1   # 10% minimum
+LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.05    # 5% minimum
+```
+
+**Recommendation:**
+```python
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.02   # Nearly impossible in Bortle 9
+LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.00     # Actually impossible for large faint objects
+```
+
+**Rationale:** Planning apps should err toward "don't waste your night." Bortle 8-9 makes faint galaxies genuinely impossible. Lower floors help app say "skip it tonight."
+
+#### 6. Reference Values - Validated ✅
+```python
+SUN_APPARENT_MAGNITUDE = -26.74  # Lit: -26.7 to -26.8 ✅
+SIRIUS_APPARENT_MAGNITUDE = -1.46  # Lit: -1.47 ✅
+SUN_ANGULAR_SIZE = 31.00  # Lit: ~32 arcmin (close enough) ✅
+```
+
+**Action item:** Verify precomputed magnitude scores match formulas in unit test.
+
+---
+
+### Multi-Preset Architecture
+
+**Problem:** Different users have different tolerances for "false positives" vs "missed opportunities."
+
+**Solution:** Implement switchable constant presets in settings tab.
+
+#### Preset A: "Friendly Planner" (Default)
+**Goal:** Encourage trying things; fewer hard "nope" results.
+
+**Target users:**
+- Beginners exploring what's possible
+- Observers willing to attempt challenging targets
+- Users who want a longer "maybe" list
+
+**Constants:**
+```python
+# Weather
+WEATHER_FACTOR_FEW_CLOUDS = 0.85
+WEATHER_FACTOR_PARTLY_CLOUDY = 0.65
+WEATHER_FACTOR_MOSTLY_CLOUDY = 0.30
+WEATHER_FACTOR_OVERCAST = 0.05
+
+# Altitude (deep-sky)
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.45
+
+# Light pollution
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.05
+LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.03
+
+# Aperture (deep-sky)
+APERTURE_FACTOR_LARGE = 1.40
+```
+
+#### Preset B: "Strict Realism"
+**Goal:** Reduce wasted time; fewer false greens.
+
+**Target users:**
+- Experienced observers who know their limits
+- Users planning remote dark-sky trips (limited time)
+- Imagers who need predictable conditions
+
+**Constants:**
+```python
+# Weather
+WEATHER_FACTOR_FEW_CLOUDS = 0.85
+WEATHER_FACTOR_PARTLY_CLOUDY = 0.60
+WEATHER_FACTOR_MOSTLY_CLOUDY = 0.20
+WEATHER_FACTOR_OVERCAST = 0.02
+
+# Altitude (deep-sky)
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.35
+
+# Light pollution
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.02
+LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.00
+
+# Aperture (deep-sky)
+APERTURE_FACTOR_LARGE = 1.55
+```
+
+#### Implementation Plan
+
+32. **Create preset system infrastructure**
+    - File: `src/app/utils/scoring_presets.py`
+    - Define `ScoringPreset` dataclass containing all tunable constants
+    - Define `PRESET_FRIENDLY` and `PRESET_STRICT` instances
+    - Add `active_preset` to user settings (defaults to FRIENDLY)
+
+33. **Refactor constants to use active preset**
+    - File: `src/app/utils/scoring_constants.py`
+    - Move tunable constants into preset objects
+    - Keep fixed constants (sun magnitude, bortle mapping, etc.) as module-level
+    - Strategies access constants via `get_active_preset().CONSTANT_NAME`
+
+34. **Settings UI integration**
+    - Add "Scoring Preset" dropdown to settings tab
+    - Options: "Friendly Planner" | "Strict Realism"
+    - Show tooltip explaining difference
+    - Persist selection in user preferences
+
+35. **Scenario validation tests**
+    - Test preset behavior across 3 key scenarios:
+      1. **Bortle 8, partly cloudy, 25° altitude**
+         - Expect: Friendly shows some galaxies as "yellow", Strict shows "red"
+      2. **Bortle 4-5, clear, 45-70° altitude**
+         - Expect: Both show faint DSOs as viable, Strict ranks slightly lower
+      3. **Mostly cloudy with gaps**
+         - Expect: Friendly shows short good list, Strict shows very short great list
+    - Validate across gear profiles: 80mm, 130mm, 200mm
+
+---
+
+### Validation Checklist
+
+Before shipping preset system:
+
+- [ ] All precomputed magnitude scores verified in unit test
+- [ ] Overcast threshold adjusted to 90%
+- [ ] Zenith penalty removed (set to 1.0)
+- [ ] Deep-sky <20° factor adjusted to 0.35-0.45 range
+- [ ] Magnification range adjusted to 120-250×
+- [ ] Aperture scaling increased for deep-sky
+- [ ] Bortle floors lowered
+- [ ] Preset system implemented and tested
+- [ ] Settings UI updated with preset selector
+- [ ] Scenario validation tests passing for both presets
+- [ ] Documentation updated explaining preset differences
+
+---
+
+### Open Research Questions
+
+1. **Separate transparency signal:** Should we add a "haze/high cloud" parameter independent of cloud fraction? Cloud cover alone misses "thin junk" that ruins contrast.
+
+2. **Moon global sky brightness:** Current moon factor is proximity-based. Should we also model moon's effect on overall sky brightness (even when far from target)?
+
+3. **Seeing parameter:** Should we add atmospheric seeing as explicit input? Would affect planetary magnification recommendations.
+
+4. **Preset customization:** Should users be able to create custom presets, or just pick from Friendly/Strict?
+
+5. **Dynamic preset recommendations:** Should app suggest preset based on user's observation history? (e.g., "You tend to observe low-altitude targets successfully, consider Friendly preset")
+
+---
+
+*Last Updated: 2026-02-09*
+*Author: Claude (Anthropic) - Research by ChatGPT 5.2*
 *Project: Celestial Difficulty Scoring*

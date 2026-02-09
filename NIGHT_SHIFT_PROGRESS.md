@@ -1,7 +1,7 @@
 Note from the Human:
 > I've reviewed the code and it looks great!
 > Next actions:
-> - Review src/app/utils/constants.py and see if it shouls be consolidated with (into) scoring_constants.py
+> - Review src/app/utils/constants.py and see if it shouls be consolidated with (into) scoring_constants.py /edit: DONE!
 > - Review all constants with a deeper research using ChatGPT online
 > - Tweak the constants to make the 18 remaining tests pass that fail due to calibration
 > - Start working on the next phase (Moon proximity)
