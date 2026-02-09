@@ -332,7 +332,7 @@ def run_pipenv_sync(python_path: str, project_root: str):
         pass
 
     print("Running pipenv sync...")
-    subprocess.run([python_path, "-m", "pipenv", "sync"], check=True, cwd=project_root)
+    subprocess.run([python_path, "-m", "pipenv", "sync", "--dev"], check=True, cwd=project_root)
 
 
 def init_db_schema(python_path: str, project_root: str):
