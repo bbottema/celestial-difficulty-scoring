@@ -2,27 +2,31 @@ from abc import abstractmethod, ABC
 
 from app.domain.model.scoring_context import ScoringContext
 from app.utils.scoring_constants import *
+from app.utils.scoring_presets import get_active_preset
 
 
 def _calculate_weather_factor(context: 'ScoringContext') -> float:
     """
     Weather impact on observability.
     Cloud cover reduces visibility proportionally.
+    Uses active preset to determine factor values, allowing users to choose
+    between 'Friendly' (more lenient) and 'Strict' (more conservative) scoring.
     Shared across all strategies since weather affects everything equally.
     """
     if not context.weather:
         return WEATHER_FACTOR_CLEAR  # No weather data = assume clear
 
+    preset = get_active_preset()
     cloud_cover = context.weather.get('cloud_cover', 0)
 
     if cloud_cover >= WEATHER_CLOUD_COVER_OVERCAST:
-        return WEATHER_FACTOR_OVERCAST
+        return preset.weather_factor_overcast
     elif cloud_cover >= WEATHER_CLOUD_COVER_MOSTLY_CLOUDY:
-        return WEATHER_FACTOR_MOSTLY_CLOUDY
+        return preset.weather_factor_mostly_cloudy
     elif cloud_cover >= WEATHER_CLOUD_COVER_PARTLY_CLOUDY:
-        return WEATHER_FACTOR_PARTLY_CLOUDY
+        return preset.weather_factor_partly_cloudy
     elif cloud_cover >= WEATHER_CLOUD_COVER_FEW_CLOUDS:
-        return WEATHER_FACTOR_FEW_CLOUDS
+        return preset.weather_factor_few_clouds
     else:
         return WEATHER_FACTOR_CLEAR
 
@@ -147,12 +151,14 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
 
     def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
-        For deep-sky: aperture is critical (light gathering power)
-        More aperture = see fainter objects
+        For deep-sky: aperture is critical (light gathering power).
+        More aperture = see fainter objects.
+        Uses active preset for aperture scaling.
         """
         if not context.has_equipment():
             return EQUIPMENT_PENALTY_DEEPSKY
 
+        preset = get_active_preset()
         aperture = context.get_aperture_mm()
 
         # Aperture impact depends on object brightness
@@ -160,17 +166,17 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         if celestial_object.magnitude <= 6:  # Bright deep-sky
             # Even small scopes work
             if aperture >= APERTURE_MEDIUM:
-                return APERTURE_FACTOR_MEDIUM
+                return preset.aperture_factor_medium
             elif aperture >= APERTURE_SMALL:
-                return APERTURE_FACTOR_SMALL
+                return 1.0
             else:
-                return APERTURE_FACTOR_TINY
+                return preset.aperture_factor_tiny
         elif celestial_object.magnitude <= 9:  # Medium faint
             # Need decent aperture
             if aperture >= APERTURE_LARGE:
-                return APERTURE_FACTOR_LARGE
+                return preset.aperture_factor_large
             elif aperture >= 150:
-                return APERTURE_FACTOR_MEDIUM
+                return preset.aperture_factor_medium
             elif aperture >= APERTURE_MEDIUM:
                 return 0.9
             else:
@@ -178,9 +184,9 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         else:  # Very faint (>9 mag)
             # Really need large aperture
             if aperture >= 250:
-                return 1.4  # Extra bonus for very large scopes on faint targets
+                return preset.aperture_factor_large * 1.05  # Extra bonus for very large scopes
             elif aperture >= APERTURE_LARGE:
-                return MAGNIFICATION_FACTOR_OPTIMAL
+                return preset.aperture_factor_large
             elif aperture >= 150:
                 return 0.9
             elif aperture >= APERTURE_MEDIUM:
@@ -205,7 +211,8 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             penalty_per_bortle = 0.13
 
         factor = 1.0 - (bortle * penalty_per_bortle)
-        return max(factor, LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY)
+        preset = get_active_preset()
+        return max(factor, preset.light_pollution_min_factor_deepsky)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """Higher altitude = less atmosphere to penetrate. Below horizon = impossible."""
@@ -220,7 +227,8 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         elif altitude >= ALTITUDE_POOR_MIN_DEEPSKY:
             return ALTITUDE_FACTOR_POOR_DEEPSKY
         else:
-            return ALTITUDE_FACTOR_VERY_POOR_DEEPSKY
+            preset = get_active_preset()
+            return preset.altitude_factor_very_poor_deepsky
 
     @staticmethod
     def _normalize_magnitude(score) -> float:
@@ -265,24 +273,38 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
     def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
         Large objects need LOW magnification for wide field of view.
-        Need to fit the entire object in the eyepiece.
+        Also consider aperture for light gathering (low surface brightness objects).
         """
         if not context.has_equipment():
             return EQUIPMENT_PENALTY_LARGE_FAINT
 
         magnification = context.get_magnification()
+        aperture = context.get_aperture_mm()
+        preset = get_active_preset()
 
-        # For large objects (>30 arcmin), we want low magnification
-        # Optimal: 30-80x for wide field
+        # Calculate magnification factor (low mag preferred)
         if MAGNIFICATION_LARGE_OBJECT_OPTIMAL_MAX <= magnification <= 80:
-            return APERTURE_FACTOR_LARGE  # Reuse as bonus for wide field
+            mag_factor = 1.2  # Optimal range
         elif 20 <= magnification < MAGNIFICATION_LARGE_OBJECT_OPTIMAL_MAX or \
              80 < magnification <= 120:
-            return MAGNIFICATION_FACTOR_ACCEPTABLE
+            mag_factor = 1.0
         elif magnification < 20:
-            return 0.9  # Too wide - dimmer image
+            mag_factor = 0.9  # Too wide - dimmer image
         else:
-            return MAGNIFICATION_FACTOR_TOO_HIGH
+            mag_factor = MAGNIFICATION_FACTOR_TOO_HIGH
+
+        # Calculate aperture factor (light gathering for low surface brightness)
+        if aperture >= APERTURE_LARGE:
+            aperture_factor = preset.aperture_factor_large
+        elif aperture >= APERTURE_MEDIUM:
+            aperture_factor = preset.aperture_factor_medium
+        elif aperture >= APERTURE_SMALL:
+            aperture_factor = 1.0
+        else:
+            aperture_factor = preset.aperture_factor_tiny
+
+        # Combine factors (both matter for large faint objects)
+        return (mag_factor + aperture_factor) / 2
 
     def _calculate_site_factor(self, context: 'ScoringContext') -> float:
         """Dark skies are critical for faint extended nebulosity"""
@@ -294,7 +316,8 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         # These objects are very affected by light pollution
         # Even worse than standard deep-sky because of low surface brightness
         factor = 1.0 - (bortle * LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE)
-        return max(factor, LIGHT_POLLUTION_MIN_FACTOR_LARGE)
+        preset = get_active_preset()
+        return max(factor, preset.light_pollution_min_factor_large)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """Higher altitude = better for faint objects. Below horizon = impossible."""

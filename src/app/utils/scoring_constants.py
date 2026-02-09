@@ -12,42 +12,90 @@ Following Clean Code principles (Uncle Bob would approve!)
 # ==============================================================================
 
 # Cloud cover thresholds (percentage)
-WEATHER_CLOUD_COVER_OVERCAST = 100  # percent
-"""100% cloud cover = overcast conditions. Based on meteorological standards."""
+WEATHER_CLOUD_COVER_OVERCAST = 90  # percent
+"""
+90%+ cloud cover = overcast conditions.
+Based on meteorological standards: overcast is 7/8 oktas (87.5%+).
+Set to 90% because weather APIs often report 90-99% rather than exactly 100%.
+Reference: https://en.wikipedia.org/wiki/Okta
+"""
 
 WEATHER_CLOUD_COVER_MOSTLY_CLOUDY = 75  # percent
-"""75%+ cloud cover = mostly cloudy. Significant obstruction."""
+"""
+75%+ cloud cover = mostly cloudy (5/8 to 6/8 oktas).
+Significant obstruction, but occasional gaps allow brief observations.
+"""
 
 WEATHER_CLOUD_COVER_PARTLY_CLOUDY = 50  # percent
-"""50% cloud cover = partly cloudy. Moderate obstruction."""
+"""
+50% cloud cover = partly cloudy (4/8 oktas).
+Moderate obstruction - represents "scattered" clouds in aviation terminology.
+"""
 
 WEATHER_CLOUD_COVER_FEW_CLOUDS = 25  # percent
-"""25% cloud cover = few clouds. Minor obstruction."""
+"""
+25% cloud cover = few clouds (2/8 oktas).
+Minor obstruction - most of sky accessible.
+"""
 
 # Weather impact factors (multipliers)
+# Note: These are base/default values. Presets may override some of these.
+
 WEATHER_FACTOR_OVERCAST = 0.05
 """
-Overcast conditions (100% cloud cover).
-Only brightest objects (Sun/Moon) barely visible.
+Overcast conditions (90%+ cloud cover).
+Only brightest objects (Sun/Moon) barely visible through brief gaps.
 95% reduction in observability.
+Interpretation: "time-occlusion" - target visible ~5% of session duration.
+"""
+
+WEATHER_FACTOR_OVERCAST_STRICT = 0.02
+"""
+Strict preset: even less optimistic for overcast.
+98% reduction - nearly impossible conditions.
 """
 
 WEATHER_FACTOR_MOSTLY_CLOUDY = 0.25
 """
 Mostly cloudy conditions (75%+ cloud cover).
 75% reduction in observability.
+Observers report catching targets in gaps, but unreliable.
+Deep-sky targets typically not worth attempting.
 """
 
-WEATHER_FACTOR_PARTLY_CLOUDY = 0.50
+WEATHER_FACTOR_MOSTLY_CLOUDY_FRIENDLY = 0.30
 """
-Partly cloudy conditions (50% cloud cover).
-50% reduction in observability - proportional to coverage.
+Friendly preset: slightly more lenient for mostly cloudy.
+Encourages attempting targets during gaps.
 """
 
-WEATHER_FACTOR_FEW_CLOUDS = 0.75
+WEATHER_FACTOR_MOSTLY_CLOUDY_STRICT = 0.20
+"""
+Strict preset: more conservative for mostly cloudy.
+Reduces false greens on unreliable nights.
+"""
+
+WEATHER_FACTOR_PARTLY_CLOUDY = 0.60
+"""
+Partly cloudy conditions (50% cloud cover) - base value.
+40% reduction in observability.
+Based on observer experience: "mostly cloudy, I caught gaps" scenarios.
+Represents time target is accessible during session.
+Value tuned to avoid false greens for faint targets.
+"""
+
+WEATHER_FACTOR_PARTLY_CLOUDY_FRIENDLY = 0.65
+"""
+Friendly preset: more optimistic for partly cloudy.
+Encourages observing in variable conditions.
+"""
+
+WEATHER_FACTOR_FEW_CLOUDS = 0.85
 """
 Few clouds (25% cloud cover).
-25% reduction in observability.
+15% reduction in observability.
+Should still yield many green-rated results for good targets.
+Matches "gap probability" interpretation from observer reports.
 """
 
 WEATHER_FACTOR_CLEAR = 1.0
@@ -104,8 +152,13 @@ ALTITUDE_FACTOR_BELOW_HORIZON = 0.0
 ALTITUDE_FACTOR_OPTIMAL = 1.0
 """No atmospheric penalty at optimal altitude."""
 
-ALTITUDE_FACTOR_NEAR_ZENITH = 0.95
-"""Slight penalty near zenith (>80°) due to overhead viewing angle."""
+ALTITUDE_FACTOR_NEAR_ZENITH = 1.0
+"""
+No penalty at zenith (>80°).
+Zenith has minimal airmass and is optimal for atmospheric transparency.
+Previous penalty had no atmospheric physics basis - zenith is best observing altitude.
+Any ergonomic issues (neck strain, mount clearance) are equipment-specific, not observability.
+"""
 
 ALTITUDE_FACTOR_GOOD_SOLAR = 0.85
 """15% atmospheric reduction for planets at 20-30° altitude."""
@@ -125,8 +178,34 @@ ALTITUDE_FACTOR_FAIR_DEEPSKY = 0.85
 ALTITUDE_FACTOR_POOR_DEEPSKY = 0.70
 """30% reduction for DSOs at 20-30° altitude."""
 
-ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.5
-"""50% reduction for DSOs at <20° altitude."""
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY = 0.40
+"""
+60% reduction for DSOs at <20° altitude - base value.
+At low altitude, airmass becomes severe:
+  - 20°: airmass ≈ 2.9
+  - 10°: airmass ≈ 5.8
+Effects beyond dimming:
+  - Contrast destruction for low surface brightness objects (galaxies, nebulae)
+  - Light domes concentrate near horizon in polluted sites
+  - Atmospheric dispersion smears colors
+  - Seeing turbulence increases
+Value set conservatively for planning app: prefer "don't waste your night" over false greens.
+Reference: Kasten & Young airmass model
+"""
+
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY_FRIENDLY = 0.45
+"""
+Friendly preset: less harsh penalty for low altitude DSOs.
+55% reduction - encourages attempting low-altitude targets.
+Some experienced observers can pull detail from objects at 15-20° in good conditions.
+"""
+
+ALTITUDE_FACTOR_VERY_POOR_DEEPSKY_STRICT = 0.35
+"""
+Strict preset: harsher penalty for low altitude DSOs.
+65% reduction - more realistic for typical observing conditions.
+Contrast loss and light dome effects make most DSOs difficult below 20°.
+"""
 
 ALTITUDE_FACTOR_GOOD_LARGE = 0.90
 """10% reduction for large objects at 35-50° altitude."""
@@ -142,20 +221,35 @@ ALTITUDE_FACTOR_POOR_LARGE = 0.5
 # ==============================================================================
 
 # Magnification ranges for different object types
-MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 150
+MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 120
 """
 Minimum magnification for planetary detail.
-Below this, cloud bands and surface features become hard to resolve.
+Based on exit pupil approach: 0.5-1.0mm exit pupil optimal for planets.
+  - 80mm scope: optimal ~120-140× (exit pupil 0.57-0.67mm)
+  - 150mm scope: optimal ~150-250× (exit pupil 0.6-1.0mm)
+  - 200mm scope: optimal ~200-300× (exit pupil 0.67-1.0mm)
+Previous value (150×) was too aggressive for small scopes (70-100mm).
+Reference: Exit pupil = aperture_mm / magnification
 """
 
-MAGNIFICATION_PLANETARY_OPTIMAL_MAX = 300
+MAGNIFICATION_PLANETARY_OPTIMAL_MAX = 250
 """
 Maximum useful magnification for planets before atmospheric seeing degrades image.
-General rule: 50x per inch of aperture (e.g., 200mm = 8" → 400x max, but 300x practical)
+Based on practical seeing limits and exit pupil approach.
+Common rule: ~50× per inch aperture, or 2× per mm (~0.5mm exit pupil).
+  - 100mm scope: ~200× max
+  - 200mm scope: ~400× theoretical, but 250× more practical in average seeing
+Previous value (300×) caps out early for large scopes on steady nights, but 250× is more
+conservative and fits broader user base across typical seeing conditions.
 """
 
-MAGNIFICATION_PLANETARY_TOO_LOW = 50
-"""Below 50x, planets appear as small disks without detail."""
+MAGNIFICATION_PLANETARY_TOO_LOW = 60
+"""
+Below 60×, planets appear as small disks without significant detail.
+At 60×, Jupiter (~45" diameter) appears as 0.75mm disk at typical eyepiece.
+Cloud bands and Great Red Spot become visible around 80-100×.
+Moons visible, but planetary detail requires higher power.
+"""
 
 MAGNIFICATION_LARGE_OBJECT_MAX = 50
 """
@@ -197,20 +291,64 @@ APERTURE_TINY = 50  # mm (2 inches)
 """Finder scope / very small telescope range."""
 
 # Aperture impact factors
-APERTURE_FACTOR_LARGE = 1.3
+APERTURE_FACTOR_LARGE = 1.5
 """
-30% bonus for large aperture (200mm+).
-Light gathering power: (200/100)² = 4x more light than 100mm.
+50% bonus for large aperture (200mm+) on deep-sky objects - base value.
+Light gathering power scales as D²:
+  - 200mm vs 100mm: (200/100)² = 4× light = ~1.5 magnitudes deeper
+  - 200mm vs 70mm: (200/70)² = 8× light = ~2.3 magnitudes deeper
+For solar system objects, use lower factors (seeing dominates over aperture).
+Increased from 1.3 to emphasize aperture importance for faint DSOs.
+Reference: Limiting magnitude ≈ 5 × log₁₀(D) where D in mm
 """
 
-APERTURE_FACTOR_MEDIUM = 1.1
-"""10% bonus for medium aperture (100-199mm)."""
+APERTURE_FACTOR_LARGE_FRIENDLY = 1.40
+"""
+Friendly preset: moderate aperture bonus.
+40% bonus - aperture helps but doesn't dominate scoring.
+"""
+
+APERTURE_FACTOR_LARGE_STRICT = 1.55
+"""
+Strict preset: stronger aperture bonus.
+55% bonus - emphasizes that large aperture really matters for faint DSOs.
+"""
+
+APERTURE_FACTOR_MEDIUM = 1.2
+"""
+20% bonus for medium aperture (100-199mm) - base value.
+Standard amateur range - good balance of portability and light gathering.
+Increased from 1.1 to better reflect light gathering advantage.
+"""
+
+APERTURE_FACTOR_MEDIUM_FRIENDLY = 1.15
+"""
+Friendly preset: moderate medium aperture bonus.
+15% bonus.
+"""
+
+APERTURE_FACTOR_MEDIUM_STRICT = 1.25
+"""
+Strict preset: stronger medium aperture bonus.
+25% bonus.
+"""
 
 APERTURE_FACTOR_SMALL = 1.0
 """No bonus for small aperture (70-99mm) - baseline."""
 
-APERTURE_FACTOR_TINY = 0.8
-"""20% penalty for very small aperture (<70mm)."""
+APERTURE_FACTOR_TINY = 0.75
+"""
+25% penalty for very small aperture (<70mm) - base value.
+Finder scope range - limited light gathering for faint objects.
+Still useful for bright targets (Moon, planets, bright stars, Pleiades).
+Increased penalty from 0.8 to reflect genuine difficulty with faint DSOs.
+"""
+
+APERTURE_FACTOR_TINY_STRICT = 0.70
+"""
+Strict preset: harsher penalty for tiny apertures.
+30% penalty - realistic about limitations.
+"""
 
 # ==============================================================================
 # LIGHT POLLUTION CONSTANTS
@@ -223,25 +361,59 @@ LIGHT_POLLUTION_PENALTY_PER_BORTLE_SOLAR = 0.01
 """
 Minimal light pollution impact on bright solar system objects.
 1% reduction per Bortle level (max 9% in Bortle 9).
+Planets remain visible even in heavily light-polluted skies (Bortle 8-9).
 """
 
 LIGHT_POLLUTION_PENALTY_PER_BORTLE_DEEPSKY = 0.10
 """
 Significant light pollution impact on deep-sky objects.
 10% reduction per Bortle level (can approach zero in cities).
+Linear penalty is simplified model; reality shows steeper drop in bright skies,
+but combined with minimum floors provides reasonable planning estimates.
 """
 
 LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE = 0.12
 """
 Severe light pollution impact on large faint objects (low surface brightness).
 12% reduction per Bortle level.
+Large extended objects (nebulae, galaxy halos) suffer more than compact objects
+because their surface brightness is distributed over larger area.
 """
 
-LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.1
-"""Deep-sky objects never go below 10% even in worst light pollution."""
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY = 0.02
+"""
+Deep-sky objects become nearly impossible in worst light pollution (Bortle 9) - base value.
+Lowered from 0.1 to 0.02 to honestly reflect difficulty in inner-city observing.
+Planning apps should err toward "don't waste your night" rather than false hope.
+Only brightest DSOs (M42, M31 core, M45) have any chance in Bortle 8-9.
+"""
 
-LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.05
-"""Large faint objects can become nearly impossible in cities (5% minimum)."""
+LIGHT_POLLUTION_MIN_FACTOR_DEEPSKY_FRIENDLY = 0.05
+"""
+Friendly preset: slightly higher floor for deep-sky in cities.
+5% minimum - allows some "challenging but possible" ratings for brightest DSOs.
+"""
+
+LIGHT_POLLUTION_MIN_FACTOR_LARGE = 0.02
+"""
+Large faint objects become nearly impossible in cities - base value.
+Lowered from 0.05 to 0.02 for realism.
+Low surface brightness objects (galaxy halos, faint nebulae, supernova remnants)
+genuinely invisible in Bortle 8-9 regardless of aperture.
+Example: Veil Nebula, California Nebula, outer regions of Andromeda.
+"""
+
+LIGHT_POLLUTION_MIN_FACTOR_LARGE_FRIENDLY = 0.03
+"""
+Friendly preset: slightly higher floor for large faint objects.
+3% minimum - acknowledges some may attempt anyway.
+"""
+
+LIGHT_POLLUTION_MIN_FACTOR_LARGE_STRICT = 0.00
+"""
+Strict preset: zero floor for large faint objects in bright cities.
+Honestly impossible - don't waste your time.
+"""
 
 # Bortle scale to limiting magnitude mapping
 BORTLE_TO_LIMITING_MAGNITUDE = {
@@ -256,9 +428,18 @@ BORTLE_TO_LIMITING_MAGNITUDE = {
     9: 3.6,  # Inner-city sky
 }
 """
-Bortle scale to naked-eye limiting magnitude mapping.
+Bortle scale to naked-eye limiting magnitude (NELM) mapping.
 Based on empirical observations and published astronomy references.
-Limiting magnitude = faintest star visible to adapted eye.
+Limiting magnitude = faintest star visible to dark-adapted naked eye (zenith).
+
+This mapping is used for reference and potential future visibility calculations.
+Current scoring uses linear penalty model (LIGHT_POLLUTION_PENALTY_PER_BORTLE)
+rather than direct limiting magnitude cutoffs.
+
+Future enhancement could use: visibility_factor = 1.0 - (object_mag - limiting_mag) / headroom
+where headroom represents how far below limiting magnitude object needs to be for detection.
+
+Reference: https://en.wikipedia.org/wiki/Bortle_scale
 """
 
 # ==============================================================================
@@ -381,10 +562,14 @@ Formula: 10 ** (-0.4 * SUN_APPARENT_MAGNITUDE)
 Used to normalize solar system object brightness to 0-25 scale.
 """
 
-SIRIUS_DEEPSKY_MAGNITUDE_SCORE = 0.015275660582380723
+SIRIUS_DEEPSKY_MAGNITUDE_SCORE = 6.081350012787176e-05
 """
 Pre-calculated magnitude score for Sirius with deep-sky offset.
 Formula: 10 ** (-0.4 * (SIRIUS_APPARENT_MAGNITUDE + MAGNITUDE_OFFSET_DEEPSKY))
+      = 10 ** (-0.4 * (-1.46 + 12))
+      = 10 ** (-0.4 * 10.54)
+      = 10 ** -4.216
+      ≈ 6.081 × 10^-5
 Used to normalize deep-sky object brightness to 0-25 scale.
 """
 

@@ -2,7 +2,7 @@ import math
 from typing import Optional
 
 from app.domain.model.celestial_object import CelestialObjectScore, ScoredCelestialObject, CelestialsList, \
-    ScoredCelestialsList
+    ScoredCelestialsList, CelestialObject
 from app.domain.services.strategies import *
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.utils.scoring_constants import LARGE_OBJECT_SIZE_THRESHOLD
