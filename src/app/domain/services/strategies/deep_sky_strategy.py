@@ -15,10 +15,17 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
     """
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
-        # Base score from object properties
-        magnitude_score = self._normalize_magnitude(10 ** (-0.4 * (celestial_object.magnitude + 12)))
-        size_score = self._normalize_size(celestial_object.size)
-        base_score = (magnitude_score + size_score) / 2
+        # Base score from object properties using SAME approach as ReflectedLightStrategy
+        # This ensures cross-strategy comparisons are calibrated correctly
+        flux = 10 ** (-0.4 * celestial_object.magnitude)
+        # Sirius: mag -1.46 → flux = 3.72
+        # Vega: mag 0.03 → flux = 1.01
+        # M42: mag 4.0 → flux = 0.04
+
+        # For point sources (stars), size=0, so base score is just flux-based
+        # For extended objects, add size contribution
+        # Use same weighting as ReflectedLight: 80% flux, 20% size
+        base_score = (flux / 100.0) * 0.80 + (celestial_object.size / 10.0) * 0.20
 
         # Equipment factor: aperture is king for faint objects
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -138,3 +145,22 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
     @staticmethod
     def _normalize_size(score) -> float:
         return (score / MAX_DEEPSKY_SIZE_COMPACT) * MAX_OBSERVABLE_SCORE
+
+    def normalize_score(self, raw_score: float) -> float:
+        """
+        Normalize deep-sky scores to 0-25 scale.
+
+        After unifying base score calculation with ReflectedLightStrategy,
+        use the SAME normalization formula to preserve magnitude ordering.
+
+        Typical raw scores (after factors):
+        - Sirius: ~0.0275
+        - Vega: ~0.007
+        - M42: ~0.001-0.003
+        - Faint galaxies: ~0.0001-0.0005
+        """
+        # Use same power scaling as ReflectedLightStrategy
+        if raw_score < 0.0001:
+            return 0.0
+        compressed = raw_score ** 0.35
+        return min(compressed * 15.0, 25.0)

@@ -118,3 +118,19 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
             return ALTITUDE_FACTOR_FAIR_LARGE
         else:
             return ALTITUDE_FACTOR_POOR_LARGE
+
+    def normalize_score(self, raw_score: float) -> float:
+        """
+        Normalize large faint object scores to 0-25 scale.
+
+        Large extended objects (M31, M42, Veil) range:
+        - Very bright (M31, M42 in dark skies): ~1-4
+        - Medium (M31 in suburbs): ~0.3-1
+        - Faint (Veil, dim nebulae): ~0.05-0.3
+
+        Strategy: 6x multiplier to capture typical range.
+        """
+        # M31/M42 optimal: ~3 * 6 = 18 ✓
+        # M31 suburbs: ~0.5 * 6 = 3 ✓
+        # Veil: ~0.1 * 6 = 0.6 ✓
+        return min(raw_score * 6.0, 25.0)

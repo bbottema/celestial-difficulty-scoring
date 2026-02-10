@@ -559,7 +559,17 @@ SUN_MAGNITUDE_SCORE = 49659232145.03358
 """
 Pre-calculated magnitude score for the Sun.
 Formula: 10 ** (-0.4 * SUN_APPARENT_MAGNITUDE)
-Used to normalize solar system object brightness to 0-25 scale.
+Used to normalize Sun brightness in SunStrategy.
+"""
+
+MOON_APPARENT_MAGNITUDE = -12.6
+"""Full Moon apparent magnitude."""
+
+MOON_MAGNITUDE_SCORE = 10 ** (-0.4 * MOON_APPARENT_MAGNITUDE)  # ~109,648
+"""
+Pre-calculated magnitude score for the Moon.
+Formula: 10 ** (-0.4 * MOON_APPARENT_MAGNITUDE)
+Used to normalize Moon/planet brightness in ReflectedLightStrategy.
 """
 
 SIRIUS_DEEPSKY_MAGNITUDE_SCORE = 6.081350012787176e-05

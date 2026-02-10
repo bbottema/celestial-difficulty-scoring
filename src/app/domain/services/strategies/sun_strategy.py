@@ -81,3 +81,15 @@ class SunStrategy(IObservabilityScoringStrategy):
             return ALTITUDE_FACTOR_POOR_SOLAR
         else:
             return ALTITUDE_FACTOR_VERY_POOR_SOLAR
+
+    def normalize_score(self, raw_score: float) -> float:
+        """
+        Normalize Sun scores to 0-25 scale.
+
+        Sun scores typically range from 100-250 (very high).
+        Simple linear scaling works well.
+        """
+        # Divide by 10 to bring into 0-25 range
+        # Sun with equipment and good conditions: ~250 / 10 = 25
+        # Sun low altitude or poor weather: ~100 / 10 = 10
+        return min(raw_score / 10.0, 25.0)

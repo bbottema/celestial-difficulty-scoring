@@ -55,9 +55,10 @@ class ObservabilityCalculationService:
         )
 
         strategy = self._determine_scoring_strategy(celestial_object)
-        final_score = strategy.calculate_score(celestial_object, context)
+        raw_score = strategy.calculate_score(celestial_object, context)
+        normalized_score = strategy.normalize_score(raw_score)
 
-        return CelestialObjectScore(final_score, self._normalize_score(final_score))
+        return CelestialObjectScore(raw_score, normalized_score)
 
     @staticmethod
     def _determine_scoring_strategy(celestial_object: CelestialObject) -> IObservabilityScoringStrategy:
@@ -75,14 +76,3 @@ class ObservabilityCalculationService:
                 return DeepSkyScoringStrategy()
         else:
             raise ValueError(f'Unknown celestial object type: {celestial_object.object_type}')
-
-    @staticmethod
-    def _normalize_score(score) -> float:
-        if score > 10:
-            transformed_score = math.log10(score + 1) ** 2  # More aggressive transformation for higher scores
-        else:
-            transformed_score = math.log(score + 1, 1.5)  # Less aggressive transformation for lower scores
-
-        max_transformed_score = 2  # Adjust based on observed transformed score range
-        rescaled_score = (transformed_score / max_transformed_score) * 25  # Rescaling to a 0-25 scale
-        return rescaled_score
