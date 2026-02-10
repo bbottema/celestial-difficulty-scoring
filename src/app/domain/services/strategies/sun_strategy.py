@@ -24,8 +24,11 @@ class SunStrategy(IObservabilityScoringStrategy):
     """
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
-        # Base score: Sun is always maximally bright when visible
-        base_score = MAX_OBSERVABLE_SCORE * 100.0  # Sun is by far the brightest object
+        # Base score using unified flux formula (same as other strategies)
+        flux = 10 ** (-0.4 * celestial_object.magnitude)
+        # Sun: mag -26.74 → flux = 49,659,232,145
+        # Use same formula: flux/100 * 0.80 + size/10 * 0.20
+        base_score = (flux / 100.0) * 0.80 + (celestial_object.size / 10.0) * 0.20
 
         # Equipment factor: MUST have solar filter (safety!)
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -86,10 +89,20 @@ class SunStrategy(IObservabilityScoringStrategy):
         """
         Normalize Sun scores to 0-25 scale.
 
-        Sun scores typically range from 100-250 (very high).
-        Simple linear scaling works well.
+        After unifying base score calculation with other strategies,
+        use the SAME normalization formula to preserve magnitude ordering.
+
+        Sun raw scores are MUCH higher due to extreme brightness (mag -26.74).
         """
-        # Divide by 10 to bring into 0-25 range
-        # Sun with equipment and good conditions: ~250 / 10 = 25
-        # Sun low altitude or poor weather: ~100 / 10 = 10
-        return min(raw_score / 10.0, 25.0)
+        # Use same hybrid normalization as other strategies
+        if raw_score <= 0:
+            return 0.0
+        elif raw_score > 10:
+            # Logarithmic for Sun (extremely bright)
+            # Sun (raw=397M): 15 + log10(397M) = 23.60
+            import math
+            return min(15 + math.log10(raw_score), 25.0)
+        else:
+            # Power scaling (unlikely for Sun, but for consistency)
+            compressed = raw_score ** 0.35
+            return min(compressed * 15.0, 25.0)

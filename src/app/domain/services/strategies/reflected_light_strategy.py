@@ -35,10 +35,10 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
         # Saturn flux: 10^(-0.2) = 0.631
 
         # Size is in arcminutes (0.1-30 range)
-        # Combine: flux/100 weighted heavily, size/10 adds bonus
-        # Scaling: flux/100 brings Moon to ~1096, Jupiter to ~0.09, Saturn to ~0.006
-        #          size/10 brings Moon to ~3.1, Jupiter to ~0.08, Saturn to ~0.027
-        base_score = (flux / 100.0) * 0.80 + (celestial_object.size / 10.0) * 0.20
+        # Only add size contribution for objects >= 1 arcmin (extended objects)
+        # For tiny objects (planets < 1'), size shouldn't outweigh brightness
+        size_contribution = (celestial_object.size / 10.0) * 0.20 if celestial_object.size >= 1.0 else 0.0
+        base_score = (flux / 100.0) * 0.80 + size_contribution
 
         # Equipment factor: magnification needs depend on angular size
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -179,14 +179,18 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
         # Mars (raw ~0.02): needs to beat Saturn
         # BUT: Simple multiplier doesn't work - need non-linear
 
-        # Use power scaling to compress the huge magnitude range:
-        # score^0.35 compresses: Moon 5^0.35 = 1.747, Jupiter 0.1^0.35 = 0.449
-        # Then multiply by 15 to reach target 0-25 range
-        if raw_score < 0.0001:
+        # Hybrid normalization: handles both very bright (Moon) and normal (planets)
+        # For very bright objects (raw > 10): use logarithmic scaling to avoid capping
+        # For normal objects (raw <= 10): use power scaling
+        if raw_score <= 0:
             return 0.0
-        compressed = raw_score ** 0.35  # Compress the range
-        # Moon: 1.747 * 15 = 26.2 (cap at 25) ✓
-        # Jupiter: 0.449 * 15 = 6.7 ✓
-        # Mars: 0.250 * 15 = 3.75 (needs to beat Saturn)
-        # Saturn: 0.307 * 15 = 4.6
-        return min(compressed * 15.0, 25.0)
+        elif raw_score > 10:
+            # Logarithmic for Moon and other very bright objects
+            # Moon (raw=865): 15 + log10(865) = 17.94
+            import math
+            return min(15 + math.log10(raw_score), 25.0)
+        else:
+            # Power scaling for planets
+            # Jupiter (raw=0.07): 0.07^0.35 * 15 = 5.92
+            compressed = raw_score ** 0.35
+            return min(compressed * 15.0, 25.0)

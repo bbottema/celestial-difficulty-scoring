@@ -23,9 +23,10 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         # M42: mag 4.0 → flux = 0.04
 
         # For point sources (stars), size=0, so base score is just flux-based
-        # For extended objects, add size contribution
-        # Use same weighting as ReflectedLight: 80% flux, 20% size
-        base_score = (flux / 100.0) * 0.80 + (celestial_object.size / 10.0) * 0.20
+        # For extended objects (>= 1 arcmin), add size contribution
+        # Use same threshold as ReflectedLight: only add size if >= 1 arcmin
+        size_contribution = (celestial_object.size / 10.0) * 0.20 if celestial_object.size >= 1.0 else 0.0
+        base_score = (flux / 100.0) * 0.80 + size_contribution
 
         # Equipment factor: aperture is king for faint objects
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
@@ -159,8 +160,14 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         - M42: ~0.001-0.003
         - Faint galaxies: ~0.0001-0.0005
         """
-        # Use same power scaling as ReflectedLightStrategy
-        if raw_score < 0.0001:
+        # Use same hybrid normalization as ReflectedLightStrategy
+        if raw_score <= 0:
             return 0.0
-        compressed = raw_score ** 0.35
-        return min(compressed * 15.0, 25.0)
+        elif raw_score > 10:
+            # Logarithmic for very bright objects
+            import math
+            return min(15 + math.log10(raw_score), 25.0)
+        else:
+            # Power scaling for normal objects
+            compressed = raw_score ** 0.35
+            return min(compressed * 15.0, 25.0)
