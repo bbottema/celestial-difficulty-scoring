@@ -8,7 +8,8 @@ from app.domain.model.scoring_context import ScoringContext
 from app.domain.services.strategies.base_strategy import IObservabilityScoringStrategy
 from app.domain.services.strategies.deep_sky_strategy import DeepSkyScoringStrategy
 from app.domain.services.strategies.large_faint_object_strategy import LargeFaintObjectScoringStrategy
-from app.domain.services.strategies.solar_system_strategy import SolarSystemScoringStrategy
+from app.domain.services.strategies.reflected_light_strategy import ReflectedLightStrategy
+from app.domain.services.strategies.sun_strategy import SunStrategy
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.utils.scoring_constants import LARGE_OBJECT_SIZE_THRESHOLD
 
@@ -60,8 +61,13 @@ class ObservabilityCalculationService:
 
     @staticmethod
     def _determine_scoring_strategy(celestial_object: CelestialObject) -> IObservabilityScoringStrategy:
-        if celestial_object.object_type in ['Planet', 'Moon', 'Sun']:
-            return SolarSystemScoringStrategy()
+        # Sun gets dedicated strategy (safety-first)
+        if celestial_object.object_type == 'Sun':
+            return SunStrategy()
+        # Moon and Planets use physics-based reflected light strategy
+        elif celestial_object.object_type in ['Planet', 'Moon']:
+            return ReflectedLightStrategy()
+        # Deep-sky objects (stars, galaxies, nebulae)
         elif celestial_object.object_type == 'DeepSky':
             if celestial_object.size > LARGE_OBJECT_SIZE_THRESHOLD:
                 return LargeFaintObjectScoringStrategy()
