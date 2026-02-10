@@ -27,10 +27,10 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
         # Base score from brightness and size
-        # (Both contribute to overall observability - bright helps visibility, size helps seeing detail)
+        # Brightness dominates (makes object visible), size adds detail
         magnitude_score = self._normalize_magnitude(10 ** (-0.4 * celestial_object.magnitude))
         size_score = self._normalize_size(celestial_object.size)
-        base_score = (magnitude_score + size_score) / 2
+        base_score = magnitude_score * 0.80 + size_score * 0.20  # Brightness-dominant weighting
 
         # Equipment factor: magnification needs depend on angular size
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)

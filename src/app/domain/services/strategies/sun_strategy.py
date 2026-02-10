@@ -25,7 +25,7 @@ class SunStrategy(IObservabilityScoringStrategy):
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
         # Base score: Sun is always maximally bright when visible
-        base_score = MAX_OBSERVABLE_SCORE * 2.0  # Very high base
+        base_score = MAX_OBSERVABLE_SCORE * 100.0  # Sun is by far the brightest object
 
         # Equipment factor: MUST have solar filter (safety!)
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)
