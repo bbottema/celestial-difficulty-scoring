@@ -26,13 +26,16 @@ def run_tests(test_type='all', verbosity=2):
         from tests.scoring import test_observability_unit_tests
         from tests.scoring import test_magnitude_constants
         from tests.scoring import test_limiting_magnitude_model
+        from tests.scoring import test_benchmark_objects
         unit_tests1 = loader.loadTestsFromModule(test_observability_unit_tests)
         unit_tests2 = loader.loadTestsFromModule(test_magnitude_constants)
         unit_tests3 = loader.loadTestsFromModule(test_limiting_magnitude_model)
+        unit_tests4 = loader.loadTestsFromModule(test_benchmark_objects)
         suite.addTests(unit_tests1)
         suite.addTests(unit_tests2)
         suite.addTests(unit_tests3)
-        print(f"  Added {unit_tests1.countTestCases() + unit_tests2.countTestCases() + unit_tests3.countTestCases()} unit tests")
+        suite.addTests(unit_tests4)
+        print(f"  Added {unit_tests1.countTestCases() + unit_tests2.countTestCases() + unit_tests3.countTestCases() + unit_tests4.countTestCases()} unit tests")
 
     if test_type in ('all', 'advanced'):
         print("Loading advanced tests...")
