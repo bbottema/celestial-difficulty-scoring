@@ -389,6 +389,33 @@ HEADROOM_BY_TYPE = {
 
 ---
 
+## Phase 9-11: Filters, Imaging, and Astrophotography 🟢 FUTURE
+
+**Status:** PLANNED (see EQUIPMENT_EXPANSION_PLAN.md)
+**Priority:** MEDIUM-HIGH (after Phase 8)
+
+**Overview:**
+The application has database schema and UI for filters and imagers, but they are not integrated into scoring. Three major expansion phases planned:
+
+- **Phase 9: Filter Integration** - Solar filters (safety), narrowband filters (H-alpha/OIII), broadband filters (LPR)
+- **Phase 10: Astrophotography Scoring** - Different scoring strategy for imaging (integration time, pixel scale, stacking)
+- **Phase 11: Advanced Imaging** - Multi-night planning, mosaics, lucky imaging
+
+**Key Features:**
+1. **Solar Safety** - Sun requires solar filter (score = 0.0 without filter)
+2. **Narrowband Filters** - H-alpha/OIII boost nebula visibility by 2-3 Bortle classes in light pollution
+3. **Imaging Mode** - Score for astrophotography: integration time, sensor size, moon phase
+4. **Filter Recommendations** - Show "H-alpha recommended for M42" in UI
+5. **Dual Scoring** - Compare visual observability vs imaging suitability
+
+**Dependencies:**
+- Phase 8: API integration needed for object classification (filter effectiveness varies by type)
+- Phase 7: Object-type-aware scoring (emission nebulae benefit most from narrowband)
+
+**Full details:** See `EQUIPMENT_EXPANSION_PLAN.md`
+
+---
+
 ## Current Test Status
 
 **As of 2026-02-09 (after Phase 5):**
