@@ -9,12 +9,6 @@ These tests demonstrate the benefits of Phase 5 implementation:
 """
 import unittest
 from assertpy import assert_that
-
-from app.domain.model.celestial_object import CelestialObject
-from app.domain.services.observability_calculation_service import ObservabilityCalculationService
-from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
-from app.domain.model.light_pollution import LightPollution
-from app.domain.model.telescope_type import TelescopeType
 from app.utils.light_pollution_models import (
     calculate_light_pollution_factor_by_limiting_magnitude,
     get_visibility_status

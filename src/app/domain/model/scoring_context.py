@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
+from app.domain.model.moon_conditions import MoonConditions
 
 
 @dataclass
@@ -15,6 +16,7 @@ class ScoringContext:
     observation_site: Optional[ObservationSite]
     altitude: float  # Object's current altitude in degrees
     weather: Optional[dict] = None  # Weather conditions: {'condition': str, 'cloud_cover': int}
+    moon_conditions: Optional[MoonConditions] = None  # Moon position and phase
 
     def has_equipment(self) -> bool:
         """Check if minimum required equipment is present for scoring"""

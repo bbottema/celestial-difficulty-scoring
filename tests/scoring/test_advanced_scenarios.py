@@ -8,10 +8,33 @@ import unittest
 from assertpy import assert_that
 
 from app.domain.model.celestial_object import CelestialObject
+from app.domain.model.moon_conditions import MoonConditions
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.domain.model.light_pollution import LightPollution
 from app.domain.model.telescope_type import TelescopeType
+
+
+def create_moon_at_separation(target_ra: float, target_dec: float, separation_degrees: float,
+                              illumination: float, altitude: float) -> MoonConditions:
+    """
+    Helper to create MoonConditions at specified separation from target.
+    Places moon at calculated RA/Dec to achieve desired separation.
+    """
+    # Simple approach: place moon at same declination, offset in RA
+    # For accurate separation, we use spherical trigonometry
+    # For simplicity in tests, we'll offset in RA by the separation amount
+    # (This is approximate but sufficient for testing purposes)
+    moon_ra = target_ra + separation_degrees
+    moon_dec = target_dec
+
+    return MoonConditions(
+        phase=illumination / 100.0,
+        illumination=illumination,
+        altitude=altitude,
+        ra=moon_ra,
+        dec=moon_dec
+    )
 
 
 class TestFixtures:
@@ -44,7 +67,7 @@ class TestFixtures:
 
     @staticmethod
     def jupiter():
-        return CelestialObject('Jupiter', 'Planet', -2.40, 0.77, 45.00)
+        return CelestialObject('Jupiter', 'Planet', -2.40, 0.77, 45.00, ra=200.0, dec=20.0)
 
     @staticmethod
     def orion_nebula():
@@ -52,7 +75,7 @@ class TestFixtures:
 
     @staticmethod
     def horsehead():
-        return CelestialObject('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00)
+        return CelestialObject('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00, ra=85.0, dec=-2.0)
 
     @staticmethod
     def andromeda():
@@ -246,41 +269,39 @@ class TestMoonProximityBasic(unittest.TestCase):
 
     def test_object_near_full_moon_severe_penalty(self):
         """Object 10° from full moon should lose 70%+ score."""
-        target = CelestialObject('Target Near Moon', 'DeepSky', 6.0, 10.0, 60.00)
+        target = CelestialObject('Target Near Moon', 'DeepSky', 6.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            # Moon far away
-            far_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 120.0})
+        # Moon far away
+        far_moon = create_moon_at_separation(target.ra, target.dec, 120.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            # Moon very close
-            near_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 10.0})
+        # Moon very close
+        near_moon = create_moon_at_separation(target.ra, target.dec, 10.0, 100.0, 60.0)
+        near_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=near_moon)
 
-            ratio = near_score.observability_score.score / far_score.observability_score.score
-            assert_that(ratio).is_less_than(0.30)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        ratio = near_score.observability_score.score / far_score.observability_score.score
+        assert_that(ratio).is_less_than(0.30)
 
     def test_object_very_close_to_full_moon(self):
         """Object 5° from full moon should be nearly impossible."""
-        target = CelestialObject('Target Very Close', 'DeepSky', 7.0, 5.0, 60.00)
+        target = CelestialObject('Target Very Close', 'DeepSky', 7.0, 5.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            far_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 90.0})
+        far_moon = create_moon_at_separation(target.ra, target.dec, 90.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            very_close_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 5.0})
+        close_moon = create_moon_at_separation(target.ra, target.dec, 5.0, 100.0, 60.0)
+        very_close_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=close_moon)
 
-            ratio = very_close_score.observability_score.score / far_score.observability_score.score
-            assert_that(ratio).is_less_than(0.15)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        ratio = very_close_score.observability_score.score / far_score.observability_score.score
+        assert_that(ratio).is_less_than(0.15)
 
 
 class TestMoonProximityByPhase(unittest.TestCase):
@@ -294,60 +315,57 @@ class TestMoonProximityByPhase(unittest.TestCase):
 
     def test_new_moon_no_penalty(self):
         """New moon (0% illumination) should not penalize nearby objects."""
-        target = CelestialObject('Target Near New Moon', 'DeepSky', 8.0, 10.0, 60.00)
+        target = CelestialObject('Target Near New Moon', 'DeepSky', 8.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            new_moon_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'New', 'illumination': 0, 'altitude': 0.0, 'separation_degrees': 20.0})
+        new_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 0.0, 0.0)
+        new_moon_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=new_moon)
 
-            full_moon_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 20.0})
+        full_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 100.0, 60.0)
+        full_moon_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=full_moon)
 
-            # New moon should not penalize
-            assert_that(new_moon_score.observability_score.score).is_greater_than(
-                full_moon_score.observability_score.score * 2.0)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        # New moon should not penalize
+        assert_that(new_moon_score.observability_score.score).is_greater_than(
+            full_moon_score.observability_score.score * 2.0)
 
     def test_quarter_moon_moderate_penalty(self):
         """Quarter moon (50% illumination) should have moderate penalty."""
-        target = CelestialObject('Target Near Quarter Moon', 'DeepSky', 7.0, 8.0, 60.00)
+        target = CelestialObject('Target Near Quarter Moon', 'DeepSky', 7.0, 8.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            quarter_moon_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'First Quarter', 'illumination': 50, 'altitude': 50.0, 'separation_degrees': 15.0})
+        quarter_moon = create_moon_at_separation(target.ra, target.dec, 15.0, 50.0, 50.0)
+        quarter_moon_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=quarter_moon)
 
-            full_moon_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 50.0, 'separation_degrees': 15.0})
+        full_moon = create_moon_at_separation(target.ra, target.dec, 15.0, 100.0, 50.0)
+        full_moon_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=full_moon)
 
-            # Quarter moon should be better than full moon
-            assert_that(quarter_moon_score.observability_score.score).is_greater_than(
-                full_moon_score.observability_score.score)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        # Quarter moon should be better than full moon
+        assert_that(quarter_moon_score.observability_score.score).is_greater_than(
+            full_moon_score.observability_score.score)
 
     def test_crescent_moon_minor_penalty(self):
         """Crescent moon (10% illumination) should have minor penalty."""
-        target = CelestialObject('Target Near Crescent', 'DeepSky', 7.5, 10.0, 60.00)
+        target = CelestialObject('Target Near Crescent', 'DeepSky', 7.5, 10.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            crescent_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Crescent', 'illumination': 10, 'altitude': 40.0, 'separation_degrees': 20.0})
+        crescent_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 10.0, 40.0)
+        crescent_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=crescent_moon)
 
-            full_moon_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 40.0, 'separation_degrees': 20.0})
+        full_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 100.0, 40.0)
+        full_moon_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=full_moon)
 
-            # Crescent should be much better than full
-            assert_that(crescent_score.observability_score.score).is_greater_than(
-                full_moon_score.observability_score.score * 3.0)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        # Crescent should be much better than full
+        assert_that(crescent_score.observability_score.score).is_greater_than(
+            full_moon_score.observability_score.score * 3.0)
 
 
 class TestMoonProximityBySeparation(unittest.TestCase):
@@ -361,41 +379,38 @@ class TestMoonProximityBySeparation(unittest.TestCase):
 
     def test_separation_gradient(self):
         """Score should increase with separation from full moon."""
-        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00)
+        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
         separations = [5, 10, 20, 40, 80]
 
-        try:
-            scores = []
-            for sep in separations:
-                score = self.service.score_celestial_object(
-                    target, self.scope, self.eyepiece, self.site,
-                    moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': sep})
-                scores.append(score.observability_score.score)
+        scores = []
+        for sep in separations:
+            moon = create_moon_at_separation(target.ra, target.dec, sep, 100.0, 60.0)
+            score = self.service.score_celestial_object(
+                target, self.scope, self.eyepiece, self.site,
+                moon_conditions=moon)
+            scores.append(score.observability_score.score)
 
-            # Scores should increase monotonically
-            for i in range(len(scores) - 1):
-                assert_that(scores[i + 1]).is_greater_than(scores[i])
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        # Scores should increase monotonically
+        for i in range(len(scores) - 1):
+            assert_that(scores[i + 1]).is_greater_than(scores[i])
 
     def test_double_separation_significant_improvement(self):
         """Doubling separation should significantly improve score."""
-        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00)
+        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            close_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 10.0})
+        close_moon = create_moon_at_separation(target.ra, target.dec, 10.0, 100.0, 60.0)
+        close_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=close_moon)
 
-            far_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 20.0})
+        far_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            # Doubling distance should roughly quadruple score (inverse square)
-            ratio = far_score.observability_score.score / close_score.observability_score.score
-            assert_that(ratio).is_greater_than(2.5)  # Allow some variance
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        # Doubling distance should roughly quadruple score (inverse square)
+        ratio = far_score.observability_score.score / close_score.observability_score.score
+        assert_that(ratio).is_greater_than(2.5)  # Allow some variance
 
 
 class TestMoonOccultation(unittest.TestCase):
@@ -409,34 +424,31 @@ class TestMoonOccultation(unittest.TestCase):
 
     def test_occultation_zero_score(self):
         """Object at 0° separation (behind moon) should score zero."""
-        target = CelestialObject('Occulted Star', 'DeepSky', 3.0, 0.0001, 60.00)
+        target = CelestialObject('Occulted Star', 'DeepSky', 3.0, 0.0001, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 0.0})
+        moon = create_moon_at_separation(target.ra, target.dec, 0.0, 100.0, 60.0)
+        score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=moon)
 
-            assert_that(score.observability_score.score).is_equal_to(0.0)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        assert_that(score.observability_score.score).is_equal_to(0.0)
 
     def test_barely_past_moon_still_very_hard(self):
         """Object 0.5° from moon edge should be nearly impossible."""
-        target = CelestialObject('Just Past Moon', 'DeepSky', 5.0, 1.0, 60.00)
+        target = CelestialObject('Just Past Moon', 'DeepSky', 5.0, 1.0, 60.00, ra=180.0, dec=30.0)
 
-        try:
-            barely_past_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 0.5})
+        close_moon = create_moon_at_separation(target.ra, target.dec, 0.5, 100.0, 60.0)
+        barely_past_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=close_moon)
 
-            far_score = self.service.score_celestial_object(
-                target, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 60.0})
+        far_moon = create_moon_at_separation(target.ra, target.dec, 60.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            target, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            ratio = barely_past_score.observability_score.score / far_score.observability_score.score
-            assert_that(ratio).is_less_than(0.05)  # < 5% of far score
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        ratio = barely_past_score.observability_score.score / far_score.observability_score.score
+        assert_that(ratio).is_less_than(0.05)  # < 5% of far score
 
 
 class TestMoonProximityOnBrightObjects(unittest.TestCase):
@@ -452,37 +464,35 @@ class TestMoonProximityOnBrightObjects(unittest.TestCase):
         """Jupiter should maintain 60%+ score even near moon."""
         jupiter = TestFixtures.jupiter()
 
-        try:
-            far_score = self.service.score_celestial_object(
-                jupiter, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 90.0})
+        far_moon = create_moon_at_separation(jupiter.ra, jupiter.dec, 90.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            jupiter, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            near_score = self.service.score_celestial_object(
-                jupiter, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 15.0})
+        near_moon = create_moon_at_separation(jupiter.ra, jupiter.dec, 15.0, 100.0, 60.0)
+        near_score = self.service.score_celestial_object(
+            jupiter, self.scope, self.eyepiece, self.site,
+            moon_conditions=near_moon)
 
-            ratio = near_score.observability_score.score / far_score.observability_score.score
-            assert_that(ratio).is_greater_than(0.60)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        ratio = near_score.observability_score.score / far_score.observability_score.score
+        assert_that(ratio).is_greater_than(0.60)
 
     def test_faint_object_devastated_by_moon(self):
         """Faint object should lose 80%+ near moon."""
         horsehead = TestFixtures.horsehead()
 
-        try:
-            far_score = self.service.score_celestial_object(
-                horsehead, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 90.0})
+        far_moon = create_moon_at_separation(horsehead.ra, horsehead.dec, 90.0, 100.0, 60.0)
+        far_score = self.service.score_celestial_object(
+            horsehead, self.scope, self.eyepiece, self.site,
+            moon_conditions=far_moon)
 
-            near_score = self.service.score_celestial_object(
-                horsehead, self.scope, self.eyepiece, self.site,
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 15.0})
+        near_moon = create_moon_at_separation(horsehead.ra, horsehead.dec, 15.0, 100.0, 60.0)
+        near_score = self.service.score_celestial_object(
+            horsehead, self.scope, self.eyepiece, self.site,
+            moon_conditions=near_moon)
 
-            ratio = near_score.observability_score.score / far_score.observability_score.score
-            assert_that(ratio).is_less_than(0.20)
-        except TypeError:
-            self.skipTest("Moon conditions parameter not yet implemented")
+        ratio = near_score.observability_score.score / far_score.observability_score.score
+        assert_that(ratio).is_less_than(0.20)
 
 
 # =============================================================================
@@ -502,41 +512,39 @@ class TestCombinedAdversity(unittest.TestCase):
         """Faint object near moon in cloudy weather should be nearly impossible."""
         horsehead = TestFixtures.horsehead()
 
-        try:
-            ideal_score = self.service.score_celestial_object(
-                horsehead, self.scope, self.eyepiece, self.site,
-                weather={'condition': 'Clear', 'cloud_cover': 0},
-                moon_conditions={'phase': 'New', 'illumination': 0, 'altitude': 0.0, 'separation_degrees': 180.0})
+        new_moon = create_moon_at_separation(horsehead.ra, horsehead.dec, 180.0, 0.0, 0.0)
+        ideal_score = self.service.score_celestial_object(
+            horsehead, self.scope, self.eyepiece, self.site,
+            weather={'condition': 'Clear', 'cloud_cover': 0},
+            moon_conditions=new_moon)
 
-            terrible_score = self.service.score_celestial_object(
-                horsehead, self.scope, self.eyepiece, self.site,
-                weather={'condition': 'Mostly Cloudy', 'cloud_cover': 75},
-                moon_conditions={'phase': 'Full', 'illumination': 100, 'altitude': 60.0, 'separation_degrees': 10.0})
+        full_moon = create_moon_at_separation(horsehead.ra, horsehead.dec, 10.0, 100.0, 60.0)
+        terrible_score = self.service.score_celestial_object(
+            horsehead, self.scope, self.eyepiece, self.site,
+            weather={'condition': 'Mostly Cloudy', 'cloud_cover': 75},
+            moon_conditions=full_moon)
 
-            ratio = terrible_score.observability_score.score / ideal_score.observability_score.score
-            assert_that(ratio).is_less_than(0.05)  # < 5%
-        except TypeError:
-            self.skipTest("Combined parameters not yet implemented")
+        ratio = terrible_score.observability_score.score / ideal_score.observability_score.score
+        assert_that(ratio).is_less_than(0.05)  # < 5%
 
     def test_bright_object_survives_adversity(self):
         """Jupiter should remain observable even in moderate adversity."""
         jupiter = TestFixtures.jupiter()
 
-        try:
-            ideal_score = self.service.score_celestial_object(
-                jupiter, self.scope, self.eyepiece, self.site,
-                weather={'condition': 'Clear', 'cloud_cover': 0},
-                moon_conditions={'phase': 'New', 'illumination': 0, 'altitude': 0.0, 'separation_degrees': 180.0})
+        new_moon = create_moon_at_separation(jupiter.ra, jupiter.dec, 180.0, 0.0, 0.0)
+        ideal_score = self.service.score_celestial_object(
+            jupiter, self.scope, self.eyepiece, self.site,
+            weather={'condition': 'Clear', 'cloud_cover': 0},
+            moon_conditions=new_moon)
 
-            adverse_score = self.service.score_celestial_object(
-                jupiter, self.scope, self.eyepiece, self.site,
-                weather={'condition': 'Few Clouds', 'cloud_cover': 25},
-                moon_conditions={'phase': 'First Quarter', 'illumination': 50, 'altitude': 50.0, 'separation_degrees': 30.0})
+        quarter_moon = create_moon_at_separation(jupiter.ra, jupiter.dec, 30.0, 50.0, 50.0)
+        adverse_score = self.service.score_celestial_object(
+            jupiter, self.scope, self.eyepiece, self.site,
+            weather={'condition': 'Few Clouds', 'cloud_cover': 25},
+            moon_conditions=quarter_moon)
 
-            ratio = adverse_score.observability_score.score / ideal_score.observability_score.score
-            assert_that(ratio).is_greater_than(0.50)  # Still > 50%
-        except TypeError:
-            self.skipTest("Combined parameters not yet implemented")
+        ratio = adverse_score.observability_score.score / ideal_score.observability_score.score
+        assert_that(ratio).is_greater_than(0.50)  # Still > 50%
 
 
 # =============================================================================

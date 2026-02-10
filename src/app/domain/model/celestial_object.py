@@ -8,6 +8,8 @@ class CelestialObject:
     magnitude: float
     size: float
     altitude: float
+    ra: float = 0.0  # right ascension in decimal degrees
+    dec: float = 0.0  # declination in decimal degrees
 
 
 @dataclass
