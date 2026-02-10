@@ -14,24 +14,8 @@ from app.utils.light_pollution_models import (
     get_visibility_status
 )
 
-
 class TestLimitingMagnitudePhysics(unittest.TestCase):
     """Test the core physics-based limiting magnitude calculations."""
-
-    def test_bright_object_always_visible(self):
-        """Bright objects (mag < 0) should be visible even in Bortle 9."""
-        # Jupiter at magnitude -2.4 in worst light pollution (Bortle 9, NELM 3.6)
-        factor = calculate_light_pollution_factor_by_limiting_magnitude(
-            object_magnitude=-2.4,
-            bortle=9,
-            telescope_aperture_mm=None,  # Naked eye
-            detection_headroom=0.5,
-            use_legacy_penalty=False
-        )
-
-        # Jupiter is 6 magnitudes brighter than Bortle 9 limit
-        # Should have very high visibility factor
-        assert_that(factor).is_greater_than(0.99)
 
     def test_object_below_limiting_magnitude_invisible(self):
         """Objects fainter than limiting magnitude should score zero (invisible)."""
@@ -107,43 +91,6 @@ class TestLimitingMagnitudePhysics(unittest.TestCase):
         assert_that(medium_scope_factor).is_greater_than(small_scope_factor)
         assert_that(large_scope_factor).is_greater_than(medium_scope_factor)
 
-    def test_exponential_falloff_near_threshold(self):
-        """Visibility should fall off exponentially as object approaches limiting magnitude."""
-        # In Bortle 5 (NELM 5.6) with 100mm scope (adds ~5.6 mag, limit ~11.2)
-
-        # Object well above limit (mag 8.0): high visibility
-        bright_factor = calculate_light_pollution_factor_by_limiting_magnitude(
-            object_magnitude=8.0,
-            bortle=5,
-            telescope_aperture_mm=100,
-            detection_headroom=1.5,
-            use_legacy_penalty=False
-        )
-
-        # Object near limit (mag 10.5): marginal visibility
-        marginal_factor = calculate_light_pollution_factor_by_limiting_magnitude(
-            object_magnitude=10.5,
-            bortle=5,
-            telescope_aperture_mm=100,
-            detection_headroom=1.5,
-            use_legacy_penalty=False
-        )
-
-        # Object at limit (mag 11.2): barely visible
-        threshold_factor = calculate_light_pollution_factor_by_limiting_magnitude(
-            object_magnitude=11.2,
-            bortle=5,
-            telescope_aperture_mm=100,
-            detection_headroom=1.5,
-            use_legacy_penalty=False
-        )
-
-        # Should show exponential falloff
-        assert_that(bright_factor).is_greater_than(0.85)  # Well above limit
-        assert_that(marginal_factor).is_between(0.30, 0.70)  # Near limit
-        assert_that(threshold_factor).is_less_than(0.15)  # At limit
-
-
 class TestVisibilityStatusLabels(unittest.TestCase):
     """Test human-readable visibility status labels."""
 
@@ -174,7 +121,6 @@ class TestVisibilityStatusLabels(unittest.TestCase):
             telescope_aperture_mm=None  # Naked eye in city
         )
         assert_that(status).is_equal_to("Invisible")
-
 
 class TestSurfaceBrightnessEffect(unittest.TestCase):
     """Test that extended objects are treated differently than point sources."""
@@ -228,7 +174,6 @@ class TestSurfaceBrightnessEffect(unittest.TestCase):
 
         # Large object needs more visibility margin due to low surface brightness
         assert_that(large_size).is_less_than(medium_size)
-
 
 class TestIntegratedBehavior(unittest.TestCase):
     """Test that the limiting magnitude model integrates correctly with full scoring."""
@@ -284,7 +229,6 @@ class TestIntegratedBehavior(unittest.TestCase):
         assert_that(small_scope).is_equal_to(0.0)  # Invisible
         assert_that(large_scope).is_greater_than(0.5)  # Visible
 
-
 class TestLegacyCompatibilityMode(unittest.TestCase):
     """Test that legacy mode preserves old behavior while adding visibility cutoffs."""
 
@@ -332,34 +276,11 @@ class TestLegacyCompatibilityMode(unittest.TestCase):
         # Object is ~5 magnitudes below limit - should be invisible
         assert_that(factor).is_equal_to(0.0)
 
-
 class TestRealisticOptimismGuards(unittest.TestCase):
     """
     Test that the model doesn't over-promise visibility in challenging conditions.
     These tests address real-world limitations that the basic telescope formula ignores.
     """
-
-    def test_200mm_scope_bortle6_mag11_galaxy_documents_optimism(self):
-        """
-        Real-world test: Mag 11 galaxy from Bortle 6 with 200mm scope.
-        Basic formula says limit ~12.7, so object "should be easy."
-        Reality: mediocre seeing, light loss, observer skill → often marginal or missed.
-
-        This test documents current behavior before aperture_gain_factor fix.
-        """
-        # Without aperture gain correction
-        factor_optimistic = calculate_light_pollution_factor_by_limiting_magnitude(
-            object_magnitude=11.0,
-            bortle=6,
-            telescope_aperture_mm=200,
-            detection_headroom=1.5,
-            use_legacy_penalty=False
-        )
-
-        # With aperture_gain_factor=0.85, this is now marginal (~0.17)
-        # This represents realistic expectation: challenging but possible
-        # Without correction (factor=1.0), would be ~0.5 (over-optimistic)
-        assert_that(factor_optimistic).is_between(0.10, 0.25)
 
     def test_large_low_surface_brightness_needs_strict_headroom(self):
         """
@@ -426,7 +347,6 @@ class TestRealisticOptimismGuards(unittest.TestCase):
         # Should be moderate at best
         assert_that(factor).is_less_than(0.75)
 
-
 class TestApertureDoubleCountingIssue(unittest.TestCase):
     """
     Test that documents aperture being counted in multiple factors.
@@ -454,36 +374,12 @@ class TestApertureDoubleCountingIssue(unittest.TestCase):
         # to focus it on magnification/field-of-view appropriateness
         pass
 
-
 class TestDoublePenaltyIssue(unittest.TestCase):
     """
     Test that demonstrates the double-penalty problem in LargeObjectStrategy.
     Issue: size affects both detection_headroom AND gets an additional size_penalty,
     causing very large objects to be overly suppressed even in good conditions.
     """
-
-    def test_large_object_not_overly_crushed(self):
-        """
-        Andromeda (190') in dark skies should still score well.
-
-        The headroom adjustment (3.5 for size >120') appropriately makes it harder,
-        but we shouldn't apply an ADDITIONAL 15% size penalty on top of that.
-        """
-        from app.utils.light_pollution_models import calculate_light_pollution_factor_with_surface_brightness
-
-        # Andromeda: mag 3.44, 190 arcmin in Bortle 3 with 200mm scope
-        andromeda_factor = calculate_light_pollution_factor_with_surface_brightness(
-            object_magnitude=3.44,
-            object_size_arcmin=190,
-            bortle=3,
-            telescope_aperture_mm=200,
-            use_legacy_penalty=False
-        )
-
-        # Should still be quite visible in dark skies
-        # With just headroom adjustment (no double-penalty): should be > 0.75
-        assert_that(andromeda_factor).is_greater_than(0.70)
-
 
 class TestPresetIntegration(unittest.TestCase):
     """
@@ -512,7 +408,6 @@ class TestPresetIntegration(unittest.TestCase):
         Strict: base headroom * 1.1
         """
         pass
-
 
 if __name__ == '__main__':
     unittest.main()

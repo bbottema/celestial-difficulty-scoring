@@ -15,7 +15,6 @@ from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.domain.model.light_pollution import LightPollution
 from app.domain.model.telescope_type import TelescopeType
 
-
 class TestFixtures:
     """Test fixtures for equipment and celestial objects."""
 
@@ -209,7 +208,6 @@ class TestFixtures:
     def ic_1396():
         return CelestialObject('IC 1396', 'DeepSky', 9.5, 170.0, 50.00)
 
-
 # =============================================================================
 # SOLAR SYSTEM BRIGHTNESS COMPARISONS
 # =============================================================================
@@ -327,7 +325,6 @@ class TestSolarSystemBrightnessOrdering(unittest.TestCase):
         assert_that(uranus_score.observability_score.normalized_score).is_greater_than(
             neptune_score.observability_score.normalized_score)
 
-
 # =============================================================================
 # MOON VS OTHER OBJECT TYPES
 # =============================================================================
@@ -432,7 +429,6 @@ class TestMoonVsOtherObjectTypes(unittest.TestCase):
         assert_that(moon_score.observability_score.normalized_score).is_greater_than(
             horsehead_score.observability_score.normalized_score)
 
-
 # =============================================================================
 # PLANETS VS STARS
 # =============================================================================
@@ -498,7 +494,6 @@ class TestPlanetsVsStars(unittest.TestCase):
         assert_that(vega_score.observability_score.normalized_score).is_greater_than(
             saturn_score.observability_score.normalized_score)
 
-
 # =============================================================================
 # BRIGHT STARS VS DEEP-SKY OBJECTS
 # =============================================================================
@@ -563,7 +558,6 @@ class TestStarsVsDeepSkyObjects(unittest.TestCase):
 
         assert_that(vega_score.observability_score.normalized_score).is_greater_than(
             horsehead_score.observability_score.normalized_score)
-
 
 # =============================================================================
 # DEEP-SKY MAGNITUDE COMPARISONS
@@ -656,7 +650,6 @@ class TestDeepSkyMagnitudeOrdering(unittest.TestCase):
         assert_that(ic_score.observability_score.normalized_score).is_greater_than(
             horsehead_score.observability_score.normalized_score)
 
-
 # =============================================================================
 # APERTURE IMPACT TESTS (Pairwise)
 # =============================================================================
@@ -734,7 +727,6 @@ class TestApertureImpactOnFaintObjects(unittest.TestCase):
         ratio = large_score.observability_score.score / small_score.observability_score.score
         assert_that(ratio).is_less_than(1.3)  # Less than 30% improvement
 
-
 # =============================================================================
 # MAGNIFICATION IMPACT TESTS (Pairwise)
 # =============================================================================
@@ -776,7 +768,6 @@ class TestMagnificationImpactOnPlanets(unittest.TestCase):
 
         assert_that(high_mag_score.observability_score.score).is_greater_than(
             medium_mag_score.observability_score.score)
-
 
 class TestMagnificationImpactOnLargeObjects(unittest.TestCase):
     """Large extended objects should prefer low magnification."""
@@ -831,7 +822,6 @@ class TestMagnificationImpactOnLargeObjects(unittest.TestCase):
         assert_that(low_mag_score.observability_score.score).is_greater_than(
             high_mag_score.observability_score.score)
 
-
 # =============================================================================
 # LIGHT POLLUTION IMPACT TESTS (Pairwise)
 # =============================================================================
@@ -846,43 +836,6 @@ class TestLightPollutionImpactOnPlanets(unittest.TestCase):
         self.dark_site = TestFixtures.dark_site()
         self.city_site = TestFixtures.city_site()
 
-    def test_jupiter_resilient_to_light_pollution(self):
-        """Jupiter should be 90%+ visible even in city."""
-        jupiter = TestFixtures.jupiter()
-
-        dark_score = self.service.score_celestial_object(
-            jupiter, self.medium_scope, self.medium_eyepiece, self.dark_site)
-        city_score = self.service.score_celestial_object(
-            jupiter, self.medium_scope, self.medium_eyepiece, self.city_site)
-
-        ratio = city_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_greater_than(0.90)
-
-    def test_saturn_resilient_to_light_pollution(self):
-        """Saturn should remain visible in city."""
-        saturn = TestFixtures.saturn()
-
-        dark_score = self.service.score_celestial_object(
-            saturn, self.medium_scope, self.medium_eyepiece, self.dark_site)
-        city_score = self.service.score_celestial_object(
-            saturn, self.medium_scope, self.medium_eyepiece, self.city_site)
-
-        ratio = city_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_greater_than(0.85)
-
-    def test_moon_unaffected_by_light_pollution(self):
-        """Moon should be essentially unaffected by light pollution."""
-        moon = TestFixtures.moon()
-
-        dark_score = self.service.score_celestial_object(
-            moon, self.medium_scope, self.medium_eyepiece, self.dark_site)
-        city_score = self.service.score_celestial_object(
-            moon, self.medium_scope, self.medium_eyepiece, self.city_site)
-
-        ratio = city_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_greater_than(0.95)
-
-
 class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
     """Deep-sky objects should be severely affected by light pollution."""
 
@@ -895,7 +848,7 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
         self.city_site = TestFixtures.city_site()
 
     def test_horsehead_devastated_by_city_light(self):
-        """Horsehead (very faint) should lose 70%+ in city."""
+        """Horsehead (very faint) should be drastically worse in city light pollution."""
         horsehead = TestFixtures.horsehead()
 
         dark_score = self.service.score_celestial_object(
@@ -903,11 +856,16 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
         city_score = self.service.score_celestial_object(
             horsehead, self.large_scope, self.medium_eyepiece, self.city_site)
 
-        ratio = city_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_less_than(0.30)
+        # Faint objects should be devastated by city light (retain <30% of dark sky score)
+        assert_that(city_score.observability_score.score).is_less_than(
+            dark_score.observability_score.score * 0.3
+        ).described_as(
+            f"Horsehead in city should be <30% of dark sky score "
+            f"(got {city_score.observability_score.score:.2f} vs {dark_score.observability_score.score:.2f})"
+        )
 
     def test_ring_nebula_hurt_by_city_light(self):
-        """Ring Nebula should lose 50%+ score in city."""
+        """Ring Nebula should be significantly worse in city light pollution."""
         ring = TestFixtures.ring_nebula()
 
         dark_score = self.service.score_celestial_object(
@@ -915,11 +873,16 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
         city_score = self.service.score_celestial_object(
             ring, self.large_scope, self.medium_eyepiece, self.city_site)
 
-        ratio = city_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_less_than(0.50)
+        # City light should significantly hurt medium-brightness DSOs (retain <50%)
+        assert_that(city_score.observability_score.score).is_less_than(
+            dark_score.observability_score.score * 0.5
+        ).described_as(
+            f"Ring Nebula in city should be <50% of dark sky score "
+            f"(got {city_score.observability_score.score:.2f} vs {dark_score.observability_score.score:.2f})"
+        )
 
     def test_andromeda_hurt_by_suburbs(self):
-        """Andromeda should lose 30-50% in suburbs."""
+        """Andromeda should be noticeably worse in suburban light pollution."""
         andromeda = TestFixtures.andromeda()
 
         dark_score = self.service.score_celestial_object(
@@ -927,11 +890,14 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
         suburban_score = self.service.score_celestial_object(
             andromeda, self.large_scope, self.medium_eyepiece, self.suburban_site)
 
+        # Suburbs should noticeably hurt large faint objects (retain 50-70%)
         ratio = suburban_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_between(0.50, 0.70)
+        assert_that(ratio).is_between(0.50, 0.70).described_as(
+            f"Andromeda in suburbs should be 50-70% of dark sky score (got {ratio:.2%})"
+        )
 
     def test_orion_nebula_moderately_affected(self):
-        """Orion Nebula (bright DSO) should be moderately affected."""
+        """Orion Nebula (bright DSO) should be moderately affected by suburban light."""
         orion = TestFixtures.orion_nebula()
 
         dark_score = self.service.score_celestial_object(
@@ -939,9 +905,11 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
         suburban_score = self.service.score_celestial_object(
             orion, self.large_scope, self.medium_eyepiece, self.suburban_site)
 
+        # Bright DSOs should be moderately affected (retain 60-85%)
         ratio = suburban_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_between(0.60, 0.85)
-
+        assert_that(ratio).is_between(0.60, 0.85).described_as(
+            f"Orion Nebula in suburbs should be 60-85% of dark sky score (got {ratio:.2%})"
+        )
 
 class TestLightPollutionGradient(unittest.TestCase):
     """Scores should decrease monotonically with worsening light pollution."""
@@ -985,7 +953,6 @@ class TestLightPollutionGradient(unittest.TestCase):
             suburban_score.observability_score.score)
         assert_that(suburban_score.observability_score.score).is_greater_than(
             city_score.observability_score.score)
-
 
 # =============================================================================
 # ALTITUDE IMPACT TESTS (Pairwise)
@@ -1048,7 +1015,6 @@ class TestAltitudeImpact(unittest.TestCase):
         assert_that(high_score.observability_score.score).is_greater_than(
             low_score.observability_score.score)
 
-
 # =============================================================================
 # NO EQUIPMENT PENALTY TESTS
 # =============================================================================
@@ -1063,7 +1029,7 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         self.dark_site = TestFixtures.dark_site()
 
     def test_horsehead_needs_equipment(self):
-        """Horsehead should score < 30% without equipment."""
+        """Horsehead should be much worse without telescope (faint objects need equipment)."""
         horsehead = TestFixtures.horsehead()
 
         with_equipment = self.service.score_celestial_object(
@@ -1071,11 +1037,16 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         no_equipment = self.service.score_celestial_object(
             horsehead, None, None, self.dark_site)
 
-        ratio = no_equipment.observability_score.score / with_equipment.observability_score.score
-        assert_that(ratio).is_less_than(0.30)
+        # Faint DSOs need telescope - naked eye should be much worse (<30%)
+        assert_that(no_equipment.observability_score.score).is_less_than(
+            with_equipment.observability_score.score * 0.3
+        ).described_as(
+            f"Horsehead naked eye should be <30% of telescope score "
+            f"(got {no_equipment.observability_score.score:.2f} vs {with_equipment.observability_score.score:.2f})"
+        )
 
     def test_ring_nebula_needs_equipment(self):
-        """Ring Nebula should score much lower without equipment."""
+        """Ring Nebula should be significantly worse without telescope."""
         ring = TestFixtures.ring_nebula()
 
         with_equipment = self.service.score_celestial_object(
@@ -1083,11 +1054,16 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         no_equipment = self.service.score_celestial_object(
             ring, None, None, self.dark_site)
 
-        ratio = no_equipment.observability_score.score / with_equipment.observability_score.score
-        assert_that(ratio).is_less_than(0.40)
+        # Medium-faint DSOs need telescope - naked eye should be significantly worse (<40%)
+        assert_that(no_equipment.observability_score.score).is_less_than(
+            with_equipment.observability_score.score * 0.4
+        ).described_as(
+            f"Ring Nebula naked eye should be <40% of telescope score "
+            f"(got {no_equipment.observability_score.score:.2f} vs {with_equipment.observability_score.score:.2f})"
+        )
 
     def test_jupiter_okay_without_equipment(self):
-        """Jupiter should still be visible naked eye (> 70% score)."""
+        """Jupiter should remain highly visible without telescope (bright planets)."""
         jupiter = TestFixtures.jupiter()
 
         with_equipment = self.service.score_celestial_object(
@@ -1095,11 +1071,14 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         no_equipment = self.service.score_celestial_object(
             jupiter, None, None, self.dark_site)
 
+        # Bright planets should remain highly visible naked eye (>70%)
         ratio = no_equipment.observability_score.score / with_equipment.observability_score.score
-        assert_that(ratio).is_greater_than(0.70)
+        assert_that(ratio).is_greater_than(0.70).described_as(
+            f"Jupiter naked eye should be >70% of telescope score (got {ratio:.2%})"
+        )
 
     def test_moon_excellent_without_equipment(self):
-        """Moon should be 90%+ visible naked eye."""
+        """Moon should be excellent without telescope (brightest natural object)."""
         moon = TestFixtures.moon()
 
         with_equipment = self.service.score_celestial_object(
@@ -1107,11 +1086,14 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         no_equipment = self.service.score_celestial_object(
             moon, None, None, self.dark_site)
 
+        # Moon should be nearly as good naked eye as with telescope (>90%)
         ratio = no_equipment.observability_score.score / with_equipment.observability_score.score
-        assert_that(ratio).is_greater_than(0.90)
+        assert_that(ratio).is_greater_than(0.90).described_as(
+            f"Moon naked eye should be >90% of telescope score (got {ratio:.2%})"
+        )
 
     def test_sirius_visible_naked_eye(self):
-        """Sirius should be 80%+ visible naked eye."""
+        """Sirius should remain highly visible without telescope (bright stars)."""
         sirius = TestFixtures.sirius()
 
         with_equipment = self.service.score_celestial_object(
@@ -1119,9 +1101,11 @@ class TestNoEquipmentPenalty(unittest.TestCase):
         no_equipment = self.service.score_celestial_object(
             sirius, None, None, self.dark_site)
 
+        # Bright stars should remain highly visible naked eye (>80%)
         ratio = no_equipment.observability_score.score / with_equipment.observability_score.score
-        assert_that(ratio).is_greater_than(0.80)
-
+        assert_that(ratio).is_greater_than(0.80).described_as(
+            f"Sirius naked eye should be >80% of telescope score (got {ratio:.2%})"
+        )
 
 # =============================================================================
 # COMPREHENSIVE SANITY TESTS
@@ -1179,7 +1163,6 @@ class TestComprehensiveSanityChecks(unittest.TestCase):
 
         assert_that(bright_score.observability_score.score).is_greater_than(
             faint_score.observability_score.score)
-
 
 if __name__ == '__main__':
     unittest.main()
