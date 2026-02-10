@@ -3,7 +3,7 @@ Function Show-Tree
     param (
         [string]$path = ".",
         [int]$level = 0,
-        [string[]]$excludeDirs = @('__pycache__', '.idea'),
+        [string[]]$excludeDirs = @('__pycache__', '.idea', '.mypy_cache'),
         [string]$fileExtension = "*.py"
     )
     $indent = " " * $level
