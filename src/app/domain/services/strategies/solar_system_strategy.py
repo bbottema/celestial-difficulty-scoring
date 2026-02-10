@@ -69,10 +69,15 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
     def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
         Light pollution barely affects bright solar system objects.
+        Moon is essentially unaffected by light pollution.
         Uses hybrid model: legacy linear penalty with physics-based visibility check.
         """
         if not context.observation_site:
             return 0.9  # Small penalty for unknown site
+
+        # Moon is so bright it's essentially unaffected by light pollution
+        if celestial_object.object_type == 'Moon':
+            return 1.0
 
         bortle = context.get_bortle_number()
         aperture = context.get_aperture_mm() if context.has_equipment() else None
