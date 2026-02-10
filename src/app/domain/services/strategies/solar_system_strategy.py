@@ -41,8 +41,16 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         """
         For planets: higher magnification = better (see more detail)
         Target: 150-300x for planets
+        Moon: looks great naked-eye (minimal penalty)
         """
         if not context.has_equipment():
+            # Moon is spectacular naked-eye, minimal penalty
+            if celestial_object.object_type == 'Moon':
+                return 0.95
+            # Bright planets (Venus, Jupiter, Mars, Saturn) are good naked-eye too
+            # Only penalize moderately since they're bright and obvious
+            if celestial_object.object_type == 'Planet' and celestial_object.magnitude < 1.0:
+                return 0.75
             return EQUIPMENT_PENALTY_SOLAR_SYSTEM
 
         magnification = context.get_magnification()
