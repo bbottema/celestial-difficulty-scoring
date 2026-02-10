@@ -166,6 +166,23 @@ Validate Phase 5 limiting magnitude model against real-world observing condition
 
 ---
 
+## Test Suite Overhaul 🔴 HIGH PRIORITY
+
+**Status:** READY TO IMPLEMENT
+**Priority:** HIGH (improves development velocity)
+**Dependencies:** None
+**Files:** `planning/TEST_SUITE_OVERHAUL.md`, `planning/TEST_SUITE_OVERHAUL_STATUS.md`, `planning/TEST_AUDIT.md`
+
+Transform test suite from implementation-driven to user-experience-driven. Remove 40 arbitrary threshold tests, focus on physics-based ordering and relative comparisons. This will improve maintainability and clarify what tests actually validate.
+
+**Key Changes:**
+- Remove tests with arbitrary numeric assertions (>0.80, >0.50, etc.)
+- Keep 32 physics-based ordering tests (objective, always valid)
+- Focus on relative comparisons that validate user experience
+- Reduces test count from 131 to ~91 high-quality tests
+
+---
+
 ## Priority Roadmap
 
 ### Immediate Next Steps (Choose One)
@@ -221,7 +238,10 @@ python run_tests.py -v
 │   ├── phase-6_double-star-splitability.md
 │   ├── phase-7_object-type-aware-scoring.md
 │   ├── phase-8_astronomical-api-integration.md
-│   └── phases-9-10-11_filters-imaging-astrophotography.md
+│   ├── phases-9-10-11_filters-imaging-astrophotography.md
+│   ├── TEST_SUITE_OVERHAUL.md
+│   ├── TEST_SUITE_OVERHAUL_STATUS.md
+│   └── TEST_AUDIT.md
 │
 ├── PHASE5_CODE_REVIEW_RESPONSE.md (Phase 5 architectural decisions)
 └── NIGHT_SHIFT_PROGRESS.md (historical development log)
