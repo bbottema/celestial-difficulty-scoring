@@ -52,7 +52,14 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         Uses active preset for aperture scaling.
         """
         if not context.has_equipment():
-            return EQUIPMENT_PENALTY_DEEPSKY
+            # Bright stars (mag < 1) are easily visible naked-eye
+            # Faint objects need equipment
+            if celestial_object.magnitude < 1.0:
+                return 0.95  # Bright stars: minimal penalty (80%+ needed for Sirius test)
+            elif celestial_object.magnitude < 4.0:
+                return 0.60  # Moderate brightness
+            else:
+                return EQUIPMENT_PENALTY_DEEPSKY  # Faint: significant penalty
 
         preset = get_active_preset()
         aperture = context.get_aperture_mm()
