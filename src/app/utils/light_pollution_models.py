@@ -151,10 +151,10 @@ def calculate_light_pollution_factor_with_surface_brightness(
     # However, we don't want to use surface brightness directly as it makes objects appear
     # way too faint. Instead, we'll adjust the detection headroom based on size.
     # Very large objects (>60') need even stricter headroom due to extremely low surface brightness.
-    if object_size_arcmin > 120:  # Very large extended objects (Veil, California Nebula)
+    if object_size_arcmin > 120:  # Very large extended objects (Veil, California Nebula, Andromeda)
         effective_magnitude = object_magnitude
-        # Extremely large objects need very strict headroom
-        detection_headroom = 3.5
+        # Extremely large objects need strict headroom (but not TOO strict for bright ones like M31)
+        detection_headroom = 3.0  # Reduced from 3.5 to allow bright large objects better visibility
     elif object_size_arcmin > 60:  # Large extended objects
         effective_magnitude = object_magnitude
         # Large objects need strict headroom

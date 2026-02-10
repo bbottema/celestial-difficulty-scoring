@@ -75,27 +75,26 @@ Strict preset: more conservative for mostly cloudy.
 Reduces false greens on unreliable nights.
 """
 
-WEATHER_FACTOR_PARTLY_CLOUDY = 0.60
+WEATHER_FACTOR_PARTLY_CLOUDY = 0.50
 """
 Partly cloudy conditions (50% cloud cover) - base value.
-40% reduction in observability.
-Based on observer experience: "mostly cloudy, I caught gaps" scenarios.
+50% reduction in observability.
+Linear relationship: 50% clouds = 50% penalty.
 Represents time target is accessible during session.
-Value tuned to avoid false greens for faint targets.
 """
 
-WEATHER_FACTOR_PARTLY_CLOUDY_FRIENDLY = 0.65
+WEATHER_FACTOR_PARTLY_CLOUDY_FRIENDLY = 0.55
 """
 Friendly preset: more optimistic for partly cloudy.
 Encourages observing in variable conditions.
 """
 
-WEATHER_FACTOR_FEW_CLOUDS = 0.85
+WEATHER_FACTOR_FEW_CLOUDS = 0.75
 """
 Few clouds (25% cloud cover).
-15% reduction in observability.
+25% reduction in observability.
 Should still yield many green-rated results for good targets.
-Matches "gap probability" interpretation from observer reports.
+Linear relationship: 25% clouds = 25% penalty.
 """
 
 WEATHER_FACTOR_CLEAR = 1.0
@@ -221,7 +220,7 @@ ALTITUDE_FACTOR_POOR_LARGE = 0.5
 # ==============================================================================
 
 # Magnification ranges for different object types
-MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 120
+MAGNIFICATION_PLANETARY_OPTIMAL_MIN = 150
 """
 Minimum magnification for planetary detail.
 Based on exit pupil approach: 0.5-1.0mm exit pupil optimal for planets.
