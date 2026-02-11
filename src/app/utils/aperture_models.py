@@ -38,24 +38,24 @@ def calculate_optical_efficiency(telescope_type: TelescopeType) -> float:
         0.82  # Corrector + large obstruction
     """
     efficiency = {
-        TelescopeType.ACHROMATIC_REFRACTOR: 0.93,      # Slight chromatic aberration
-        TelescopeType.APOCHROMATIC_REFRACTOR: 0.95,    # High transmission, minimal aberration
-        TelescopeType.NEWTONIAN: 0.88,                 # 2 mirror coatings + spider
-        TelescopeType.DOBSONIAN: 0.88,                 # Same as Newtonian
-        TelescopeType.SCHMIDT_CASSEGRAIN: 0.82,        # Corrector + large obstruction (30-40%)
-        TelescopeType.MAKSUTOV_CASSEGRAIN: 0.85,       # Thicker corrector, smaller obstruction
-        TelescopeType.MAKSUTOV_NEWTONIAN: 0.86,        # Corrector + Newtonian
-        TelescopeType.CASSEGRAIN: 0.85,                # General Cassegrain
-        TelescopeType.RITCHEY_CHRETIEN: 0.88,          # Similar to Newtonian, optimized optics
-        TelescopeType.DALL_KIRKHAM: 0.85,              # Cassegrain variant
-        TelescopeType.SCHMIDT_NEWTONIAN: 0.86,         # Corrector + Newtonian
-        TelescopeType.SCHMIDT_CAMERA: 0.82,            # Large corrector plate
-        TelescopeType.ASTROGRAPH_ENTRY_LEVEL: 0.90,    # Modern apochromatic designs
-        TelescopeType.ASTROGRAPH_ADVANCED: 0.92,       # High-quality coatings
-        TelescopeType.ASTROGRAPH_HIGH_END: 0.94,       # Premium optics
-        TelescopeType.UNKNOWN: 0.85,                   # Conservative default
+        TelescopeType.ACHROMATIC_REFRACTOR: 0.96,      # High transmission, minor chromatic aberration
+        TelescopeType.APOCHROMATIC_REFRACTOR: 0.98,    # Excellent transmission, minimal aberration
+        TelescopeType.NEWTONIAN: 0.92,                 # 2 mirror coatings + spider (modern coatings)
+        TelescopeType.DOBSONIAN: 0.92,                 # Same as Newtonian
+        TelescopeType.SCHMIDT_CASSEGRAIN: 0.88,        # Corrector + obstruction (modern coatings help)
+        TelescopeType.MAKSUTOV_CASSEGRAIN: 0.90,       # Thicker corrector, smaller obstruction
+        TelescopeType.MAKSUTOV_NEWTONIAN: 0.91,        # Corrector + Newtonian
+        TelescopeType.CASSEGRAIN: 0.90,                # General Cassegrain
+        TelescopeType.RITCHEY_CHRETIEN: 0.92,          # Similar to Newtonian, optimized optics
+        TelescopeType.DALL_KIRKHAM: 0.90,              # Cassegrain variant
+        TelescopeType.SCHMIDT_NEWTONIAN: 0.91,         # Corrector + Newtonian
+        TelescopeType.SCHMIDT_CAMERA: 0.88,            # Large corrector plate
+        TelescopeType.ASTROGRAPH_ENTRY_LEVEL: 0.94,    # Modern apochromatic designs
+        TelescopeType.ASTROGRAPH_ADVANCED: 0.96,       # High-quality coatings
+        TelescopeType.ASTROGRAPH_HIGH_END: 0.98,       # Premium optics
+        TelescopeType.UNKNOWN: 0.90,                   # Conservative default
     }
-    return efficiency.get(telescope_type, 0.85)  # Default: generic telescope
+    return efficiency.get(telescope_type, 0.90)  # Default: generic telescope
 
 
 def calculate_seeing_factor(altitude: float, weather: dict = None) -> float:
@@ -84,12 +84,13 @@ def calculate_seeing_factor(altitude: float, weather: dict = None) -> float:
         1.0  # Near zenith, minimal extinction
     """
     # Low altitude = more atmosphere to penetrate
+    # These are more optimistic than theoretical to match real-world observing
     if altitude < 20:
-        return 0.80  # Significant atmospheric extinction
+        return 0.88  # Significant but not catastrophic
     elif altitude < 40:
-        return 0.90  # Moderate extinction
+        return 0.94  # Moderate extinction
     elif altitude < 60:
-        return 0.95  # Minimal extinction
+        return 0.97  # Minimal extinction
     else:
         return 1.0   # Negligible extinction at high altitudes
 
@@ -118,11 +119,11 @@ def calculate_observer_factor(skill_level: str = 'intermediate') -> float:
         0.95  # Maximizes visibility
     """
     factors = {
-        'beginner': 0.85,      # Learning curve, less dark adaptation
-        'intermediate': 0.90,  # Competent, knows techniques
-        'expert': 0.95,        # Experienced, maximizes visibility
+        'beginner': 0.92,      # Still capable with basic techniques
+        'intermediate': 0.96,  # Competent, knows averted vision
+        'expert': 0.99,        # Maximizes visibility, minimal losses
     }
-    return factors.get(skill_level, 0.90)  # Default: intermediate
+    return factors.get(skill_level, 0.96)  # Default: intermediate
 
 
 def calculate_aperture_gain_factor(
