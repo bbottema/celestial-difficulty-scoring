@@ -11,7 +11,12 @@ from app.domain.services.strategies.base_strategy import IObservabilityScoringSt
 class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
     """
     Scoring strategy for standard deep-sky objects (galaxies, nebulae, clusters).
-    These objects are faint, so aperture and dark skies are CRITICAL.
+
+    HIERARCHICAL MODEL (Phase 6.5 refactor):
+    1. Detection: Can object be detected? (uses aperture via limiting magnitude)
+    2. Quality: How good is the viewing experience? (independent factors)
+
+    This eliminates double-counting of aperture benefits.
     """
 
     def calculate_score(self, celestial_object, context: 'ScoringContext'):
@@ -28,80 +33,45 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         size_contribution = (celestial_object.size / 10.0) * 0.20 if celestial_object.size >= 1.0 else 0.0
         base_score = (flux / 100.0) * 0.80 + size_contribution
 
-        # Equipment factor: aperture is king for faint objects
-        equipment_factor = self._calculate_equipment_factor(celestial_object, context)
+        # HIERARCHICAL FACTORS (Phase 6.5 refactor):
 
-        # Site factor: light pollution is HUGE for faint objects
-        site_factor = self._calculate_site_factor(celestial_object, context)
+        # 1. DETECTION: Can we detect this object at all?
+        #    Uses limiting magnitude (includes aperture via physics)
+        detection_factor = self._calculate_detection_factor(celestial_object, context)
 
-        # Altitude factor: higher is better (less atmosphere to penetrate)
+        # 2. MAGNIFICATION: Is magnification appropriate for this object?
+        #    (No aperture dependency - only mag/size matching)
+        magnification_factor = self._calculate_magnification_factor(celestial_object, context)
+
+        # 3. SKY DARKNESS: Light pollution penalty
+        #    (No aperture dependency - only Bortle scale)
+        sky_darkness_factor = self._calculate_sky_darkness_factor(celestial_object, context)
+
+        # 4. ALTITUDE: Atmospheric clarity
+        #    (No aperture dependency)
         altitude_factor = self._calculate_altitude_factor(context.altitude)
 
-        # Weather factor: clouds affect all objects
+        # 5. WEATHER: Cloud cover
         weather_factor = calculate_weather_factor(context)
 
-        # Moon proximity factor: moon can devastate faint deep-sky objects
+        # 6. MOON: Moon proximity
         moon_factor = calculate_moon_proximity_factor(celestial_object, context)
 
-        return base_score * equipment_factor * site_factor * altitude_factor * weather_factor * moon_factor
+        return base_score * detection_factor * magnification_factor * sky_darkness_factor * altitude_factor * weather_factor * moon_factor
 
-    def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
+    def _calculate_detection_factor(self, celestial_object, context: 'ScoringContext') -> float:
         """
-        For deep-sky: aperture is critical (light gathering power).
-        More aperture = see fainter objects.
-        Uses active preset for aperture scaling.
-        """
-        if not context.has_equipment():
-            # Bright stars (mag < 1) are easily visible naked-eye
-            # Faint objects need equipment
-            if celestial_object.magnitude < 1.0:
-                return 0.95  # Bright stars: minimal penalty (80%+ needed for Sirius test)
-            elif celestial_object.magnitude < 4.0:
-                return 0.60  # Moderate brightness
-            else:
-                return EQUIPMENT_PENALTY_DEEPSKY  # Faint: significant penalty
+        DETECTION FACTOR: Can the object be detected above the noise floor?
 
-        preset = get_active_preset()
-        aperture = context.get_aperture_mm()
+        Uses physics-based limiting magnitude model (Phase 5):
+        - Includes aperture via limiting magnitude formula
+        - Considers light pollution (Bortle scale)
+        - Returns 0.0 if below detection threshold
+        - Returns 0-1 exponential falloff near threshold
+        - Returns ~1.0 if well above threshold
 
-        # Aperture impact depends on object brightness
-        # Faint objects benefit much more from large aperture
-        if celestial_object.magnitude <= 6:  # Bright deep-sky
-            # Even small scopes work
-            if aperture >= APERTURE_MEDIUM:
-                return preset.aperture_factor_medium
-            elif aperture >= APERTURE_SMALL:
-                return 1.0
-            else:
-                return preset.aperture_factor_tiny
-        elif celestial_object.magnitude <= 9:  # Medium faint
-            # Need decent aperture
-            if aperture >= APERTURE_LARGE:
-                return preset.aperture_factor_large
-            elif aperture >= 150:
-                return preset.aperture_factor_medium
-            elif aperture >= APERTURE_MEDIUM:
-                return 0.9
-            else:
-                return 0.6
-        else:  # Very faint (>9 mag)
-            # Really need large aperture
-            if aperture >= 250:
-                return preset.aperture_factor_large * 1.05  # Extra bonus for very large scopes
-            elif aperture >= APERTURE_LARGE:
-                return preset.aperture_factor_large
-            elif aperture >= 150:
-                return 0.9
-            elif aperture >= APERTURE_MEDIUM:
-                return 0.6
-            else:
-                return 0.3  # Very difficult with small scope
-
-    def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
-        """
-        Light pollution is CRITICAL for faint deep-sky objects.
-        Uses hybrid model: legacy penalties with physics-based visibility checks.
-        Phase 6.5: Passes telescope properties for split aperture model.
+        This is the ONLY factor that considers aperture (via limiting magnitude).
+        All other factors are independent of aperture.
         """
         if not context.observation_site:
             return 0.7  # Moderate penalty for unknown site
@@ -109,18 +79,11 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         bortle = context.get_bortle_number()
         aperture = context.get_aperture_mm() if context.has_equipment() else None
         telescope_type = context.telescope.type if context.has_equipment() else None
-        preset = get_active_preset()
 
-        # Determine penalty based on object brightness (same logic as before)
-        if celestial_object.magnitude <= 6:  # Bright deep-sky
-            penalty_per_bortle = 0.06
-        elif celestial_object.magnitude <= 9:  # Medium faint
-            penalty_per_bortle = LIGHT_POLLUTION_PENALTY_PER_BORTLE_DEEPSKY
-        else:  # Very faint
-            penalty_per_bortle = 0.13
-
-        # Use hybrid model with surface brightness consideration
+        # Use limiting magnitude model with surface brightness consideration
         # Phase 6.5: Pass telescope_type and altitude for split aperture gain
+        # NOTE: We set use_legacy_penalty=False to get PURE limiting magnitude model
+        # The sky_darkness_factor will handle Bortle penalties separately
         factor = calculate_light_pollution_factor_with_surface_brightness(
             celestial_object.magnitude,
             celestial_object.size,
@@ -129,12 +92,123 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             telescope_type=telescope_type,
             altitude=celestial_object.altitude,
             observer_skill='intermediate',  # TODO: Make configurable in user settings
-            use_legacy_penalty=True,
-            legacy_penalty_per_bortle=penalty_per_bortle,
-            legacy_minimum_factor=preset.light_pollution_min_factor_deepsky
+            use_legacy_penalty=False,  # Pure physics model, no legacy blending
+            legacy_penalty_per_bortle=0.0,  # Not used
+            legacy_minimum_factor=0.0  # Not used
         )
 
         return factor
+
+    def _calculate_magnification_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """
+        MAGNIFICATION FACTOR: Is magnification appropriate for this object?
+
+        Large extended objects need LOW magnification (wide field of view).
+        Small compact objects can handle HIGHER magnification.
+
+        NO APERTURE DEPENDENCY - only considers magnification and object size.
+
+        For FAINT objects (mag > 9), magnification matching is less critical than detection.
+        We're more forgiving because any equipment that can detect it is valuable.
+        """
+        if not context.has_equipment():
+            # Naked eye viewing
+            # Bright stars/objects: great naked-eye
+            # Faint objects: significant penalty
+            if celestial_object.magnitude < 1.0:
+                return 0.95  # Bright stars easily visible
+            elif celestial_object.magnitude < 4.0:
+                return 0.70  # Moderate stars visible
+            else:
+                return 0.40  # Faint objects hard without equipment
+
+        magnification = context.get_magnification()
+
+        # For very faint objects, magnification matching is less critical
+        # Detection is paramount - if you can see it at all, that's what matters
+        # We progressively care less about magnification as objects get fainter
+        if celestial_object.magnitude > 9:
+            leniency = 1.5  # Very faint: detection >> magnification matching
+        elif celestial_object.magnitude > 7:
+            leniency = 1.3  # Faint: detection > magnification matching
+        else:
+            leniency = 1.0  # Bright: magnification matching matters
+
+        # Magnification matching based on object size
+        # For faint objects (leniency > 1), we're very forgiving - just don't be extreme
+        if celestial_object.size > 60:  # Very large (Andromeda, Pleiades, etc.)
+            # Need very low magnification, but faint ones are forgiving
+            if magnification < 100:
+                return 1.0  # Good enough for very large objects
+            elif magnification < 200:
+                return min(0.85 * leniency, 1.0)  # Acceptable for faint
+            else:
+                return min(0.7 * leniency, 1.0)  # Too high but tolerable if faint
+
+        elif celestial_object.size > 20:  # Large (many nebulae)
+            # Need low-moderate magnification
+            if magnification < 150:
+                return 1.0  # Wide acceptable range
+            elif magnification < 200:
+                return min(0.9 * leniency, 1.0)
+            else:
+                return min(0.8 * leniency, 1.0)
+
+        elif celestial_object.size > 5:  # Medium (many galaxies)
+            # Moderate magnification best
+            if 50 <= magnification <= 150:
+                return min(1.0 * leniency, 1.0)
+            elif 30 <= magnification < 50 or 150 < magnification <= 200:
+                return min(0.9 * leniency, 1.0)
+            else:
+                return min(0.8 * leniency, 1.0)
+
+        else:  # Small/compact (planetary nebulae, globular clusters)
+            # Can handle higher magnification
+            if 100 <= magnification <= 200:
+                return min(1.0 * leniency, 1.0)
+            elif 50 <= magnification < 100 or 200 < magnification <= 250:
+                return min(0.9 * leniency, 1.0)
+            else:
+                return min(0.85 * leniency, 1.0)
+
+    def _calculate_sky_darkness_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """
+        SKY DARKNESS FACTOR: Light pollution penalty based on Bortle scale.
+
+        NO APERTURE DEPENDENCY - only considers Bortle scale and object brightness.
+        Aperture's effect on visibility is handled by detection_factor.
+
+        Fainter objects suffer more from light pollution.
+        """
+        if not context.observation_site:
+            return 0.8  # Moderate penalty for unknown site
+
+        bortle = context.get_bortle_number()
+        preset = get_active_preset()
+
+        # Determine penalty based on object brightness
+        if celestial_object.magnitude <= 6:  # Bright deep-sky
+            penalty_per_bortle = 0.06  # Less affected by light pollution
+        elif celestial_object.magnitude <= 9:  # Medium faint
+            penalty_per_bortle = LIGHT_POLLUTION_PENALTY_PER_BORTLE_DEEPSKY
+        else:  # Very faint
+            penalty_per_bortle = 0.13  # Heavily affected by light pollution
+
+        # Linear Bortle penalty
+        factor = 1.0 - ((bortle - 1) * penalty_per_bortle)
+        factor = max(factor, preset.light_pollution_min_factor_deepsky)
+
+        return factor
+
+    # Backward compatibility aliases for tests
+    def _calculate_site_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """DEPRECATED: Use _calculate_detection_factor() instead. Kept for test compatibility."""
+        return self._calculate_detection_factor(celestial_object, context)
+
+    def _calculate_equipment_factor(self, celestial_object, context: 'ScoringContext') -> float:
+        """DEPRECATED: Use _calculate_magnification_factor() instead. Kept for test compatibility."""
+        return self._calculate_magnification_factor(celestial_object, context)
 
     def _calculate_altitude_factor(self, altitude: float) -> float:
         """Higher altitude = less atmosphere to penetrate. Below horizon = impossible."""
