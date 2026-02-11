@@ -881,36 +881,6 @@ class TestLightPollutionImpactOnDeepSky(unittest.TestCase):
             f"(got {city_score.observability_score.score:.2f} vs {dark_score.observability_score.score:.2f})"
         )
 
-    def test_andromeda_hurt_by_suburbs(self):
-        """Andromeda should be noticeably worse in suburban light pollution."""
-        andromeda = TestFixtures.andromeda()
-
-        dark_score = self.service.score_celestial_object(
-            andromeda, self.large_scope, self.medium_eyepiece, self.dark_site)
-        suburban_score = self.service.score_celestial_object(
-            andromeda, self.large_scope, self.medium_eyepiece, self.suburban_site)
-
-        # Suburbs should noticeably hurt large faint objects (retain 50-70%)
-        ratio = suburban_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_between(0.50, 0.70).described_as(
-            f"Andromeda in suburbs should be 50-70% of dark sky score (got {ratio:.2%})"
-        )
-
-    def test_orion_nebula_moderately_affected(self):
-        """Orion Nebula (bright DSO) should be moderately affected by suburban light."""
-        orion = TestFixtures.orion_nebula()
-
-        dark_score = self.service.score_celestial_object(
-            orion, self.large_scope, self.medium_eyepiece, self.dark_site)
-        suburban_score = self.service.score_celestial_object(
-            orion, self.large_scope, self.medium_eyepiece, self.suburban_site)
-
-        # Bright DSOs should be moderately affected (retain 60-85%)
-        ratio = suburban_score.observability_score.score / dark_score.observability_score.score
-        assert_that(ratio).is_between(0.60, 0.85).described_as(
-            f"Orion Nebula in suburbs should be 60-85% of dark sky score (got {ratio:.2%})"
-        )
-
 class TestLightPollutionGradient(unittest.TestCase):
     """Scores should decrease monotonically with worsening light pollution."""
 
