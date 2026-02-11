@@ -1,15 +1,15 @@
 # Celestial Observability Scoring - Improvement Plan
 
 **Last Updated:** 2026-02-11
-**Status:** Phase 6 Complete ✅ | Phase 6.5 (Hierarchical Model) Complete ✅
+**Status:** Phase 6.5 (Hierarchical Model) ✅ | Phase 2 (Moon Proximity) ✅
 
 ---
 
 ## Quick Navigation
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
-- **Current Priority:** Phase 2 (Moon Proximity) - Next priority
-- **Latest Completion:** Phase 6.5 (Hierarchical Model) - Eliminated aperture double-counting
+- **Current Priority:** Bug fixes for remaining 5 test failures
+- **Latest Completion:** Phase 2 (Moon Proximity) - Implemented moon proximity penalties
 
 ---
 
@@ -27,12 +27,12 @@
 
 ### 📊 Test Status
 - **113 tests total** (down from 131 - removed arbitrary threshold tests)
-- **105 passing** (93% pass rate)
-- **8 failing** (2 limiting magnitude + 1 benchmark + 3 moon proximity + 1 weather + 1 error)
+- **108 passing** (96% pass rate)
+- **5 failing** (2 limiting magnitude + 2 benchmark aperture + 1 weather)
 - **Test philosophy:** Physics-based ordering and relative comparisons (no magic number thresholds)
 
 ### 🎯 Goal
-Continue with moon proximity (Phase 2) and API integration (Phase 8).
+Fix remaining 5 test failures, then proceed with Phase 8 (API integration).
 
 ---
 
@@ -45,19 +45,26 @@ Phase 6 ✅ COMPLETE (Test Suite Overhaul)
     │        │
     │        └─→ Prepares for Phase 7 (Object Type awareness)
     │
-    ├─→ Phase 2 🔴 NEXT (Moon Proximity) ──→ Independent
+    ├─→ Phase 2 ✅ COMPLETE (Moon Proximity) - Implemented proximity penalties
+    │
+    ├─→ Phase 13 🔴 HIGH (Equipment Integration) - Foundation for all equipment types
+    │        │
+    │        ├─→ Enables Phase 9, 10, 11 (Filters/Imaging/Astrophotography)
+    │        └─→ Enables Phase 4 (Factor Pipeline) equipment diagnostics
     │
     ├─→ Phase 3 🟡 MEDIUM (Custom Presets) ──→ Depends on Phase 5, 6.5
     │
-    ├─→ Phase 4 🟢 MEDIUM (Factor Pipeline) ──→ Depends on Phase 5, 6.5, Phase 2
+    ├─→ Phase 4 🟢 MEDIUM (Factor Pipeline) ──→ Depends on Phase 5, 6.5, Phase 2, 13
     │
     └─→ Phase 8 🔴 CRITICAL (API Integration)
             │
             ├─→ Phase 7 🟢 MEDIUM (Object Types) ──→ Depends on Phase 8, builds on 6.5
             │
-            ├─→ Phase 9 🟢 LOW (Double Stars) ──→ Depends on Phase 8
+            ├─→ Phase 9 🟢 MEDIUM (Filters) ──→ Depends on Phase 13 foundation
             │
-            └─→ Phases 10-12 🟢 MEDIUM (Filters/Imaging) ──→ Depends on Phase 8, 7
+            ├─→ Phase 10 🟢 MEDIUM (Imaging) ──→ Depends on Phase 13 foundation
+            │
+            └─→ Phase 11 🟢 MEDIUM (Astrophotography) ──→ Depends on Phase 13, 8, 7
 ```
 
 ---
@@ -107,18 +114,63 @@ Implemented hierarchical scoring model to eliminate aperture double-counting and
 
 ---
 
-### Phase 2: Moon Proximity Integration 🔴 NEXT
-**Status:** NOT STARTED (3 tests waiting)
-**Priority:** HIGH
+### Phase 2: Moon Proximity Integration ✅ COMPLETE
+**Status:** COMPLETE (2026-02-11)
+**Priority:** N/A
 **Dependencies:** None
 **File:** `planning/phase-2_moon-proximity.md`
 
-Factor moon conditions into scoring to avoid recommending targets near a bright moon.
+Implemented moon proximity penalty factor to avoid recommending targets near a bright moon.
 
-**Waiting Tests:**
-- `test_separation_gradient` - Score should increase with separation from full moon
-- `test_barely_past_moon_still_very_hard` - Object 0.5° from moon should be much harder
-- `test_object_very_close_to_full_moon` - IndexError in test setup (needs fix)
+**Implementation:**
+- ✅ Moon proximity factor in `strategy_utils.py:calculate_moon_proximity_factor()`
+- ✅ Inverse square falloff with smooth scaling (C=3.0 factor)
+- ✅ Special cases: < 1° = occluded (factor 0.0), > 60° = no penalty (factor 1.0)
+- ✅ Penalties: 5° ≈ 98% penalty, 10° ≈ 92% penalty, 30° ≈ 57% penalty
+- ✅ Applied to all deep sky strategies
+- ✅ Solar system objects (planets, sun, moon) unaffected
+
+**Tests Fixed:**
+- ✅ `test_separation_gradient` - Monotonic score increase with separation ✓
+- ✅ `test_barely_past_moon_still_very_hard` - 0.5° vs 60° comparison ✓
+- ✅ `test_occultation_zero_score` - Objects at 0° separation score 0.0 ✓
+- ✅ All moon proximity tests now passing (11 tests)
+
+---
+
+### Phase 13: Comprehensive Equipment Integration 🔴 HIGH
+**Status:** NOT STARTED
+**Priority:** HIGH - Critical architectural gap
+**Dependencies:** None (foundational work)
+**File:** `planning/phase-13_comprehensive-equipment-integration.md`
+
+Integrate ALL equipment types (filters, optical aids, imagers) into scoring pipeline.
+
+**Problem:** Database and UI support 5 equipment types, but only 2 are used in scoring.
+
+**Current Coverage:**
+- ✅ Telescope: Fully integrated (aperture, focal length, type)
+- 🟡 Eyepiece: Partial (only focal_length used, ignores AFOV/barrel)
+- ❌ Filters: Database + UI only, **not in scoring**
+- ❌ Optical Aids: Database + UI only, **not in scoring**
+- ❌ Imagers: Database + UI only, **not in scoring**
+
+**Implementation:**
+- Expand `ScoringContext` to include filters, optical_aids, imager
+- Add `get_effective_magnification()` - includes Barlows/reducers
+- Add `get_true_field_of_view()` - uses eyepiece AFOV
+- Add `has_solar_filter()` - safety check for Sun
+- Add `has_narrowband_filter()` - contrast boost for nebulae
+- Support observation_mode: "visual" vs "imaging"
+
+**Key Features:**
+- **Optical Aids:** Barlows multiply magnification, reducers widen field
+- **Filters:** Narrowband improves emission nebulae by ~2 Bortle classes
+- **Solar Safety:** Sun scores 0.0 without solar filter
+- **Field of View:** Penalize objects that don't fit in TFOV
+- **Imaging Mode:** Foundation for camera-based scoring
+
+**Impact:** Enables Phases 9 (Filters), 10 (Imaging), 11 (Astrophotography)
 
 ---
 
@@ -213,17 +265,19 @@ Validate Phase 5 limiting magnitude model against real-world observing condition
 ## Priority Roadmap
 
 ### Immediate Next Steps
-1. **Phase 2: Moon Proximity** (3 tests waiting, unblocks night planning)
-2. **Phase 8: Astronomical API Integration** (RECOMMENDED - unblocks phases 7, 9-12)
+1. **Bug Fixes** (5 tests remaining - 2 limiting magnitude, 2 benchmark aperture, 1 weather)
+2. **Phase 13: Equipment Integration** (HIGH - fixes architectural gap, enables filter/imaging phases)
+3. **Phase 8: Astronomical API Integration** (CRITICAL - unblocks phases 7, 9-12)
 
 ### Medium Term
-3. **Phase 7: Object-Type-Aware Scoring** (after Phase 8, 15-25% accuracy boost)
-4. **Phase 4: Factor Pipeline Refactor** (debugging & UI transparency)
+4. **Phase 7: Object-Type-Aware Scoring** (after Phase 8, 15-25% accuracy boost)
+5. **Phase 4: Factor Pipeline Refactor** (debugging & UI transparency)
 
 ### Long Term
-5. **Phase 3: Custom Preset Overrides** (power user feature)
-6. **Phase 9: Double Star Splitability** (niche but valuable)
-7. **Phases 10-12: Filters & Astrophotography** (major expansion)
+6. **Phase 3: Custom Preset Overrides** (power user feature)
+7. **Phase 9: Filter Effects** (after Phase 13 - narrowband, UHC, solar)
+8. **Phase 10: Imaging Mode** (after Phase 13 - camera-based scoring)
+9. **Phase 11: Astrophotography** (after Phase 13, 8 - integration time, SNR)
 
 ---
 
@@ -264,5 +318,5 @@ python run_tests.py -v
 
 ---
 
-*Next Priority: Phase 2 (Moon Proximity Integration)*
-*Latest Update: Phase 6.5 complete (hierarchical model eliminates aperture double-counting)*
+*Next Priority: Bug fixes for remaining 5 test failures*
+*Latest Update: Phase 2 complete (moon proximity penalties implemented)*

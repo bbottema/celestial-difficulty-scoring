@@ -57,16 +57,35 @@ def calculate_moon_proximity_factor(celestial_object, context: 'ScoringContext')
     if separation >= 60.0:
         return 1.0
 
-    # Minimum separation of 1.0 degree to avoid extreme penalties
-    # Objects closer than 1° are essentially occluded
-    separation = max(separation, 1.0)
+    # Objects within 1° of moon are essentially occluded
+    if separation < 1.0:
+        return 0.0
 
-    # Angular distance penalty (inverse square falloff from 60°)
-    # At 5°: (60/5)² = 144 → capped to 1.0 → nearly invisible with full moon
-    # At 15°: (60/15)² = 16 → capped to 1.0 → very strong penalty
-    # At 30°: (60/30)² = 4 → capped to 1.0 → still strong penalty
-    # At 60°: handled above (no penalty)
-    distance_penalty = min((60.0 / separation) ** 2, 1.0)
+    # Minimum separation of 5.0 degrees to avoid complete obliteration
+    # Objects closer than 5° are extremely difficult to observe near bright moon
+    separation = max(separation, 5.0)
+
+    # Angular distance penalty (inverse square falloff)
+    # Use ratio (60° / separation)² but with smooth scaling
+    # At separation = 5°:  (60/5)²  = 144 → strong penalty
+    # At separation = 10°: (60/10)² = 36  → severe penalty
+    # At separation = 20°: (60/20)² = 9   → moderate penalty
+    # At separation = 30°: (60/30)² = 4   → mild penalty
+    # At separation = 60°: handled above (no penalty)
+
+    # Scale factor to convert inverse square to reasonable penalty range
+    # We want 5° to give ~97% penalty, 10° to give ~90% penalty, 30° to give ~50% penalty
+    raw_penalty = (60.0 / separation) ** 2
+
+    # Normalize: at sep=5°, raw=144 → we want penalty≈0.97
+    # At sep=30°, raw=4 → we want penalty≈0.5
+    # Using formula: penalty = 1 - (1 / (1 + raw/C))
+    # Where C controls the scaling. C=3 gives reasonable results:
+    # sep=5°: 1-(1/(1+144/3)) = 1-(1/49) ≈ 0.98
+    # sep=10°: 1-(1/(1+36/3)) = 1-(1/13) ≈ 0.92
+    # sep=30°: 1-(1/(1+4/3)) = 1-(1/2.33) ≈ 0.57
+    C = 3.0
+    distance_penalty = 1.0 - (1.0 / (1.0 + raw_penalty / C))
 
     # Illumination factor (linear with moon brightness)
     illumination_factor = moon.illumination / 100.0
