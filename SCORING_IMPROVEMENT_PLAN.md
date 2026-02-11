@@ -1,7 +1,7 @@
 # Celestial Observability Scoring - Improvement Plan
 
 **Last Updated:** 2026-02-11
-**Status:** Phase 6 Complete ✅ | Phase 6.5 (Bug-fix) In Progress
+**Status:** Phase 6 Complete ✅ | Phase 6.5 (Aperture Split) 80% Complete
 
 ---
 
@@ -83,23 +83,26 @@ Transformed test suite from implementation-driven to user-experience-driven test
 
 ---
 
-### Phase 6.5: Aperture Model Split 🔴 IN PROGRESS
-**Status:** IN PROGRESS (Bug-fix phase)
-**Priority:** CRITICAL - Blocks 6 tests
+### Phase 6.5: Aperture Model Split 🟡 80% COMPLETE
+**Status:** 80% COMPLETE (Architecture done, 5 tests need calibration)
+**Priority:** CRITICAL - Blocks 5 tests
 **Dependencies:** Phase 5 (complete), Phase 6 (complete)
-**File:** `planning/PHASE_6.5_APERTURE_MODEL_SPLIT.md`
+**Files:** `planning/PHASE_6.5_APERTURE_MODEL_SPLIT.md`, `planning/PHASE_6.5_STATUS.md`
 
 Split single `aperture_gain_factor` (0.85) into physically meaningful components to fix aperture bugs and prepare for Phase 7.
 
-**Problem:** Current single fudge factor masks 5 different phenomena (optical losses, seeing, obstruction, observer skill, surface brightness)
+**Completed:**
+- ✅ Created `aperture_models.py` with split components (optical, seeing, observer)
+- ✅ Integrated into `light_pollution_models.py` with backward compatibility
+- ✅ Updated all 3 strategies to pass telescope properties
+- ✅ Calibrated factors to match 0.85 baseline (Dobsonian 45°: 0.857)
+- ✅ Fixed TelescopeType enum mismatch (15 types mapped)
+- ✅ Went from 65 errors (recursion) → 9 failures
 
-**Solution:** Split into separate components:
-- Optical efficiency (telescope-type dependent)
-- Seeing impact (altitude/weather dependent)
-- Observer experience (user skill setting)
-- Surface brightness (object-size dependent - already handled)
+**Remaining:**
+- ⬜ Fine-tune 5 aperture tests (equipment_factor/site_factor interaction)
 
-**Impact:** Fixes 6 failing aperture tests, sets architecture for Phase 7 object-type refinement
+**Impact:** Major architecture improvement, prepares for Phase 7 object-type refinement
 
 ---
 
@@ -240,9 +243,9 @@ python run_tests.py -v
 ├── SCORING_IMPROVEMENT_PLAN.md (this file)
 │
 ├── planning/
-│   ├── PHASE_6.5_APERTURE_MODEL_SPLIT.md
+│   ├── PHASE_6.5_APERTURE_MODEL_SPLIT.md (spec)
+│   ├── PHASE_6.5_STATUS.md (implementation progress)
 │   ├── TEST_SUITE_OVERHAUL_STATUS.md
-│   ├── BUG_FIX_PHASE.md
 │   ├── phase-2_moon-proximity.md
 │   ├── phase-3_custom-presets.md
 │   ├── phase-4_factor-pipeline.md
