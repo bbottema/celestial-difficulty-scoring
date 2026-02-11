@@ -101,12 +101,14 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         """
         Light pollution is CRITICAL for faint deep-sky objects.
         Uses hybrid model: legacy penalties with physics-based visibility checks.
+        Phase 6.5: Passes telescope properties for split aperture model.
         """
         if not context.observation_site:
             return 0.7  # Moderate penalty for unknown site
 
         bortle = context.get_bortle_number()
         aperture = context.get_aperture_mm() if context.has_equipment() else None
+        telescope_type = context.telescope.type if context.has_equipment() else None
         preset = get_active_preset()
 
         # Determine penalty based on object brightness (same logic as before)
@@ -118,11 +120,15 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             penalty_per_bortle = 0.13
 
         # Use hybrid model with surface brightness consideration
+        # Phase 6.5: Pass telescope_type and altitude for split aperture gain
         factor = calculate_light_pollution_factor_with_surface_brightness(
             celestial_object.magnitude,
             celestial_object.size,
             bortle,
             aperture,
+            telescope_type=telescope_type,
+            altitude=celestial_object.altitude,
+            observer_skill='intermediate',  # TODO: Make configurable in user settings
             use_legacy_penalty=True,
             legacy_penalty_per_bortle=penalty_per_bortle,
             legacy_minimum_factor=preset.light_pollution_min_factor_deepsky

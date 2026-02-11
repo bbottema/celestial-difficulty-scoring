@@ -81,13 +81,17 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
 
         bortle = context.get_bortle_number()
         aperture = context.get_aperture_mm() if context.has_equipment() else None
+        telescope_type = context.telescope.type if context.has_equipment() else None
 
         # Use hybrid model that blends legacy penalty with physics-based visibility
-        # This maintains test compatibility while adding hard visibility cutoffs
+        # Phase 6.5: Pass telescope properties for split aperture model
         factor = calculate_light_pollution_factor_by_limiting_magnitude(
             celestial_object.magnitude,
             bortle,
             aperture,
+            telescope_type=telescope_type,
+            altitude=celestial_object.altitude,
+            observer_skill='intermediate',
             detection_headroom=0.5,
             use_legacy_penalty=True,
             legacy_penalty_per_bortle=LIGHT_POLLUTION_PENALTY_PER_BORTLE_SOLAR,
