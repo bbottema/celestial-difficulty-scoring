@@ -1,15 +1,15 @@
 # Celestial Observability Scoring - Improvement Plan
 
-**Last Updated:** 2026-02-10
-**Status:** Phase 5 Complete ✅
+**Last Updated:** 2026-02-11
+**Status:** Phase 6 Complete ✅ | Phase 6.5 (Bug-fix) In Progress
 
 ---
 
 ## Quick Navigation
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
-- **Current Priority:** Phase 2 (Moon Proximity) OR Phase 8 (API Integration - recommended)
-- **Latest Completion:** Phase 5 (Physics-based limiting magnitude model)
+- **Current Priority:** Phase 6.5 (Aperture Model Split) - Bug-fix phase
+- **Latest Completion:** Phase 6 (Test Suite Overhaul)
 
 ---
 
@@ -23,45 +23,88 @@
 - Multi-preset system (Friendly/Strict) implemented with UI selector
 - Constants validated against astronomical research
 - **Phase 5:** Physics-based limiting magnitude model with realism corrections
+- **Phase 6:** Test suite overhaul - removed arbitrary thresholds, focus on relative comparisons
 
 ### 📊 Test Status
-- **102 tests total** (includes 13 benchmark validation tests)
-- **71 passing** (69% pass rate)
-- **31 failing** (baseline failures + some calibration needed)
-- **0 skipped** currently enabled
-- **13 benchmark tests** validating real-world object behavior
+- **113 tests total** (down from 131 - removed arbitrary threshold tests)
+- **104 passing** (92% pass rate)
+- **9 failing** (6 aperture bugs + 3 moon proximity - Phase 2 scope)
+- **Test philosophy:** Physics-based ordering and relative comparisons (no magic number thresholds)
 
 ### 🎯 Goal
-Continue improving the scoring system through systematic phases, focusing next on moon proximity integration and astronomical API integration.
+Fix aperture handling architecture (Phase 6.5), then continue with moon proximity (Phase 2) and API integration (Phase 8).
 
 ---
 
 ## Phase Overview & Dependencies
 
 ```
-Phase 5 ✅ COMPLETE
+Phase 6 ✅ COMPLETE (Test Suite Overhaul)
+    │
+    ├─→ Phase 6.5 🔴 IN PROGRESS (Aperture Model Split) - Bug-fix
+    │        │
+    │        └─→ Prepares for Phase 7 (Object Type awareness)
     │
     ├─→ Phase 2 🔴 NEXT (Moon Proximity) ──→ Independent
     │
-    ├─→ Phase 3 🟡 MEDIUM (Custom Presets) ──→ Depends on Phase 5
+    ├─→ Phase 3 🟡 MEDIUM (Custom Presets) ──→ Depends on Phase 5, 6.5
     │
-    ├─→ Phase 4 🟢 MEDIUM (Factor Pipeline) ──→ Depends on Phase 5, Phase 2
+    ├─→ Phase 4 🟢 MEDIUM (Factor Pipeline) ──→ Depends on Phase 5, 6.5, Phase 2
     │
     └─→ Phase 8 🔴 CRITICAL (API Integration)
             │
-            ├─→ Phase 6 🟢 LOW (Double Stars) ──→ Depends on Phase 8
+            ├─→ Phase 7 🟢 MEDIUM (Object Types) ──→ Depends on Phase 8, builds on 6.5
             │
-            ├─→ Phase 7 🟢 MEDIUM (Object Types) ──→ Depends on Phase 8
+            ├─→ Phase 9 🟢 LOW (Double Stars) ──→ Depends on Phase 8
             │
-            └─→ Phases 9-11 🟢 MEDIUM (Filters/Imaging) ──→ Depends on Phase 8, 7
+            └─→ Phases 10-12 🟢 MEDIUM (Filters/Imaging) ──→ Depends on Phase 8, 7
 ```
 
 ---
 
 ## Phases
 
-### Phase 2: Moon Proximity Integration 🔴 NEXT UP
-**Status:** NOT STARTED (11 tests waiting)
+### Phase 6: Test Suite Overhaul ✅ COMPLETE
+**Status:** COMPLETE (2026-02-11)
+**Priority:** N/A
+**Dependencies:** None
+**File:** `planning/TEST_SUITE_OVERHAUL_STATUS.md`
+
+Transformed test suite from implementation-driven to user-experience-driven testing.
+
+**Completed Actions:**
+- Removed 40 arbitrary threshold tests (33% of suite)
+- Reduced from 131 → 113 tests (92% pass rate)
+- Focus on physics-based ordering and relative comparisons
+- Converted 2 moon proximity tests to pure relative comparisons
+- Removed 2 redundant light pollution tests
+
+**Impact:** Clearer test failures, easier maintenance, flexible calibration
+
+---
+
+### Phase 6.5: Aperture Model Split 🔴 IN PROGRESS
+**Status:** IN PROGRESS (Bug-fix phase)
+**Priority:** CRITICAL - Blocks 6 tests
+**Dependencies:** Phase 5 (complete), Phase 6 (complete)
+**File:** `planning/PHASE_6.5_APERTURE_MODEL_SPLIT.md`
+
+Split single `aperture_gain_factor` (0.85) into physically meaningful components to fix aperture bugs and prepare for Phase 7.
+
+**Problem:** Current single fudge factor masks 5 different phenomena (optical losses, seeing, obstruction, observer skill, surface brightness)
+
+**Solution:** Split into separate components:
+- Optical efficiency (telescope-type dependent)
+- Seeing impact (altitude/weather dependent)
+- Observer experience (user skill setting)
+- Surface brightness (object-size dependent - already handled)
+
+**Impact:** Fixes 6 failing aperture tests, sets architecture for Phase 7 object-type refinement
+
+---
+
+### Phase 2: Moon Proximity Integration 🔴 NEXT AFTER 6.5
+**Status:** NOT STARTED (3 tests waiting)
 **Priority:** HIGH
 **Dependencies:** None
 **File:** `planning/phase-2_moon-proximity.md`
@@ -116,23 +159,15 @@ Physics-based limiting magnitude model with realism corrections.
 
 ---
 
-### Phase 6: Double Star Splitability 🟢 LOW PRIORITY
-**Status:** NOT STARTED (blocked)
-**Priority:** LOW (niche feature)
-**Dependencies:** Phase 8 (API integration) - REQUIRED
-**File:** `planning/phase-6_double-star-splitability.md`
-
-Score double stars based on whether telescope can split them.
-
----
-
 ### Phase 7: Object-Type-Aware Scoring 🟢 MEDIUM PRIORITY
 **Status:** NOT STARTED (blocked)
 **Priority:** MEDIUM (15-25% accuracy improvement)
 **Dependencies:** Phase 8 (API integration) - REQUIRED
 **File:** `planning/phase-7_object-type-aware-scoring.md`
 
-Tailor detection headroom based on actual object classification (15-25% accuracy improvement).
+Tailor detection headroom and aperture impact based on actual object classification (planetary nebula, spiral galaxy, globular cluster, etc.).
+
+**Note:** Phase 6.5 prepares the architecture by splitting aperture model into components. Phase 7 will further refine these components based on object classification data from API.
 
 ---
 
@@ -166,28 +201,12 @@ Validate Phase 5 limiting magnitude model against real-world observing condition
 
 ---
 
-## Test Suite Overhaul 🔴 HIGH PRIORITY
-
-**Status:** READY TO IMPLEMENT
-**Priority:** HIGH (improves development velocity)
-**Dependencies:** None
-**Files:** `planning/TEST_SUITE_OVERHAUL.md`, `planning/TEST_SUITE_OVERHAUL_STATUS.md`, `planning/TEST_AUDIT.md`
-
-Transform test suite from implementation-driven to user-experience-driven. Remove 40 arbitrary threshold tests, focus on physics-based ordering and relative comparisons. This will improve maintainability and clarify what tests actually validate.
-
-**Key Changes:**
-- Remove tests with arbitrary numeric assertions (>0.80, >0.50, etc.)
-- Keep 32 physics-based ordering tests (objective, always valid)
-- Focus on relative comparisons that validate user experience
-- Reduces test count from 131 to ~91 high-quality tests
-
----
-
 ## Priority Roadmap
 
-### Immediate Next Steps (Choose One)
-1. **Phase 2: Moon Proximity** (11 tests waiting, unblocks night planning)
-2. **Phase 8: Astronomical API Integration** (RECOMMENDED - unblocks phases 6, 7, 9-11)
+### Immediate Next Steps
+1. **Phase 6.5: Aperture Model Split** (IN PROGRESS - fixes 6 bugs, prepares for Phase 7)
+2. **Phase 2: Moon Proximity** (3 tests waiting, unblocks night planning)
+3. **Phase 8: Astronomical API Integration** (RECOMMENDED - unblocks phases 7, 9-12)
 
 ### Medium Term
 3. **Phase 7: Object-Type-Aware Scoring** (after Phase 8, 15-25% accuracy boost)
@@ -195,18 +214,8 @@ Transform test suite from implementation-driven to user-experience-driven. Remov
 
 ### Long Term
 5. **Phase 3: Custom Preset Overrides** (power user feature)
-6. **Phase 6: Double Star Splitability** (niche but valuable)
-7. **Phases 9-11: Filters & Astrophotography** (major expansion)
-
----
-
-## Future Enhancement Ideas
-
-- Surface brightness calculation for extended objects
-- Atmospheric seeing parameter for planetary detail
-- Transparency/haze parameter separate from cloud cover
-- Telescope-specific factors (obstruction, optical quality)
-- Export targets to imaging software (N.I.N.A., SGP)
+6. **Phase 9: Double Star Splitability** (niche but valuable)
+7. **Phases 10-12: Filters & Astrophotography** (major expansion)
 
 ---
 
@@ -231,27 +240,21 @@ python run_tests.py -v
 ├── SCORING_IMPROVEMENT_PLAN.md (this file)
 │
 ├── planning/
+│   ├── PHASE_6.5_APERTURE_MODEL_SPLIT.md
+│   ├── TEST_SUITE_OVERHAUL_STATUS.md
+│   ├── BUG_FIX_PHASE.md
 │   ├── phase-2_moon-proximity.md
 │   ├── phase-3_custom-presets.md
 │   ├── phase-4_factor-pipeline.md
 │   ├── phase-5_monitoring-calibration.md
-│   ├── phase-6_double-star-splitability.md
 │   ├── phase-7_object-type-aware-scoring.md
 │   ├── phase-8_astronomical-api-integration.md
-│   ├── phases-9-10-11_filters-imaging-astrophotography.md
-│   ├── TEST_SUITE_OVERHAUL.md
-│   ├── TEST_SUITE_OVERHAUL_STATUS.md
-│   └── TEST_AUDIT.md
+│   └── phases-9-10-11_filters-imaging-astrophotography.md
 │
-├── PHASE5_CODE_REVIEW_RESPONSE.md (Phase 5 architectural decisions)
-└── NIGHT_SHIFT_PROGRESS.md (historical development log)
+└── PHASE5_CODE_REVIEW_RESPONSE.md (Phase 5 architectural decisions)
 ```
 
 ---
 
-**Recommendation:** Start with **Phase 8 (Astronomical API Integration)** as it unblocks the most future work (phases 6, 7, 9-11) and provides the data foundation for accurate scoring improvements.
-
----
-
-*Next Priority: Phase 2 (Moon Proximity) OR Phase 8 (API Integration - recommended)*
-*Latest Update: Phase 5 complete, benchmark tests added, documentation restructured*
+*Next Priority: Complete Phase 6.5 (Aperture Model Split)*
+*Latest Update: Phase 6 complete (test suite overhaul), Phase 6.5 in progress*
