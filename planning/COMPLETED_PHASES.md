@@ -40,6 +40,36 @@ Phase 6 represents a fundamental shift in testing philosophy: from implementatio
 
 ---
 
+## Phase 8: Astronomical API Integration ✅
+**Completed:** 2026-02-12
+
+**Goal:** Replace AstroPlanner Excel exports with proper astronomical catalog APIs.
+
+**Implementation:**
+- **OpenNGC provider:** 13,970 DSO objects from local CSV (offline)
+- **SIMBAD provider:** Online enrichment with rate limiting
+- **Horizons provider:** Solar System ephemerides via JPL
+- **CatalogService:** Decision tree (OpenNGC → SIMBAD → WDS → Horizons)
+- **CatalogRepository:** Smart caching (OpenNGC 1yr, SIMBAD 1wk, Horizons never)
+- **Classification mapper:** Fixes SIMBAD misclassifications (M31→"AGN" corrected)
+- **Surface brightness:** Computed from size + magnitude
+- **Domain models:** ObjectClassification, DataProvenance with full type system
+- **CatalogDataComponent UI:** 716-line component integrated into main window
+
+**Key Features:**
+- **Offline-first:** 13,970 DSO available without internet
+- **Type correction:** Validates SIMBAD via `other_types` field
+- **Multi-source fallback:** OpenNGC → SIMBAD → Horizons seamlessly
+- **Full provenance:** Tracks data source, confidence, timestamps
+
+**Test Coverage:**
+- 6 test files, 1,482 lines of tests
+- Domain models, adapters, providers, service covered
+
+**Impact:** Unblocks Phase 7 (Object Types) and Phase 9 (Object Selection Workflow).
+
+---
+
 ## Test Status
 - **Total:** 113 tests
 - **Passing:** 108 (96%)
