@@ -14,8 +14,10 @@ injector = "*"
 mypy = "*"
 qt-material = "*"
 overrides = "*"
+astroquery = "*"
 
 [dev-packages]
+pytest = "*"
 assertpy = "*"
 pandas-stubs = "*"
 pyside6-stubs = "*"
