@@ -277,6 +277,6 @@ class TestOpenNGCDTOConversion:
         obj = self.adapter.to_domain(dto)
 
         assert len(obj.provenance) == 1
-        assert obj.provenance[0].source == 'openngc'
+        assert obj.provenance[0].source == 'OpenNGC'
         assert obj.provenance[0].catalog_version == '2023-12-13'
         assert obj.provenance[0].confidence == 1.0

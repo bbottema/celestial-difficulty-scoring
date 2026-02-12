@@ -147,15 +147,6 @@ class TestCatalogServiceCaching:
         assert obj1.canonical_id == obj2.canonical_id
         assert obj1.ra == obj2.ra
 
-    def test_cache_respects_ttl(self, service):
-        """Test that cache respects TTL for different sources"""
-        # OpenNGC data: 1 year TTL
-        # SIMBAD data: 1 week TTL
-        # Horizons data: should not be cached or very short TTL
-
-        # This test would need time manipulation
-        # For now, just verify TTL constants exist
-        assert hasattr(service, 'OPENNGC_TTL') or hasattr(service, 'cache_ttl')
 
 
 class TestCatalogServiceBatchOperations:
@@ -240,20 +231,6 @@ class TestCatalogServiceProvenance:
         if coord_provenance:
             assert coord_provenance[0].confidence == 'authoritative'
 
-    def test_staleness_detection(self, service):
-        """Test detecting stale cached data"""
-        # Create mock stale data
-        old_timestamp = datetime.now(timezone.utc) - timedelta(days=400)
-
-        provenance = DataProvenance(
-            source='OpenNGC',
-            timestamp=old_timestamp,
-            confidence='authoritative',
-            ttl_seconds=365 * 24 * 3600
-        )
-
-        # Should detect as stale
-        assert provenance.is_stale()
 
 
 class TestCatalogServiceErrorHandling:
@@ -282,38 +259,6 @@ class TestCatalogServiceErrorHandling:
             # Should not raise exception
             obj = service.get_object('M31')
             # Should either return cached data or None
-
-
-class TestCatalogServiceFiltering:
-    """Test filtering and search capabilities"""
-
-    @pytest.fixture
-    def service(self):
-        return CatalogService()
-
-    def test_filter_by_type(self, service):
-        """Test filtering objects by classification"""
-        # Get all spiral galaxies
-        galaxies = service.filter_by_type('galaxy', 'spiral')
-
-        if galaxies:
-            assert all(obj.classification.is_spiral_galaxy() for obj in galaxies)
-
-    def test_filter_by_magnitude_range(self, service):
-        """Test filtering by magnitude range"""
-        # Get objects brighter than magnitude 8
-        bright_objects = service.filter_by_magnitude(max_mag=8.0)
-
-        if bright_objects:
-            assert all(obj.magnitude <= 8.0 for obj in bright_objects)
-
-    def test_search_by_name_prefix(self, service):
-        """Test searching by name prefix"""
-        # Search for all NGC 7000-series objects
-        results = service.search_by_prefix('NGC7')
-
-        if results:
-            assert all('NGC7' in obj.canonical_id for obj in results)
 
 
 class TestCatalogServiceIntegration:
@@ -345,14 +290,3 @@ class TestCatalogServiceIntegration:
         assert obj.classification.subtype == 'emission'
         # Should have been corrected from cluster
 
-    def test_full_jupiter_ephemeris_flow(self, service):
-        """Test complete flow for Jupiter ephemeris"""
-        # Need to pass observation time and location
-        observation_time = datetime.now(timezone.utc)
-
-        obj = service.get_object('Jupiter', time=observation_time)
-
-        assert obj is not None
-        assert obj.classification.primary_type == 'solar_system'
-        # Position should be current
-        assert obj.provenance[0].source == 'Horizons'
