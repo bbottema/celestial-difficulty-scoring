@@ -1,7 +1,7 @@
 # Celestial Observability Scoring - Improvement Plan
 
 **Last Updated:** 2026-02-12
-**Status:** Phase 8 (API Integration) ✅ | Phase 9 (Object Selection) 🔨
+**Status:** Phase 7 (Object-Type-Aware Scoring) ✅ | Phase 9 (Object Selection) 🔨
 
 ---
 
@@ -9,7 +9,7 @@
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
 - **Current Priority:** Phase 9 (Object Selection Workflow)
-- **Latest Completion:** Phase 8 (API Integration) - OpenNGC, SIMBAD, Horizons providers with UI
+- **Latest Completion:** Phase 7 (Object-Type-Aware Scoring) - Type-specific detection headroom with legacy type removal
 
 ---
 
@@ -27,11 +27,12 @@
 - **Phase 6.5:** Hierarchical scoring model - eliminated aperture double-counting
 - **Phase 2:** Moon proximity penalties with inverse square falloff
 - **Phase 8:** Astronomical API integration - OpenNGC, SIMBAD, Horizons providers with catalog UI
+- **Phase 7:** Object-type-aware scoring - type-specific detection headroom with legacy type removal
 
 ### 📊 Test Status
 - **113 tests total** (down from 131 - removed arbitrary threshold tests)
-- **108 passing** (96% pass rate)
-- **5 failing** (2 limiting magnitude + 2 benchmark aperture + 1 weather)
+- **113 passing** (100% pass rate) ✅
+- **0 failing**
 - **Test philosophy:** Physics-based ordering and relative comparisons (no magic number thresholds)
 
 ### 🎯 Goal
@@ -52,11 +53,13 @@ Phase 6 ✅ COMPLETE (Test Suite Overhaul)
     │
     └─→ Phase 8 ✅ COMPLETE (API Integration) - OpenNGC, SIMBAD, Horizons providers
             │
+            ├─→ Phase 7 ✅ COMPLETE (Object Types) - Type-aware scoring + legacy type removal
+            │        │
+            │        └─→ Enables Phase 9 (Object Selection) with classification-based filtering
+            │
             ├─→ Phase 9 🔨 IN PROGRESS (Object Selection) - UI workflow for object selection
             │        │
             │        └─→ Phase 9.1: Pre-curated lists (Messier, Caldwell, etc.)
-            │
-            ├─→ Phase 7 🟢 MEDIUM (Object Types) ──→ Builds on Phase 8 + 6.5
             │
             ├─→ Phase 13 🔴 HIGH (Equipment Integration) - Foundation for all equipment types
             │        │
@@ -221,15 +224,26 @@ Physics-based limiting magnitude model with realism corrections.
 
 ---
 
-### Phase 7: Object-Type-Aware Scoring 🟢 MEDIUM PRIORITY
-**Status:** NOT STARTED (blocked)
-**Priority:** MEDIUM (15-25% accuracy improvement)
-**Dependencies:** Phase 8 (API integration) - REQUIRED
-**File:** `planning/phase-7_object-type-aware-scoring.md`
+### Phase 7: Object-Type-Aware Scoring ✅ COMPLETE
+**Status:** COMPLETE (2026-02-12)
+**Priority:** N/A
+**Dependencies:** Phase 8 (API integration), Phase 6.5 (Hierarchical Model)
+**Documentation:** See `planning/COMPLETED_PHASES.md`
 
-Tailor detection headroom and aperture impact based on actual object classification (planetary nebula, spiral galaxy, globular cluster, etc.).
+Tailored detection headroom based on actual object classification (planetary nebula, spiral galaxy, globular cluster, etc.).
 
-**Note:** Phase 6.5 prepares the architecture by splitting aperture model into components. Phase 7 will further refine these components based on object classification data from API.
+**Completed Implementation:**
+- ✅ Type-aware headroom constants (1.3-3.5 mag range by object type)
+- ✅ Updated `calculate_light_pollution_factor_with_surface_brightness()` to accept classification
+- ✅ Created `_get_detection_headroom()` with type-aware logic + Phase 5 fallback
+- ✅ Updated scoring strategies to pass object classification
+- ✅ Removed legacy type system ('Sun', 'Moon', 'Planet', 'DeepSky')
+- ✅ Updated all source files with proper classification types
+- ✅ Fixed 88 test errors from Phase 8 dataclass changes
+- ✅ Converted 5 arbitrary threshold tests to relative comparisons
+- ✅ 113/113 tests passing (100% pass rate)
+
+**Impact:** Expected 15-25% accuracy improvement for type-specific scoring. Enables Phase 9 with classification-based filtering.
 
 ---
 
