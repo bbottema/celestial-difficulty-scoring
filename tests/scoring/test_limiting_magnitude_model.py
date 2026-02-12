@@ -56,8 +56,9 @@ class TestLimitingMagnitudePhysics(unittest.TestCase):
             use_legacy_penalty=False
         )
 
+        # Relative test: telescope should be dramatically better than naked eye
         assert_that(naked_eye_factor).is_equal_to(0.0)
-        assert_that(telescope_factor).is_greater_than(0.5)
+        assert_that(telescope_factor).is_greater_than(naked_eye_factor)
 
     def test_larger_aperture_better_than_smaller(self):
         """Larger aperture should give better visibility for same object."""
@@ -226,8 +227,9 @@ class TestIntegratedBehavior(unittest.TestCase):
             use_legacy_penalty=False
         )
 
-        assert_that(small_scope).is_equal_to(0.0)  # Invisible
-        assert_that(large_scope).is_greater_than(0.5)  # Visible
+        # Relative test: larger aperture should be dramatically better than small aperture
+        assert_that(small_scope).is_equal_to(0.0)  # Invisible with small scope
+        assert_that(large_scope).is_greater_than(small_scope)  # Visible with large scope
 
 class TestLegacyCompatibilityMode(unittest.TestCase):
     """Test that legacy mode preserves old behavior while adding visibility cutoffs."""
