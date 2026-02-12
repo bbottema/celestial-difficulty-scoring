@@ -7,8 +7,6 @@ Handles research-identified issues:
 3. Galaxy morphology parsing
 4. Classification confidence scoring
 """
-from typing import Optional
-
 from app.domain.model.celestial_object import CelestialObject
 from app.domain.model.object_classification import ObjectClassification
 

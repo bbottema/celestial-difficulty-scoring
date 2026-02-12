@@ -9,16 +9,11 @@ Research-validated TTL strategy:
 - Horizons: Never cache (ephemeris)
 """
 from typing import Optional
-from datetime import datetime, timedelta
 from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
 from sqlalchemy.orm import Session
 
 from app.orm.model.entities import Base
 from app.domain.model.celestial_object import CelestialObject
-from app.domain.model.object_classification import (
-    ObjectClassification, SurfaceBrightness, AngularSize
-)
-from app.domain.model.data_provenance import DataProvenance
 
 
 class CelestialObjectEntity(Base):

@@ -9,10 +9,11 @@ Implements the research-validated decision tree:
 This service abstracts catalog complexity from domain code.
 """
 from typing import Optional
-from datetime import datetime, timedelta
 
+from app.catalog.catalog_repository import CatalogRepository
+from app.catalog.classification_mapper import ClassificationMapper, SurfaceBrightnessCalculator
 from app.domain.model.celestial_object import CelestialObject
-from app.catalog.interfaces import ICatalogProvider, ICatalogService, CatalogSource
+from app.catalog.interfaces import ICatalogProvider, CatalogSource
 
 
 class CatalogService:

@@ -1,15 +1,48 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
+
+from app.domain.model.object_classification import ObjectClassification, AngularSize, SurfaceBrightness
+from app.domain.model.data_provenance import DataProvenance
 
 
 @dataclass
 class CelestialObject:
+    """Enhanced celestial object model for Phase 8 API integration"""
+    # Core identification
     name: str
-    object_type: str
-    magnitude: float
-    size: float
-    altitude: float
-    ra: float = 0.0  # right ascension in decimal degrees
+    canonical_id: str
+    aliases: list[str] = field(default_factory=list)
+
+    # Coordinates (J2000)
+    ra: float = 0.0  # decimal degrees
     dec: float = 0.0  # declination in decimal degrees
+
+    # Classification (Phase 7)
+    classification: Optional[ObjectClassification] = None
+
+    # Observational properties
+    magnitude: float = 99.0
+    size: Optional[AngularSize] = None
+    surface_brightness: Optional[SurfaceBrightness] = None
+
+    # Current observing conditions (ephemeris-dependent)
+    altitude: float = 0.0  # Current altitude above horizon
+
+    # Data quality
+    provenance: list[DataProvenance] = field(default_factory=list)
+
+    # Double star specific (optional)
+    separation_arcsec: Optional[float] = None
+    position_angle_deg: Optional[float] = None
+    companion_magnitude: Optional[float] = None
+
+    # Legacy compatibility property
+    @property
+    def object_type(self) -> str:
+        """Legacy field - map to old 'DeepSky' format"""
+        if self.classification:
+            return self.classification.primary_type
+        return "unknown"
 
 
 @dataclass

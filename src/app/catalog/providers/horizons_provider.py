@@ -21,10 +21,13 @@ Fields available:
 Research finding: Use `quantities` parameter to limit output size and speed.
 """
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+from astroquery.jplhorizons import Horizons
 
 from app.domain.model.celestial_object import CelestialObject
-from app.catalog.interfaces import ProviderDTO, ICatalogProvider
+from app.domain.model.object_classification import ObjectClassification, AngularSize
+from app.domain.model.data_provenance import DataProvenance
 
 
 class HorizonsProvider:
@@ -46,71 +49,125 @@ class HorizonsProvider:
         """
         self.observer_location = observer_location
         self.adapter = HorizonsAdapter()
+        self._last_query_time = 0.0
 
-        # TODO: Initialize astroquery.jplhorizons
-        # from astroquery.jplhorizons import Horizons
+        # Planet name to Horizons ID mapping
+        self.planet_ids = {
+            'mercury': '199',
+            'venus': '299',
+            'mars': '499',
+            'jupiter': '599',
+            'saturn': '699',
+            'uranus': '799',
+            'neptune': '899',
+            'moon': '301'
+        }
 
-    def resolve_name(self, name: str) -> Optional[str]:
-        """
-        Resolve Solar System object name to Horizons ID.
+    def _get_horizons_id(self, name: str) -> Optional[str]:
+        """Map common names to Horizons IDs"""
+        name_lower = name.lower().strip()
+        return self.planet_ids.get(name_lower)
 
-        Horizons accepts various formats:
-        - Planet names: "Mars", "Jupiter"
-        - Natural satellites: "Moon", "Io", "Europa"
-        - Minor planet numbers: "1" (Ceres), "433" (Eros)
-        - Comet designations: "C/2020 F3" (NEOWISE)
+    def _format_location(self, observer_lat: float, observer_lon: float) -> str:
+        """Format observer location for Horizons"""
+        return f"{observer_lon:.6f},{observer_lat:.6f},0.0"
 
-        Args:
-            name: User input (planet name, satellite, asteroid number, etc.)
+    def _format_time(self, observation_time: datetime) -> str:
+        """Format observation time for Horizons"""
+        return observation_time.strftime('%Y-%m-%d %H:%M')
 
-        Returns:
-            Horizons target ID string
-        """
-        # TODO: Implement Horizons name resolution
-        # - Normalize common names (case-insensitive)
-        # - Map planet names to Horizons IDs
-        # - Handle Moon specially
-        # - For numbered asteroids, validate format
-        raise NotImplementedError("Horizons name resolution not yet implemented")
-
-    def get_object(self, identifier: str) -> Optional[CelestialObject]:
+    def get_object(self, identifier: str, time: Optional[datetime] = None) -> Optional[CelestialObject]:
         """
         Fetch current ephemeris for Solar System object.
 
-        Queries Horizons for "right now" ephemeris data.
+        Queries Horizons for ephemeris data at specified time.
 
         Args:
-            identifier: Horizons target ID
+            identifier: Horizons target ID or planet name
+            time: Observation time (defaults to now)
 
         Returns:
             CelestialObject with current position, magnitude, size
         """
-        # TODO: Implement Horizons ephemeris query
-        # from astroquery.jplhorizons import Horizons
-        #
-        # # Query for current time
-        # now = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
-        # obj = Horizons(
-        #     id=identifier,
-        #     location=self.observer_location,
-        #     epochs={'start': now, 'stop': now, 'step': '1m'}
-        # )
-        #
-        # # Request specific quantities to limit output size
-        # # quantities: 1=RA/Dec, 9=V mag, 13=ang width, 20=illum%
-        # eph = obj.ephemerides(quantities='1,9,13,20')
-        #
-        # if eph is None or len(eph) == 0:
-        #     return None
-        #
-        # dto = ProviderDTO(
-        #     raw_data={k: eph[k][0] for k in eph.colnames},
-        #     source="horizons"
-        # )
-        # return self.adapter.to_domain(dto)
-        raise NotImplementedError("Horizons ephemeris query not yet implemented")
+        try:
+            # Resolve name to ID if needed
+            horizons_id = self._get_horizons_id(identifier)
+            if not horizons_id:
+                horizons_id = identifier
 
-    def batch_get_objects(self, identifiers: list[str]) -> list[CelestialObject]:
+            # Query for specified or current time
+            if time is None:
+                time = datetime.now(timezone.utc)
+
+            time_str = self._format_time(time)
+
+            obj = Horizons(
+                id=horizons_id,
+                location=self.observer_location,
+                epochs={'start': time_str, 'stop': time_str, 'step': '1m'}
+            )
+
+            # Request specific quantities to limit output size
+            # quantities: 1=RA/Dec, 9=V mag, 13=ang width, 20=illum%
+            eph = obj.ephemerides(quantities='1,9,13,20')
+
+            if eph is None or len(eph) == 0:
+                return None
+
+            return self._parse_horizons_result(eph, 0, identifier)
+        except Exception:
+            return None
+
+    def _parse_horizons_result(self, result, idx: int, name: str) -> Optional[CelestialObject]:
+        """Parse Horizons ephemeris result into CelestialObject"""
+        try:
+            ra = float(result['RA'][idx])
+            dec = float(result['DEC'][idx])
+
+            # Magnitude
+            mag = result['V'][idx] if 'V' in result.colnames else None
+            magnitude = float(mag) if mag and not isinstance(mag, str) else 99.0
+
+            # Angular width (arcsec)
+            ang_width = result['ang_width'][idx] if 'ang_width' in result.colnames else None
+
+            # Create angular size
+            size = None
+            if ang_width and not isinstance(ang_width, str):
+                # Convert arcsec to arcmin
+                size_arcmin = float(ang_width) / 60.0
+                size = AngularSize(major_arcmin=size_arcmin, minor_arcmin=size_arcmin)
+
+            # Classification
+            classification = self.adapter._classify_object(name)
+
+            # Provenance
+            provenance = [DataProvenance(
+                source='Horizons',
+                fetched_at=datetime.now(timezone.utc),
+                confidence=1.0  # Authoritative ephemeris data
+            )]
+
+            return CelestialObject(
+                name=name,
+                canonical_id=name,
+                aliases=[],
+                ra=ra,
+                dec=dec,
+                classification=classification,
+                magnitude=magnitude,
+                size=size,
+                provenance=provenance
+            )
+        except Exception:
+            return None
+
+    def _calculate_angular_size(self, ang_width_arcsec: float, name: str) -> AngularSize:
+        """Calculate angular size from Horizons ang_width field"""
+        size_arcmin = ang_width_arcsec / 60.0
+        return AngularSize(major_arcmin=size_arcmin, minor_arcmin=size_arcmin)
+
+    def batch_get_objects(self, identifiers: list[str], time: Optional[datetime] = None) -> list[CelestialObject]:
         """
         Batch query for multiple Solar System objects.
 
@@ -119,18 +176,17 @@ class HorizonsProvider:
 
         Args:
             identifiers: List of Horizons target IDs
+            time: Observation time (defaults to now)
 
         Returns:
             List of CelestialObjects with current ephemerides
         """
-        # TODO: Implement batch query
-        # objects = []
-        # for identifier in identifiers:
-        #     obj = self.get_object(identifier)
-        #     if obj:
-        #         objects.append(obj)
-        # return objects
-        raise NotImplementedError("Horizons batch query not yet implemented")
+        objects = []
+        for identifier in identifiers:
+            obj = self.get_object(identifier, time)
+            if obj:
+                objects.append(obj)
+        return objects
 
 
 class HorizonsAdapter:
@@ -140,64 +196,7 @@ class HorizonsAdapter:
     Maps ephemeris fields to CelestialObject with Solar System classification.
     """
 
-    def to_domain(self, dto: ProviderDTO) -> CelestialObject:
-        """
-        Convert Horizons ephemeris to CelestialObject.
-
-        Mappings:
-        - targetname → name
-        - RA/DEC → coordinates
-        - V → magnitude
-        - ang_width → AngularSize (diameter in arcsec)
-        - surfbright → SurfaceBrightness (if available)
-        - Classify as "planet", "moon", "asteroid", etc.
-
-        Args:
-            dto: Horizons ephemeris data
-
-        Returns:
-            CelestialObject with Solar System classification
-        """
-        # TODO: Implement DTO → domain mapping
-        # data = dto.raw_data
-        #
-        # # Determine object type from target name
-        # classification = self._classify_solar_system_object(data['targetname'])
-        #
-        # # Convert angular width (arcsec → arcmin)
-        # ang_width_arcsec = data.get('ang_width', 0.0)
-        # size = AngularSize(major_arcmin=ang_width_arcsec / 60.0)
-        #
-        # # Surface brightness (if available)
-        # sb = None
-        # if 'surfbright' in data:
-        #     sb = SurfaceBrightness(
-        #         value=data['surfbright'],
-        #         source="horizons",
-        #         band="V"
-        #     )
-        #
-        # # Build CelestialObject
-        # obj = CelestialObject(
-        #     name=data['targetname'],
-        #     canonical_id=f"horizons_{data['targetname']}",
-        #     aliases=[],
-        #     ra=data['RA'],
-        #     dec=data['DEC'],
-        #     classification=classification,
-        #     magnitude=data.get('V', 99.0),
-        #     size=size,
-        #     surface_brightness=sb,
-        #     altitude=data.get('EL', 0.0),  # Elevation above horizon
-        #     provenance=[DataProvenance(
-        #         source="horizons",
-        #         fetched_at=datetime.now()
-        #     )]
-        # )
-        # return obj
-        raise NotImplementedError("Horizons adapter not yet implemented")
-
-    def _classify_solar_system_object(self, target_name: str) -> 'ObjectClassification':
+    def _classify_object(self, target_name: str) -> ObjectClassification:
         """
         Classify Solar System object by name.
 
@@ -214,18 +213,16 @@ class HorizonsAdapter:
         Returns:
             ObjectClassification with solar_system primary type
         """
-        # TODO: Implement Solar System classification
-        # name_lower = target_name.lower()
-        # planets = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
-        #
-        # if 'moon' in name_lower:
-        #     return ObjectClassification('moon', None, None)
-        # elif any(p in name_lower for p in planets):
-        #     return ObjectClassification('planet', None, None)
-        # elif target_name.startswith('C/'):
-        #     return ObjectClassification('comet', None, None)
-        # elif target_name.isdigit():
-        #     return ObjectClassification('asteroid', None, None)
-        # else:
-        #     return ObjectClassification('solar_system', None, None)
-        raise NotImplementedError("Solar System classification not yet implemented")
+        name_lower = target_name.lower()
+        planets = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
+
+        if 'moon' in name_lower:
+            return ObjectClassification('solar_system', 'moon', None)
+        elif any(p in name_lower for p in planets):
+            return ObjectClassification('solar_system', 'planet', None)
+        elif target_name.startswith('C/'):
+            return ObjectClassification('solar_system', 'comet', None)
+        elif target_name.isdigit():
+            return ObjectClassification('solar_system', 'asteroid', None)
+        else:
+            return ObjectClassification('solar_system', 'minor_body', None)

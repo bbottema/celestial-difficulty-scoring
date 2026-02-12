@@ -12,10 +12,13 @@ because its type system is designed for amateur astronomy observing.
 """
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 import pandas as pd
 
 from app.domain.model.celestial_object import CelestialObject
-from app.catalog.interfaces import ProviderDTO, ICatalogProvider
+from app.domain.model.object_classification import ObjectClassification, SurfaceBrightness, AngularSize
+from app.domain.model.data_provenance import DataProvenance
+from app.catalog.interfaces import ProviderDTO
 
 
 class OpenNGCProvider:
@@ -40,23 +43,88 @@ class OpenNGCProvider:
         """
         Load and normalize OpenNGC CSV.
 
-        OpenNGC uses semicolon delimiter and provides:
-        - raj2000, dej2000 (degrees)
-        - maj_ax_deg, min_ax_deg (degrees)
-        - mag_v, mag_b
-        - surf_br_B (galaxies only)
-        - obj_type (G, EmN, HII, RfN, DrkN, PN, OCl, GCl, SNR)
-        - hubble_type (galaxy morphology)
+        Real OpenNGC columns:
+        - Name (NGC/IC identifier)
+        - Type (G, HII, PN, OCl, GCl, etc.)
+        - RA, Dec (sexagesimal format)
+        - MajAx, MinAx (arcmin)
+        - V-Mag, B-Mag
+        - SurfBr (mag/arcsec²)
+        - Hubble (galaxy morphology)
+        - M (Messier number)
+        - Common names, Identifiers
 
         Returns:
-            Normalized DataFrame with arcmin conversions
+            Normalized DataFrame
         """
-        # TODO: Implement CSV loading
-        # - Read with sep=';'
-        # - Convert numeric fields (raj2000, dej2000, mag_v, etc.)
-        # - Convert axes: degrees → arcmin (multiply by 60)
-        # - Handle missing values
-        raise NotImplementedError("OpenNGC CSV loading not yet implemented")
+        df = pd.read_csv(path, sep=';', dtype=str, na_values=['', 'null', 'NaN'])
+
+        # Rename columns to internal format
+        column_mapping = {
+            'Name': 'name',
+            'Type': 'obj_type',
+            'RA': 'ra_sex',
+            'Dec': 'dec_sex',
+            'MajAx': 'maj_arcmin',
+            'MinAx': 'min_arcmin',
+            'PosAng': 'pos_ang',
+            'V-Mag': 'mag_v',
+            'B-Mag': 'mag_b',
+            'SurfBr': 'surf_br',
+            'Hubble': 'hubble_type',
+            'M': 'messier_nr',
+            'Common names': 'comname',
+            'Identifiers': 'other_id'
+        }
+        df = df.rename(columns=column_mapping)
+
+        # Convert RA/Dec from sexagesimal to decimal degrees
+        if 'ra_sex' in df.columns and 'dec_sex' in df.columns:
+            ra_values = []
+            dec_values = []
+            for idx, row in df.iterrows():
+                ra_values.append(self._sex_to_deg_ra(row['ra_sex']))
+                dec_values.append(self._sex_to_deg_dec(row['dec_sex']))
+            df['ra'] = ra_values
+            df['dec'] = dec_values
+
+        # Convert numeric fields
+        numeric_fields = ['maj_arcmin', 'min_arcmin', 'pos_ang', 'mag_v', 'mag_b', 'surf_br', 'ra', 'dec']
+        for col in numeric_fields:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # Fill missing string values
+        string_cols = ['name', 'obj_type', 'messier_nr', 'comname', 'other_id', 'hubble_type']
+        for col in string_cols:
+            if col in df.columns:
+                df[col] = df[col].fillna('')
+
+        return df
+
+    def _sex_to_deg_ra(self, ra_str: str) -> Optional[float]:
+        """Convert RA from HH:MM:SS.SS to decimal degrees"""
+        if pd.isna(ra_str) or not ra_str:
+            return None
+        try:
+            parts = ra_str.split(':')
+            h, m, s = float(parts[0]), float(parts[1]), float(parts[2])
+            return (h + m/60 + s/3600) * 15  # Hours to degrees
+        except:
+            return None
+
+    def _sex_to_deg_dec(self, dec_str: str) -> Optional[float]:
+        """Convert Dec from ±DD:MM:SS.S to decimal degrees"""
+        if pd.isna(dec_str) or not dec_str:
+            return None
+        try:
+            sign = -1 if dec_str.startswith('-') else 1
+            dec_str = dec_str.lstrip('+-')
+            parts = dec_str.split(':')
+            d, m, s = float(parts[0]), float(parts[1]), float(parts[2])
+            return sign * (d + m/60 + s/3600)
+        except:
+            return None
 
     def resolve_name(self, name: str) -> Optional[str]:
         """
@@ -74,13 +142,50 @@ class OpenNGCProvider:
         Returns:
             Canonical NGC/IC name or None
         """
-        # TODO: Implement name resolution logic
-        # - Normalize input (uppercase, strip whitespace)
-        # - Check messier_nr column
-        # - Check name column
-        # - Check comname column
-        # - Check other_id column
-        raise NotImplementedError("OpenNGC name resolution not yet implemented")
+        name_upper = name.upper().strip()
+
+        # Try Messier number (M31 → find messier_nr=031)
+        if name_upper.startswith('M') and name_upper[1:].strip().isdigit():
+            messier_num = name_upper[1:].strip().zfill(3)  # Pad to 3 digits: 31 → 031
+            row = self.df[self.df['messier_nr'] == messier_num]
+            if not row.empty:
+                return row.iloc[0]['name']
+
+        # Try NGC/IC direct (handles both "NGC 224" and "NGC0224")
+        if name_upper.startswith('NGC') or name_upper.startswith('IC'):
+            # Normalize to NGC0224 format (what OpenNGC uses)
+            if ' ' in name_upper:
+                # "NGC 224" → "NGC0224"
+                prefix, number = name_upper.split(maxsplit=1)
+                name_normalized = f"{prefix}{number.zfill(4)}"
+            elif name_upper.startswith('NGC') and len(name_upper) > 3:
+                # "NGC224" → "NGC0224"
+                number = name_upper[3:]
+                name_normalized = f"NGC{number.zfill(4)}"
+            elif name_upper.startswith('IC') and len(name_upper) > 2:
+                # "IC1396" → "IC1396" (IC numbers are different)
+                name_normalized = name_upper
+            else:
+                name_normalized = name_upper
+
+            row = self.df[self.df['name'] == name_normalized]
+            if not row.empty:
+                return name_normalized
+
+        # Try common name
+        row = self.df[self.df['comname'].str.upper() == name_upper]
+        if not row.empty:
+            return row.iloc[0]['name']
+
+        # Try other_id (contains semicolon-separated aliases)
+        for other_id in self.df['other_id']:
+            if other_id and name_upper in other_id.upper():
+                # Find the row with this other_id value
+                row = self.df[self.df['other_id'] == other_id]
+                if not row.empty:
+                    return row.iloc[0]['name']
+
+        return None
 
     def get_object(self, identifier: str) -> Optional[CelestialObject]:
         """
@@ -92,19 +197,37 @@ class OpenNGCProvider:
         Returns:
             CelestialObject with all OpenNGC fields populated
         """
-        # TODO: Implement object retrieval
-        # - Query DataFrame by name column
-        # - Convert row to ProviderDTO
-        # - Use adapter to convert DTO → CelestialObject
-        # - Add provenance (source="openngc", catalog_version="2023-12-13")
-        raise NotImplementedError("OpenNGC object retrieval not yet implemented")
+        identifier_upper = identifier.upper().strip()
+        row = self.df[self.df['name'] == identifier_upper]
+
+        if row.empty:
+            return None
+
+        # Convert DataFrame row to DTO
+        dto = ProviderDTO(
+            raw_data=row.iloc[0].to_dict(),
+            source="openngc"
+        )
+
+        # Use adapter to convert to domain model
+        return self.adapter.to_domain(dto)
 
     def batch_get_objects(self, identifiers: list[str]) -> list[CelestialObject]:
         """Batch retrieval (efficient for local CSV)"""
-        # TODO: Implement batch query
-        # - Use DataFrame.isin() for efficient filtering
-        # - Convert all rows in single pass
-        raise NotImplementedError("OpenNGC batch retrieval not yet implemented")
+        identifiers_upper = [id.upper().strip() for id in identifiers]
+        rows = self.df[self.df['name'].isin(identifiers_upper)]
+
+        objects = []
+        for _, row in rows.iterrows():
+            dto = ProviderDTO(
+                raw_data=row.to_dict(),
+                source="openngc"
+            )
+            obj = self.adapter.to_domain(dto)
+            if obj:
+                objects.append(obj)
+
+        return objects
 
 
 class OpenNGCAdapter:
@@ -130,15 +253,74 @@ class OpenNGCAdapter:
         Returns:
             Fully populated CelestialObject
         """
-        # TODO: Implement DTO → domain mapping
-        # - Extract classification from obj_type + hubble_type
-        # - Build AngularSize with major/minor axes
-        # - Extract surface brightness if surf_br_B exists
-        # - Build aliases list (messier_nr, comname, other_id)
-        # - Add provenance (source="openngc", fetched_at=now())
-        raise NotImplementedError("OpenNGC adapter not yet implemented")
+        data = dto.raw_data
 
-    def _map_type(self, obj_type: str, hubble_type: Optional[str]) -> 'ObjectClassification':
+        # Build classification
+        classification = self._map_type(data.get('obj_type', ''), data.get('hubble_type'))
+
+        # Build size
+        maj = data.get('maj_arcmin', 0.0)
+        if pd.isna(maj) or maj == 0.0:
+            maj = 1.0  # Default for point sources
+        size = AngularSize(
+            major_arcmin=maj,
+            minor_arcmin=data.get('min_arcmin') if not pd.isna(data.get('min_arcmin')) else None,
+            position_angle_deg=data.get('pos_ang') if not pd.isna(data.get('pos_ang')) else None
+        )
+
+        # Surface brightness (galaxies only)
+        sb = None
+        surf_br_val = data.get('surf_br')
+        if surf_br_val is not None:
+            try:
+                import math
+                float_val = float(surf_br_val)
+                if not math.isnan(float_val):
+                    sb = SurfaceBrightness(
+                        value=float_val,
+                        source="openngc_surf_br",
+                        band="B"
+                    )
+            except (ValueError, TypeError):
+                pass  # Invalid value, skip surface brightness
+
+        # Build aliases
+        aliases = []
+        if data.get('messier_nr'):
+            aliases.append(f"M{data['messier_nr']}")
+        if data.get('comname'):
+            aliases.append(data['comname'])
+        if data.get('other_id'):
+            # other_id is semicolon-separated
+            aliases.extend([a.strip() for a in data['other_id'].split(';') if a.strip()])
+
+        # Build provenance
+        provenance = [DataProvenance(
+            source="openngc",
+            fetched_at=datetime.now(),
+            catalog_version="2023-12-13",
+            confidence=1.0
+        )]
+
+        # Build CelestialObject
+        ra_val = data.get('ra')
+        dec_val = data.get('dec')
+        obj = CelestialObject(
+            name=data.get('comname') or data['name'],
+            canonical_id=data['name'],
+            aliases=aliases,
+            ra=float(ra_val) if ra_val and not pd.isna(ra_val) else 0.0,
+            dec=float(dec_val) if dec_val and not pd.isna(dec_val) else 0.0,
+            classification=classification,
+            magnitude=float(data.get('mag_v', 99.0)) if not pd.isna(data.get('mag_v')) else 99.0,
+            size=size,
+            surface_brightness=sb,
+            provenance=provenance
+        )
+
+        return obj
+
+    def _map_type(self, obj_type: str, hubble_type: Optional[str]) -> ObjectClassification:
         """
         Map OpenNGC type codes to domain classification.
 
@@ -160,11 +342,43 @@ class OpenNGCAdapter:
         Returns:
             ObjectClassification with primary_type + subtype
         """
-        # TODO: Implement type mapping
-        # - Map obj_type to primary_type + subtype
-        # - For galaxies, parse hubble_type → spiral/elliptical/lenticular
-        # - Handle edge cases (Dup, NonEx, etc.)
-        raise NotImplementedError("OpenNGC type mapping not yet implemented")
+        obj_type_upper = obj_type.upper().strip() if obj_type else ''
+
+        # Galaxy
+        if obj_type_upper == 'G':
+            subtype = self._parse_galaxy_subtype(hubble_type)
+            return ObjectClassification('galaxy', subtype, hubble_type)
+
+        # Emission nebulae
+        if obj_type_upper in ['EMN', 'HII']:
+            return ObjectClassification('nebula', 'emission', None)
+
+        # Reflection nebula
+        if obj_type_upper == 'RFN':
+            return ObjectClassification('nebula', 'reflection', None)
+
+        # Dark nebula
+        if obj_type_upper == 'DRKN':
+            return ObjectClassification('nebula', 'dark', None)
+
+        # Planetary nebula
+        if obj_type_upper == 'PN':
+            return ObjectClassification('nebula', 'planetary', None)
+
+        # Supernova remnant
+        if obj_type_upper == 'SNR':
+            return ObjectClassification('nebula', 'supernova_remnant', None)
+
+        # Open cluster
+        if obj_type_upper == 'OCL':
+            return ObjectClassification('cluster', 'open', None)
+
+        # Globular cluster
+        if obj_type_upper == 'GCL':
+            return ObjectClassification('cluster', 'globular', None)
+
+        # Special cases (Dup, NonEx, etc.) - default to unknown
+        return ObjectClassification('unknown', None, None)
 
     def _parse_galaxy_subtype(self, hubble_type: Optional[str]) -> Optional[str]:
         """
@@ -182,9 +396,25 @@ class OpenNGCAdapter:
         Returns:
             "spiral", "elliptical", "lenticular", "irregular", or None
         """
-        # TODO: Implement Hubble type parsing
-        # - Check for E prefix → elliptical
-        # - Check for S0 → lenticular
-        # - Check for SA/SB/SAB → spiral
-        # - Check for I/Irr → irregular
-        raise NotImplementedError("Hubble type parsing not yet implemented")
+        if not hubble_type:
+            return None
+
+        ht = hubble_type.upper().strip()
+
+        # Elliptical
+        if ht.startswith('E'):
+            return 'elliptical'
+
+        # Lenticular
+        if 'S0' in ht:
+            return 'lenticular'
+
+        # Spiral (check for SA, SB, SAB)
+        if any(x in ht for x in ['SA', 'SB', 'SAB']) or ht.startswith('S'):
+            return 'spiral'
+
+        # Irregular
+        if ht.startswith('I') or 'IRR' in ht:
+            return 'irregular'
+
+        return None
