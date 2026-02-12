@@ -37,6 +37,14 @@ class OpenNGCProvider:
             csv_path: Path to OpenNGC.csv file
         """
         self.df = self._load_csv(csv_path)
+
+        # Load OpenNGC addendum (M40, M45, Caldwell objects, named DSOs)
+        # M40 and M45 are not NGC/IC objects, so they're in the official addendum.csv
+        addendum_path = csv_path.parent / 'addendum.csv'
+        if addendum_path.exists():
+            addendum_df = self._load_csv(addendum_path)
+            self.df = pd.concat([self.df, addendum_df], ignore_index=True)
+
         self.adapter = OpenNGCAdapter()
 
     def _load_csv(self, path: Path) -> pd.DataFrame:
@@ -192,13 +200,20 @@ class OpenNGCProvider:
         Fetch DSO by NGC/IC identifier.
 
         Args:
-            identifier: NGC or IC identifier (e.g., "NGC 224", "IC 1396")
+            identifier: NGC or IC identifier (e.g., "NGC 224", "IC 1396", "Mel022")
 
         Returns:
             CelestialObject with all OpenNGC fields populated
         """
-        identifier_upper = identifier.upper().strip()
-        row = self.df[self.df['name'] == identifier_upper]
+        identifier_stripped = identifier.strip()
+
+        # Try exact match first (for addendum objects like "Mel022")
+        row = self.df[self.df['name'] == identifier_stripped]
+
+        # If not found, try uppercase (for NGC/IC objects)
+        if row.empty:
+            identifier_upper = identifier_stripped.upper()
+            row = self.df[self.df['name'] == identifier_upper]
 
         if row.empty:
             return None
