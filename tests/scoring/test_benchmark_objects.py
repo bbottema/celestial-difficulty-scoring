@@ -15,6 +15,7 @@ The RA/Dec data is preserved in comments for reference but not used in testing.
 import unittest
 from assertpy import assert_that
 
+from tests.test_helpers import create_test_celestial_object
 from app.domain.model.celestial_object import CelestialObject
 from app.domain.services.strategies.deep_sky_strategy import DeepSkyScoringStrategy
 from app.domain.services.strategies.large_faint_object_strategy import LargeFaintObjectScoringStrategy
@@ -224,7 +225,7 @@ class TestApertureImpactOnBenchmarks(unittest.TestCase):
 def create_object(name: str, magnitude: float, size: float, altitude: float = 45.0,
                   ra: float = 0.0, dec: float = 0.0) -> CelestialObject:
     """Helper to create CelestialObject for testing"""
-    return CelestialObject(
+    return create_test_celestial_object(
         name=name,
         object_type="DeepSky",
         magnitude=magnitude,

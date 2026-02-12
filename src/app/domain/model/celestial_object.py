@@ -36,10 +36,9 @@ class CelestialObject:
     position_angle_deg: Optional[float] = None
     companion_magnitude: Optional[float] = None
 
-    # Legacy compatibility property
     @property
     def object_type(self) -> str:
-        """Legacy field - map to old 'DeepSky' format"""
+        """Returns the primary classification type (e.g., 'galaxy', 'nebula', 'planet', 'star')"""
         if self.classification:
             return self.classification.primary_type
         return "unknown"

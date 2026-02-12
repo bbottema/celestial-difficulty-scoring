@@ -163,18 +163,19 @@ class ObservationDataComponent(QWidget):
     def load_sample_data(self) -> None:
         """Load sample celestial objects to demonstrate the functionality"""
         from app.domain.model.celestial_object import CelestialObject
+        from app.domain.model.object_classification import ObjectClassification
 
         sample_objects: CelestialsList = [
-            CelestialObject(name="M31 - Andromeda Galaxy", object_type="DeepSky", magnitude=3.4, size=178.0, altitude=65.0),
-            CelestialObject(name="M42 - Orion Nebula", object_type="DeepSky", magnitude=4.0, size=65.0, altitude=45.0),
-            CelestialObject(name="M45 - Pleiades", object_type="DeepSky", magnitude=1.6, size=110.0, altitude=70.0),
-            CelestialObject(name="Jupiter", object_type="Planet", magnitude=-2.5, size=0.7, altitude=40.0),
-            CelestialObject(name="Saturn", object_type="Planet", magnitude=0.5, size=0.3, altitude=35.0),
-            CelestialObject(name="M13 - Hercules Cluster", object_type="DeepSky", magnitude=5.8, size=20.0, altitude=55.0),
-            CelestialObject(name="M57 - Ring Nebula", object_type="DeepSky", magnitude=8.8, size=1.4, altitude=50.0),
-            CelestialObject(name="M27 - Dumbbell Nebula", object_type="DeepSky", magnitude=7.5, size=8.0, altitude=60.0),
-            CelestialObject(name="Moon", object_type="Moon", magnitude=-12.6, size=31.0, altitude=42.0),
-            CelestialObject(name="M51 - Whirlpool Galaxy", object_type="DeepSky", magnitude=8.4, size=11.0, altitude=68.0),
+            CelestialObject(name="M31 - Andromeda Galaxy", canonical_id="M31", classification=ObjectClassification(primary_type="galaxy", subtype="spiral"), magnitude=3.4, size=178.0, altitude=65.0),
+            CelestialObject(name="M42 - Orion Nebula", canonical_id="M42", classification=ObjectClassification(primary_type="nebula", subtype="emission"), magnitude=4.0, size=65.0, altitude=45.0),
+            CelestialObject(name="M45 - Pleiades", canonical_id="M45", classification=ObjectClassification(primary_type="cluster", subtype="open"), magnitude=1.6, size=110.0, altitude=70.0),
+            CelestialObject(name="Jupiter", canonical_id="Jupiter", classification=ObjectClassification(primary_type="planet"), magnitude=-2.5, size=0.7, altitude=40.0),
+            CelestialObject(name="Saturn", canonical_id="Saturn", classification=ObjectClassification(primary_type="planet"), magnitude=0.5, size=0.3, altitude=35.0),
+            CelestialObject(name="M13 - Hercules Cluster", canonical_id="M13", classification=ObjectClassification(primary_type="cluster", subtype="globular"), magnitude=5.8, size=20.0, altitude=55.0),
+            CelestialObject(name="M57 - Ring Nebula", canonical_id="M57", classification=ObjectClassification(primary_type="nebula", subtype="planetary"), magnitude=8.8, size=1.4, altitude=50.0),
+            CelestialObject(name="M27 - Dumbbell Nebula", canonical_id="M27", classification=ObjectClassification(primary_type="nebula", subtype="planetary"), magnitude=7.5, size=8.0, altitude=60.0),
+            CelestialObject(name="Moon", canonical_id="Moon", classification=ObjectClassification(primary_type="moon"), magnitude=-12.6, size=31.0, altitude=42.0),
+            CelestialObject(name="M51 - Whirlpool Galaxy", canonical_id="M51", classification=ObjectClassification(primary_type="galaxy", subtype="spiral"), magnitude=8.4, size=11.0, altitude=68.0),
         ]
 
         # Get selected equipment

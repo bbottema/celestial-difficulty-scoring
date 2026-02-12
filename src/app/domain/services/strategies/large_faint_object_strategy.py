@@ -96,6 +96,7 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         # (larger objects get stricter headroom: 3.0, 3.2, 3.5 based on size)
         # No additional size penalty needed - that would be double-penalizing
         # Phase 6.5: Pass telescope properties for split aperture model
+        # Phase 7: Pass object_classification for type-aware headroom
         factor = calculate_light_pollution_factor_with_surface_brightness(
             celestial_object.magnitude,
             celestial_object.size,
@@ -104,6 +105,7 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
             telescope_type=telescope_type,
             altitude=celestial_object.altitude,
             observer_skill='intermediate',
+            object_classification=celestial_object.classification,  # Phase 7: Type-aware headroom
             use_legacy_penalty=True,
             legacy_penalty_per_bortle=LIGHT_POLLUTION_PENALTY_PER_BORTLE_LARGE,
             legacy_minimum_factor=preset.light_pollution_min_factor_large

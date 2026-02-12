@@ -9,7 +9,7 @@ Most tests will initially fail as features are not yet implemented - this is exp
 import unittest
 from assertpy import assert_that
 
-from app.domain.model.celestial_object import CelestialObject
+from tests.test_helpers import create_test_celestial_object
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.domain.model.light_pollution import LightPollution
@@ -126,87 +126,87 @@ class TestFixtures:
     # Solar System Objects
     @staticmethod
     def sun():
-        return CelestialObject('Sun', 'Sun', -26.74, 31.00, 45.00)
+        return create_test_celestial_object('Sun', 'Sun', -26.74, 31.00, 45.00)
 
     @staticmethod
     def moon():
-        return CelestialObject('Moon', 'Moon', -12.60, 31.00, 45.00)
+        return create_test_celestial_object('Moon', 'Moon', -12.60, 31.00, 45.00)
 
     @staticmethod
     def jupiter():
-        return CelestialObject('Jupiter', 'Planet', -2.40, 0.77, 45.00)
+        return create_test_celestial_object('Jupiter', 'Planet', -2.40, 0.77, 45.00)
 
     @staticmethod
     def saturn():
-        return CelestialObject('Saturn', 'Planet', 0.50, 0.27, 45.00)
+        return create_test_celestial_object('Saturn', 'Planet', 0.50, 0.27, 45.00)
 
     @staticmethod
     def mars():
-        return CelestialObject('Mars', 'Planet', -1.00, 0.15, 45.00)
+        return create_test_celestial_object('Mars', 'Planet', -1.00, 0.15, 45.00)
 
     @staticmethod
     def venus():
-        return CelestialObject('Venus', 'Planet', -4.00, 0.20, 45.00)
+        return create_test_celestial_object('Venus', 'Planet', -4.00, 0.20, 45.00)
 
     @staticmethod
     def uranus():
-        return CelestialObject('Uranus', 'Planet', 5.70, 0.058, 45.00)
+        return create_test_celestial_object('Uranus', 'Planet', 5.70, 0.058, 45.00)
 
     @staticmethod
     def neptune():
-        return CelestialObject('Neptune', 'Planet', 7.80, 0.037, 45.00)
+        return create_test_celestial_object('Neptune', 'Planet', 7.80, 0.037, 45.00)
 
     # Bright Stars
     @staticmethod
     def sirius():
-        return CelestialObject('Sirius', 'DeepSky', -1.46, 0.0001, 60.00)
+        return create_test_celestial_object('Sirius', 'DeepSky', -1.46, 0.0001, 60.00)
 
     @staticmethod
     def vega():
-        return CelestialObject('Vega', 'DeepSky', 0.03, 0.0001, 70.00)
+        return create_test_celestial_object('Vega', 'DeepSky', 0.03, 0.0001, 70.00)
 
     @staticmethod
     def betelgeuse():
-        return CelestialObject('Betelgeuse', 'DeepSky', 0.50, 0.0001, 50.00)
+        return create_test_celestial_object('Betelgeuse', 'DeepSky', 0.50, 0.0001, 50.00)
 
     # Bright Deep-Sky Objects
     @staticmethod
     def orion_nebula():
-        return CelestialObject('Orion Nebula', 'DeepSky', 4.0, 65.0, 55.00)
+        return create_test_celestial_object('Orion Nebula', 'DeepSky', 4.0, 65.0, 55.00)
 
     @staticmethod
     def andromeda():
-        return CelestialObject('Andromeda Galaxy', 'DeepSky', 3.44, 190.00, 60.00)
+        return create_test_celestial_object('Andromeda Galaxy', 'DeepSky', 3.44, 190.00, 60.00)
 
     @staticmethod
     def pleiades():
-        return CelestialObject('Pleiades', 'DeepSky', 1.6, 110.0, 65.00)
+        return create_test_celestial_object('Pleiades', 'DeepSky', 1.6, 110.0, 65.00)
 
     # Medium Deep-Sky Objects
     @staticmethod
     def ring_nebula():
-        return CelestialObject('Ring Nebula', 'DeepSky', 8.8, 1.4, 60.00)
+        return create_test_celestial_object('Ring Nebula', 'DeepSky', 8.8, 1.4, 60.00)
 
     @staticmethod
     def whirlpool():
-        return CelestialObject('Whirlpool Galaxy', 'DeepSky', 8.4, 11.0, 55.00)
+        return create_test_celestial_object('Whirlpool Galaxy', 'DeepSky', 8.4, 11.0, 55.00)
 
     @staticmethod
     def dumbbell_nebula():
-        return CelestialObject('Dumbbell Nebula', 'DeepSky', 7.5, 8.0, 58.00)
+        return create_test_celestial_object('Dumbbell Nebula', 'DeepSky', 7.5, 8.0, 58.00)
 
     # Faint Deep-Sky Objects
     @staticmethod
     def veil_nebula():
-        return CelestialObject('Veil Nebula', 'DeepSky', 7.0, 180.00, 55.00)
+        return create_test_celestial_object('Veil Nebula', 'DeepSky', 7.0, 180.00, 55.00)
 
     @staticmethod
     def horsehead():
-        return CelestialObject('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00)
+        return create_test_celestial_object('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00)
 
     @staticmethod
     def ic_1396():
-        return CelestialObject('IC 1396', 'DeepSky', 9.5, 170.0, 50.00)
+        return create_test_celestial_object('IC 1396', 'DeepSky', 9.5, 170.0, 50.00)
 
 # =============================================================================
 # SOLAR SYSTEM BRIGHTNESS COMPARISONS
@@ -958,8 +958,8 @@ class TestAltitudeImpact(unittest.TestCase):
 
     def test_jupiter_high_beats_low(self):
         """Jupiter at 70° should beat Jupiter at 15°."""
-        jupiter_high = CelestialObject('Jupiter High', 'Planet', -2.40, 0.77, 70.00)
-        jupiter_low = CelestialObject('Jupiter Low', 'Planet', -2.40, 0.77, 15.00)
+        jupiter_high = create_test_celestial_object('Jupiter High', 'Planet', -2.40, 0.77, 70.00)
+        jupiter_low = create_test_celestial_object('Jupiter Low', 'Planet', -2.40, 0.77, 15.00)
 
         high_score = self.service.score_celestial_object(
             jupiter_high, self.medium_scope, self.medium_eyepiece, self.dark_site)
@@ -971,8 +971,8 @@ class TestAltitudeImpact(unittest.TestCase):
 
     def test_andromeda_high_beats_low(self):
         """Andromeda at 60° should beat Andromeda at 20°."""
-        andromeda_high = CelestialObject('Andromeda High', 'DeepSky', 3.44, 190.00, 60.00)
-        andromeda_low = CelestialObject('Andromeda Low', 'DeepSky', 3.44, 190.00, 20.00)
+        andromeda_high = create_test_celestial_object('Andromeda High', 'DeepSky', 3.44, 190.00, 60.00)
+        andromeda_low = create_test_celestial_object('Andromeda Low', 'DeepSky', 3.44, 190.00, 20.00)
 
         high_score = self.service.score_celestial_object(
             andromeda_high, self.medium_scope, self.medium_eyepiece, self.dark_site)
@@ -984,7 +984,7 @@ class TestAltitudeImpact(unittest.TestCase):
 
     def test_below_horizon_is_zero(self):
         """Objects below horizon should score zero."""
-        below_horizon = CelestialObject('Below', 'Planet', -2.0, 0.5, -10.00)
+        below_horizon = create_test_celestial_object('Below', 'Planet', -2.0, 0.5, -10.00)
 
         score = self.service.score_celestial_object(
             below_horizon, self.medium_scope, self.medium_eyepiece, self.dark_site)
@@ -993,8 +993,8 @@ class TestAltitudeImpact(unittest.TestCase):
 
     def test_moon_high_beats_low(self):
         """Moon at 80° should beat Moon at 10°."""
-        moon_high = CelestialObject('Moon High', 'Moon', -12.60, 31.00, 80.00)
-        moon_low = CelestialObject('Moon Low', 'Moon', -12.60, 31.00, 10.00)
+        moon_high = create_test_celestial_object('Moon High', 'Moon', -12.60, 31.00, 80.00)
+        moon_low = create_test_celestial_object('Moon Low', 'Moon', -12.60, 31.00, 10.00)
 
         high_score = self.service.score_celestial_object(
             moon_high, self.medium_scope, self.medium_eyepiece, self.dark_site)
@@ -1142,8 +1142,8 @@ class TestComprehensiveSanityChecks(unittest.TestCase):
 
     def test_brighter_always_better(self):
         """For same object type/size, brighter magnitude should always win."""
-        bright_dso = CelestialObject('Bright', 'DeepSky', 5.0, 10.0, 50.0)
-        faint_dso = CelestialObject('Faint', 'DeepSky', 9.0, 10.0, 50.0)
+        bright_dso = create_test_celestial_object('Bright', 'DeepSky', 5.0, 10.0, 50.0)
+        faint_dso = create_test_celestial_object('Faint', 'DeepSky', 9.0, 10.0, 50.0)
 
         bright_score = self.service.score_celestial_object(
             bright_dso, self.medium_scope, self.medium_eyepiece, self.dark_site)

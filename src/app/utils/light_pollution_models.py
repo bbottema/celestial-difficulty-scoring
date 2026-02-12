@@ -11,11 +11,45 @@ The limiting magnitude model considers:
 
 Phase 6.5: Integrated split aperture gain factor model for more accurate
 telescope performance modeling.
+
+Phase 7: Object-type-aware scoring with tailored detection headroom values
+based on actual object classification (planetary nebula, spiral galaxy, etc.)
+rather than generic size-based heuristics.
 """
 
+from typing import Optional
 from app.utils.scoring_constants import BORTLE_TO_LIMITING_MAGNITUDE
 from app.utils.aperture_models import calculate_aperture_gain_factor
 from app.domain.model.telescope_type import TelescopeType
+from app.domain.model.object_classification import ObjectClassification
+
+
+# Phase 7: Object-type-aware detection headroom values
+# Lower headroom = easier to detect (high surface brightness, concentrated)
+# Higher headroom = harder to detect (low surface brightness, diffuse)
+HEADROOM_BY_OBJECT_TYPE = {
+    # Planetary nebulae - compact, high surface brightness
+    'planetary_nebula': 1.3,
+
+    # Clusters - concentrated vs resolved
+    'globular_cluster': 1.5,      # Concentrated core, easier
+    'open_cluster': 1.7,           # Resolved stars, needs dark sky
+
+    # Nebulae - emission vs reflection vs dark
+    'emission_nebula': 2.5,        # Moderate SB (H-alpha emission)
+    'reflection_nebula': 2.8,      # Fainter than emission
+    'supernova_remnant': 3.2,      # Very faint, extended (Veil, Crab)
+    'dark_nebula': 3.5,            # Extremely low contrast
+
+    # Galaxies - spiral vs elliptical
+    'spiral_galaxy': 3.0,          # Low SB, extended structure
+    'elliptical_galaxy': 2.8,      # Slightly higher SB than spiral
+    'lenticular_galaxy': 2.9,      # Between elliptical and spiral
+    'irregular_galaxy': 2.9,       # Similar to lenticular
+
+    # Fallback
+    'default': 2.5                 # For unknown/unclassified objects
+}
 
 
 def calculate_light_pollution_factor_by_limiting_magnitude(
@@ -144,6 +178,7 @@ def calculate_light_pollution_factor_with_surface_brightness(
     telescope_type: TelescopeType = None,
     altitude: float = 45.0,
     observer_skill: str = 'intermediate',
+    object_classification: Optional[ObjectClassification] = None,  # Phase 7: NEW parameter
     use_legacy_penalty: bool = False,
     legacy_penalty_per_bortle: float = 0.10,
     legacy_minimum_factor: float = 0.02
@@ -156,6 +191,7 @@ def calculate_light_pollution_factor_with_surface_brightness(
     more vulnerable to light pollution.
 
     Phase 6.5: Passes telescope properties through to limiting magnitude function.
+    Phase 7: Uses object classification for type-aware headroom selection.
 
     Args:
         object_magnitude: Integrated apparent magnitude
@@ -165,6 +201,7 @@ def calculate_light_pollution_factor_with_surface_brightness(
         telescope_type: Type of telescope (Phase 6.5 - for split aperture model)
         altitude: Object altitude in degrees (Phase 6.5 - for seeing calculation)
         observer_skill: Observer experience level (Phase 6.5)
+        object_classification: ObjectClassification with type info (Phase 7)
         use_legacy_penalty: If True, blend with linear Bortle penalty model
         legacy_penalty_per_bortle: Linear penalty per Bortle level
         legacy_minimum_factor: Minimum factor for legacy model
@@ -177,33 +214,11 @@ def calculate_light_pollution_factor_with_surface_brightness(
     """
     import math
 
-    # For extended objects, surface brightness affects visibility more than integrated magnitude
-    # However, we don't want to use surface brightness directly as it makes objects appear
-    # way too faint. Instead, we'll adjust the detection headroom based on size.
-    # Very large objects (>60') need even stricter headroom due to extremely low surface brightness.
-    if object_size_arcmin > 120:  # Very large extended objects (Veil, California Nebula, Andromeda)
-        effective_magnitude = object_magnitude
-        # Extremely large objects need strict headroom (but not TOO strict for bright ones like M31)
-        detection_headroom = 3.0  # Reduced from 3.5 to allow bright large objects better visibility
-    elif object_size_arcmin > 60:  # Large extended objects
-        effective_magnitude = object_magnitude
-        # Large objects need strict headroom
-        detection_headroom = 3.2
-    elif object_size_arcmin > 30:  # Medium-large extended object
-        effective_magnitude = object_magnitude
-        # Medium-large objects need significantly more headroom
-        detection_headroom = 3.0
-    elif object_size_arcmin > 5:  # Medium extended object
-        effective_magnitude = object_magnitude
-        # Medium objects need moderately more headroom
-        detection_headroom = 2.5
-    else:
-        # Compact objects - use integrated magnitude with standard headroom
-        effective_magnitude = object_magnitude
-        detection_headroom = 1.5
+    # Phase 7: Type-aware headroom selection
+    detection_headroom = _get_detection_headroom(object_classification, object_size_arcmin)
 
     return calculate_light_pollution_factor_by_limiting_magnitude(
-        effective_magnitude,
+        object_magnitude,
         bortle,
         telescope_aperture_mm,
         telescope_type,
@@ -214,6 +229,77 @@ def calculate_light_pollution_factor_with_surface_brightness(
         legacy_penalty_per_bortle,
         legacy_minimum_factor
     )
+
+
+def _get_detection_headroom(
+    classification: Optional[ObjectClassification],
+    size_arcmin: float
+) -> float:
+    """
+    Determine detection headroom based on object classification.
+
+    Phase 7: Primary logic - use classification-based headroom.
+    Phase 5 fallback: Use size-based heuristic when classification unavailable.
+
+    Args:
+        classification: Object classification (if available)
+        size_arcmin: Object size in arcminutes (fallback)
+
+    Returns:
+        Detection headroom magnitude value
+    """
+    # Phase 7: Try type-aware headroom first
+    if classification:
+        # Planetary nebulae
+        if classification.is_planetary_nebula():
+            return HEADROOM_BY_OBJECT_TYPE['planetary_nebula']
+
+        # Clusters
+        if classification.is_globular_cluster():
+            return HEADROOM_BY_OBJECT_TYPE['globular_cluster']
+        if classification.is_open_cluster():
+            return HEADROOM_BY_OBJECT_TYPE['open_cluster']
+
+        # Nebulae (non-planetary)
+        if classification.is_emission_nebula():
+            return HEADROOM_BY_OBJECT_TYPE['emission_nebula']
+        if classification.is_reflection_nebula():
+            return HEADROOM_BY_OBJECT_TYPE['reflection_nebula']
+        if classification.is_dark_nebula():
+            return HEADROOM_BY_OBJECT_TYPE['dark_nebula']
+
+        # Supernova remnants (check primary type + subtype)
+        if classification.primary_type == 'nebula' and classification.subtype == 'supernova_remnant':
+            return HEADROOM_BY_OBJECT_TYPE['supernova_remnant']
+
+        # Galaxies
+        if classification.is_spiral_galaxy():
+            return HEADROOM_BY_OBJECT_TYPE['spiral_galaxy']
+        if classification.is_elliptical_galaxy():
+            return HEADROOM_BY_OBJECT_TYPE['elliptical_galaxy']
+        if classification.is_lenticular_galaxy():
+            return HEADROOM_BY_OBJECT_TYPE['lenticular_galaxy']
+        if classification.primary_type == 'galaxy' and classification.subtype == 'irregular':
+            return HEADROOM_BY_OBJECT_TYPE['irregular_galaxy']
+
+        # Generic galaxy (no subtype)
+        if classification.is_galaxy():
+            return HEADROOM_BY_OBJECT_TYPE['spiral_galaxy']  # Default to spiral
+
+        # Other classified objects - use default
+        return HEADROOM_BY_OBJECT_TYPE['default']
+
+    # Phase 5 fallback: Size-based heuristic when classification unavailable
+    if size_arcmin > 120:
+        return 3.0  # Very large extended objects
+    elif size_arcmin > 60:
+        return 3.2  # Large extended objects
+    elif size_arcmin > 30:
+        return 3.0  # Medium-large extended objects
+    elif size_arcmin > 5:
+        return 2.5  # Medium extended objects
+    else:
+        return 1.5  # Compact objects
 
 
 def get_visibility_status(

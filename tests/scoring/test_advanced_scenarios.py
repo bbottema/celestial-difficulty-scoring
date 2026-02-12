@@ -7,7 +7,7 @@ These tests cover features not yet implemented - expect failures initially.
 import unittest
 from assertpy import assert_that
 
-from app.domain.model.celestial_object import CelestialObject
+from tests.test_helpers import create_test_celestial_object
 from app.domain.model.moon_conditions import MoonConditions
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
@@ -63,23 +63,23 @@ class TestFixtures:
 
     @staticmethod
     def moon():
-        return CelestialObject('Moon', 'Moon', -12.60, 31.00, 45.00)
+        return create_test_celestial_object('Moon', 'Moon', -12.60, 31.00, 45.00)
 
     @staticmethod
     def jupiter():
-        return CelestialObject('Jupiter', 'Planet', -2.40, 0.77, 45.00, ra=200.0, dec=20.0)
+        return create_test_celestial_object('Jupiter', 'Planet', -2.40, 0.77, 45.00, ra=200.0, dec=20.0)
 
     @staticmethod
     def orion_nebula():
-        return CelestialObject('Orion Nebula', 'DeepSky', 4.0, 65.0, 55.00)
+        return create_test_celestial_object('Orion Nebula', 'DeepSky', 4.0, 65.0, 55.00)
 
     @staticmethod
     def horsehead():
-        return CelestialObject('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00, ra=85.0, dec=-2.0)
+        return create_test_celestial_object('Horsehead Nebula', 'DeepSky', 10.0, 60.0, 45.00, ra=85.0, dec=-2.0)
 
     @staticmethod
     def andromeda():
-        return CelestialObject('Andromeda Galaxy', 'DeepSky', 3.44, 190.00, 60.00)
+        return create_test_celestial_object('Andromeda Galaxy', 'DeepSky', 3.44, 190.00, 60.00)
 
 
 # =============================================================================
@@ -287,7 +287,7 @@ class TestMoonProximityBasic(unittest.TestCase):
 
     def test_object_near_full_moon_severe_penalty(self):
         """Object 10° from full moon should be drastically worse than far from moon."""
-        target = CelestialObject('Target Near Moon', 'DeepSky', 6.0, 10.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target Near Moon', 'DeepSky', 6.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
         # Moon far away
         far_moon = create_moon_at_separation(target.ra, target.dec, 120.0, 100.0, 60.0)
@@ -311,7 +311,7 @@ class TestMoonProximityBasic(unittest.TestCase):
 
     def test_object_very_close_to_full_moon(self):
         """Object 5° from full moon should be much harder than 90° away."""
-        target = CelestialObject('Target Very Close', 'DeepSky', 7.0, 5.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target Very Close', 'DeepSky', 7.0, 5.0, 60.00, ra=180.0, dec=30.0)
 
         far_moon = create_moon_at_separation(target.ra, target.dec, 90.0, 100.0, 60.0)
         far_score = self.service.score_celestial_object(
@@ -343,7 +343,7 @@ class TestMoonProximityByPhase(unittest.TestCase):
 
     def test_new_moon_no_penalty(self):
         """New moon (0% illumination) should not penalize nearby objects."""
-        target = CelestialObject('Target Near New Moon', 'DeepSky', 8.0, 10.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target Near New Moon', 'DeepSky', 8.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
         new_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 0.0, 0.0)
         new_moon_score = self.service.score_celestial_object(
@@ -361,7 +361,7 @@ class TestMoonProximityByPhase(unittest.TestCase):
 
     def test_quarter_moon_moderate_penalty(self):
         """Quarter moon (50% illumination) should have moderate penalty."""
-        target = CelestialObject('Target Near Quarter Moon', 'DeepSky', 7.0, 8.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target Near Quarter Moon', 'DeepSky', 7.0, 8.0, 60.00, ra=180.0, dec=30.0)
 
         quarter_moon = create_moon_at_separation(target.ra, target.dec, 15.0, 50.0, 50.0)
         quarter_moon_score = self.service.score_celestial_object(
@@ -379,7 +379,7 @@ class TestMoonProximityByPhase(unittest.TestCase):
 
     def test_crescent_moon_minor_penalty(self):
         """Crescent moon (10% illumination) should have minor penalty."""
-        target = CelestialObject('Target Near Crescent', 'DeepSky', 7.5, 10.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target Near Crescent', 'DeepSky', 7.5, 10.0, 60.00, ra=180.0, dec=30.0)
 
         crescent_moon = create_moon_at_separation(target.ra, target.dec, 20.0, 10.0, 40.0)
         crescent_score = self.service.score_celestial_object(
@@ -407,7 +407,7 @@ class TestMoonProximityBySeparation(unittest.TestCase):
 
     def test_separation_gradient(self):
         """Score should increase with separation from full moon."""
-        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
         separations = [5, 10, 20, 40, 80]
 
         scores = []
@@ -424,7 +424,7 @@ class TestMoonProximityBySeparation(unittest.TestCase):
 
     def test_double_separation_significant_improvement(self):
         """Doubling separation should significantly improve score."""
-        target = CelestialObject('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Target', 'DeepSky', 7.0, 10.0, 60.00, ra=180.0, dec=30.0)
 
         close_moon = create_moon_at_separation(target.ra, target.dec, 10.0, 100.0, 60.0)
         close_score = self.service.score_celestial_object(
@@ -452,7 +452,7 @@ class TestMoonOccultation(unittest.TestCase):
 
     def test_occultation_zero_score(self):
         """Object at 0° separation (behind moon) should score zero."""
-        target = CelestialObject('Occulted Star', 'DeepSky', 3.0, 0.0001, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Occulted Star', 'DeepSky', 3.0, 0.0001, 60.00, ra=180.0, dec=30.0)
 
         moon = create_moon_at_separation(target.ra, target.dec, 0.0, 100.0, 60.0)
         score = self.service.score_celestial_object(
@@ -463,7 +463,7 @@ class TestMoonOccultation(unittest.TestCase):
 
     def test_barely_past_moon_still_very_hard(self):
         """Object 0.5° from moon should be much harder than 60° away."""
-        target = CelestialObject('Just Past Moon', 'DeepSky', 5.0, 1.0, 60.00, ra=180.0, dec=30.0)
+        target = create_test_celestial_object('Just Past Moon', 'DeepSky', 5.0, 1.0, 60.00, ra=180.0, dec=30.0)
 
         close_moon = create_moon_at_separation(target.ra, target.dec, 0.5, 100.0, 60.0)
         barely_past_score = self.service.score_celestial_object(
@@ -603,35 +603,35 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_object_at_zenith(self):
         """Object at 90° altitude should score well."""
-        zenith_object = CelestialObject('Zenith', 'DeepSky', 5.0, 10.0, 90.00)
+        zenith_object = create_test_celestial_object('Zenith', 'DeepSky', 5.0, 10.0, 90.00)
         score = self.service.score_celestial_object(
             zenith_object, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_greater_than(0)
 
     def test_object_just_above_horizon(self):
         """Object at 1° altitude should score poorly but not zero."""
-        horizon_object = CelestialObject('Horizon', 'DeepSky', 5.0, 10.0, 1.00)
+        horizon_object = create_test_celestial_object('Horizon', 'DeepSky', 5.0, 10.0, 1.00)
         score = self.service.score_celestial_object(
             horizon_object, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_greater_than(0)
 
     def test_object_below_horizon_zero(self):
         """Object below horizon should score exactly zero."""
-        below = CelestialObject('Below', 'DeepSky', 5.0, 10.0, -5.00)
+        below = create_test_celestial_object('Below', 'DeepSky', 5.0, 10.0, -5.00)
         score = self.service.score_celestial_object(
             below, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_equal_to(0.0)
 
     def test_extremely_bright_object(self):
         """Extremely bright object should score very high."""
-        super_bright = CelestialObject('Super Bright', 'Planet', -10.0, 1.0, 50.00)
+        super_bright = create_test_celestial_object('Super Bright', 'Planet', -10.0, 1.0, 50.00)
         score = self.service.score_celestial_object(
             super_bright, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_greater_than(0)
 
     def test_extremely_faint_object(self):
         """Extremely faint object (mag 15) should score low but not zero."""
-        super_faint = CelestialObject('Super Faint', 'DeepSky', 15.0, 1.0, 50.00)
+        super_faint = create_test_celestial_object('Super Faint', 'DeepSky', 15.0, 1.0, 50.00)
         score = self.service.score_celestial_object(
             super_faint, self.scope, self.eyepiece, self.site)
         # Should score low but not zero (technically possible with large scope)
@@ -639,14 +639,14 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_huge_extended_object(self):
         """Huge object (300 arcmin) should prefer very low mag."""
-        huge = CelestialObject('Huge', 'DeepSky', 5.0, 300.0, 50.00)
+        huge = create_test_celestial_object('Huge', 'DeepSky', 5.0, 300.0, 50.00)
         score = self.service.score_celestial_object(
             huge, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_greater_than(0)
 
     def test_tiny_object(self):
         """Tiny object (0.01 arcmin) should benefit from high mag."""
-        tiny = CelestialObject('Tiny', 'DeepSky', 8.0, 0.01, 50.00)
+        tiny = create_test_celestial_object('Tiny', 'DeepSky', 8.0, 0.01, 50.00)
         score = self.service.score_celestial_object(
             tiny, self.scope, self.eyepiece, self.site)
         assert_that(score.observability_score.score).is_greater_than(0)

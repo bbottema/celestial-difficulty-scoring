@@ -33,8 +33,13 @@ class ObservabilityCalculationService:
                                observation_site: Optional[ObservationSite] = None,
                                weather: Optional[dict] = None,
                                moon_conditions: Optional[MoonConditions] = None) -> ScoredCelestialObject:
+        # Extract size as float (handle both float and AngularSize)
+        size_arcmin = celestial_object.size
+        if hasattr(size_arcmin, 'major_arcmin'):
+            size_arcmin = size_arcmin.major_arcmin
+
         return ScoredCelestialObject(celestial_object.name, celestial_object.object_type, celestial_object.magnitude,
-                                     celestial_object.size, celestial_object.altitude,
+                                     size_arcmin, celestial_object.altitude,
                                      self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site, weather, moon_conditions))
 
     def _calculate_observability_score(self,
@@ -62,17 +67,32 @@ class ObservabilityCalculationService:
 
     @staticmethod
     def _determine_scoring_strategy(celestial_object: CelestialObject) -> IObservabilityScoringStrategy:
+        obj_type = celestial_object.object_type
+
         # Sun gets dedicated strategy (safety-first)
-        if celestial_object.object_type == 'Sun':
+        if obj_type == 'sun':
             return SunStrategy()
-        # Moon and Planets use physics-based reflected light strategy
-        elif celestial_object.object_type in ['Planet', 'Moon']:
+
+        # Moon uses physics-based reflected light strategy
+        elif obj_type == 'moon':
             return ReflectedLightStrategy()
-        # Deep-sky objects (stars, galaxies, nebulae)
-        elif celestial_object.object_type == 'DeepSky':
-            if celestial_object.size > LARGE_OBJECT_SIZE_THRESHOLD:
+
+        # Planets, asteroids, comets use reflected light strategy
+        elif obj_type in ['planet', 'asteroid', 'comet']:
+            return ReflectedLightStrategy()
+
+        # Deep-sky objects: galaxies, nebulae, clusters, stars
+        elif obj_type in ['galaxy', 'nebula', 'cluster', 'star', 'double_star', 'variable_star']:
+            # Get size value (handle both float and AngularSize object)
+            size_arcmin = celestial_object.size
+            if hasattr(size_arcmin, 'major_arcmin'):
+                size_arcmin = size_arcmin.major_arcmin
+
+            # Large extended objects need special handling
+            if size_arcmin and size_arcmin > LARGE_OBJECT_SIZE_THRESHOLD:
                 return LargeFaintObjectScoringStrategy()
             else:
                 return DeepSkyScoringStrategy()
+
         else:
-            raise ValueError(f'Unknown celestial object type: {celestial_object.object_type}')
+            raise ValueError(f'Unknown celestial object type: {obj_type}')

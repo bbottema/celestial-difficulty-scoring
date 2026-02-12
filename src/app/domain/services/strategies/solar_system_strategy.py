@@ -45,11 +45,11 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
         """
         if not context.has_equipment():
             # Moon is spectacular naked-eye, minimal penalty
-            if celestial_object.object_type == 'Moon':
+            if celestial_object.object_type == 'moon':
                 return 0.95
             # Bright planets (Venus, Jupiter, Mars, Saturn) are good naked-eye too
             # Only penalize moderately since they're bright and obvious
-            if celestial_object.object_type == 'Planet' and celestial_object.magnitude < 1.0:
+            if celestial_object.object_type == 'planet' and celestial_object.magnitude < 1.0:
                 return 0.75
             return EQUIPMENT_PENALTY_SOLAR_SYSTEM
 
@@ -76,7 +76,7 @@ class SolarSystemScoringStrategy(IObservabilityScoringStrategy):
             return 0.9  # Small penalty for unknown site
 
         # Moon is so bright it's essentially unaffected by light pollution
-        if celestial_object.object_type == 'Moon':
+        if celestial_object.object_type == 'moon':
             return 1.0
 
         bortle = context.get_bortle_number()

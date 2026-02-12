@@ -82,6 +82,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
 
         # Use limiting magnitude model with surface brightness consideration
         # Phase 6.5: Pass telescope_type and altitude for split aperture gain
+        # Phase 7: Pass object_classification for type-aware headroom
         # NOTE: We set use_legacy_penalty=False to get PURE limiting magnitude model
         # The sky_darkness_factor will handle Bortle penalties separately
         factor = calculate_light_pollution_factor_with_surface_brightness(
@@ -92,6 +93,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             telescope_type=telescope_type,
             altitude=celestial_object.altitude,
             observer_skill='intermediate',  # TODO: Make configurable in user settings
+            object_classification=celestial_object.classification,  # Phase 7: Type-aware headroom
             use_legacy_penalty=False,  # Pure physics model, no legacy blending
             legacy_penalty_per_bortle=0.0,  # Not used
             legacy_minimum_factor=0.0  # Not used

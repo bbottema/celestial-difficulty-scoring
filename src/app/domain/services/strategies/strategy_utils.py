@@ -47,7 +47,7 @@ def calculate_moon_proximity_factor(celestial_object, context: 'ScoringContext')
         return 1.0  # No moon = no penalty
 
     # Solar system objects unaffected by moon (bright enough)
-    if celestial_object.object_type in ["Planet", "Sun", "Moon"]:
+    if celestial_object.object_type in ["planet", "sun", "moon"]:
         return 1.0
 
     moon = context.moon_conditions
