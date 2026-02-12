@@ -5,6 +5,7 @@ from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import *
 from injector import inject
 
+from app.ui.main_window.catalog_data.catalog_data_component import CatalogDataComponent
 from app.ui.main_window.equipment_management.equipment_management_component import EquipmentManagementComponent
 from app.ui.main_window.observation_data.observation_data_component import ObservationDataComponent
 from app.ui.main_window.observation_preferences.observation_preferences_component import ObservationPreferencesComponent
@@ -20,13 +21,15 @@ class MainWindow(QMainWindow):
                  observation_data_component: ObservationDataComponent,
                  observation_sites_component: ObservationSitesComponent,
                  equipment_management_component: EquipmentManagementComponent,
-                 observation_preferences_component: ObservationPreferencesComponent) -> None:
+                 observation_preferences_component: ObservationPreferencesComponent,
+                 catalog_data_component: CatalogDataComponent) -> None:
         super().__init__(None)
 
         self.observation_data_component = observation_data_component
         self.observation_sites_component = observation_sites_component
         self.equipment_management_component = equipment_management_component
         self.observation_preferences_component = observation_preferences_component
+        self.catalog_data_component = catalog_data_component
 
         # Restore the window's last geometry or center it
         geometry: QByteArray = cast(QByteArray, self.settings.value("geometry", QByteArray()))
@@ -52,6 +55,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         self.tabs.addTab(self.observation_data_component, "Plan Tonight's Session")
+        self.tabs.addTab(self.catalog_data_component, "Data")
         self.tabs.addTab(self.observation_sites_component, "Setup: Observation Sites")
         self.tabs.addTab(self.equipment_management_component, "Setup: Equipment")
         self.tabs.addTab(self.observation_preferences_component, "Setup: Preferences")

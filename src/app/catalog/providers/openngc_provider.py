@@ -296,7 +296,7 @@ class OpenNGCAdapter:
 
         # Build provenance
         provenance = [DataProvenance(
-            source="openngc",
+            source="OpenNGC",
             fetched_at=datetime.now(),
             catalog_version="2023-12-13",
             confidence=1.0
@@ -405,8 +405,8 @@ class OpenNGCAdapter:
         if ht.startswith('E'):
             return 'elliptical'
 
-        # Lenticular
-        if 'S0' in ht:
+        # Lenticular (S0, SA0, SB0, etc. - must check for '0' after S or SA/SB)
+        if ht.startswith('S0') or ht.startswith('SA0') or ht.startswith('SB0'):
             return 'lenticular'
 
         # Spiral (check for SA, SB, SAB)

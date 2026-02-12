@@ -99,12 +99,14 @@ class HorizonsProvider:
             if time is None:
                 time = datetime.now(timezone.utc)
 
-            time_str = self._format_time(time)
+            # Convert to Julian Date for Horizons API
+            from astropy.time import Time
+            jd = Time(time).jd
 
             obj = Horizons(
                 id=horizons_id,
                 location=self.observer_location,
-                epochs={'start': time_str, 'stop': time_str, 'step': '1m'}
+                epochs=jd
             )
 
             # Request specific quantities to limit output size
@@ -115,7 +117,10 @@ class HorizonsProvider:
                 return None
 
             return self._parse_horizons_result(eph, 0, identifier)
-        except Exception:
+        except Exception as e:
+            print(f"Horizons query failed for '{identifier}': {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def _parse_horizons_result(self, result, idx: int, name: str) -> Optional[CelestialObject]:
