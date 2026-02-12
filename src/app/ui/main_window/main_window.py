@@ -55,10 +55,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         self.tabs.addTab(self.observation_data_component, "Plan Tonight's Session")
-        self.tabs.addTab(self.catalog_data_component, "Data")
         self.tabs.addTab(self.observation_sites_component, "Setup: Observation Sites")
         self.tabs.addTab(self.equipment_management_component, "Setup: Equipment")
         self.tabs.addTab(self.observation_preferences_component, "Setup: Preferences")
+        self.tabs.addTab(self.catalog_data_component, "Raw Data API's")
 
         # Pass tab widget reference to observation data component for navigation
         self.observation_data_component.set_tab_widget(self.tabs)
