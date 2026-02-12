@@ -20,6 +20,98 @@ Phase 5 implemented a physics-based limiting magnitude model with realism correc
 - Object types (compact vs extended)
 - Observer experience levels
 
+## Phase 8 Integration: Multi-Provider Data Validation
+
+**Critical Update (2026-02-12):** With Phase 8 complete, we now have multiple data providers feeding the unified `CelestialObject` domain model. Phase 5 validation **must test all provider data sources**, not just OpenNGC CSV.
+
+### Provider Characteristics
+
+Each provider has different data quality, completeness, and characteristics:
+
+**OpenNGC Provider** (13,970 DSO, offline CSV):
+- ✅ Surface brightness (B-band, 25 mag isophote)
+- ✅ Clean type codes (G, EmN, HII, PN, OCl, GCl)
+- ✅ Hubble morphological types
+- ✅ Consistent magnitude/size measurements
+- ⚠️ Limited to NGC/IC/Messier catalogs only
+
+**SIMBAD Provider** (online enrichment):
+- ✅ Vast object coverage (millions of objects)
+- ✅ Cross-references to multiple catalogs
+- ⚠️ Unreliable main types (M31→"AGN", NGC7000→"Cluster")
+- ⚠️ Variable data quality (crowd-sourced corrections)
+- ⚠️ Missing surface brightness for many objects
+- ✅ Fixed by classification mapper using `other_types` validation
+
+**Horizons Provider** (Solar System ephemerides):
+- ✅ Accurate planetary data from JPL
+- ✅ Real-time magnitude/size (phase-dependent)
+- ⚠️ Completely different data model (orbital elements, not fixed catalog)
+- ⚠️ Time-dependent values (Jupiter magnitude varies with Earth-Jupiter distance)
+
+### Validation Requirements
+
+Phase 5 monitoring must include:
+
+1. **Cross-Provider Consistency Tests**
+   - Same object from OpenNGC vs SIMBAD: Do limiting mag calculations agree?
+   - Example: M31 from OpenNGC vs M31 from SIMBAD → scores should match ±5%
+
+2. **Provider-Specific Edge Cases**
+   - Missing surface brightness (common in SIMBAD) → test computed SB formula
+   - Variable magnitudes (Horizons planets) → test time-dependent scoring
+   - SIMBAD type corrections → verify classification mapper fixes work
+
+3. **Representative Sample Sets**
+   - **OpenNGC sample**: 50 objects across types (galaxies, nebulae, clusters)
+   - **SIMBAD-only sample**: 20 objects NOT in OpenNGC (WDS doubles, obscure catalogs)
+   - **Horizons sample**: 8 Solar System objects (planets, Moon, Sun)
+   - **Cross-provider sample**: 10 objects available in multiple providers
+
+4. **Data Quality Scenarios**
+   - Perfect data: OpenNGC with measured surface brightness
+   - Computed data: Missing SB, computed from magnitude + size
+   - Uncertain data: SIMBAD with conflicting type classifications
+   - Dynamic data: Horizons objects with time-varying parameters
+
+### Critical Test Cases
+
+**Test 1: OpenNGC vs SIMBAD Consistency**
+```
+Object: M51 (Whirlpool Galaxy)
+Source 1: OpenNGC → SB=23.0, type=GxyS, mag=8.4
+Source 2: SIMBAD → SB=computed, type=Galaxy (after correction), mag=8.4
+Expected: Scores match within 5%
+Red flag: >10% difference suggests provider normalization issue
+```
+
+**Test 2: Missing Surface Brightness Handling**
+```
+Object: Obscure galaxy from SIMBAD only
+Data: Magnitude=11.2, size=2.5'x1.8', no measured SB
+Computed SB: ~13.8 mag/arcsec² (from size + magnitude)
+Expected: Score uses computed SB, still detectable with appropriate headroom
+Red flag: Score=0.0 suggests computed SB formula broken
+```
+
+**Test 3: Dynamic Solar System Objects**
+```
+Object: Jupiter from Horizons
+Scenario A: Opposition (mag=-2.5, size=48")
+Scenario B: Conjunction (mag=-1.8, size=32")
+Expected: Both score >0.95 (bright, easy targets)
+Red flag: Scores vary wildly suggests time-dependent handling broken
+```
+
+**Test 4: SIMBAD Type Correction**
+```
+Object: M31 from SIMBAD
+Raw SIMBAD type: "AGN" (WRONG - Active Galactic Nucleus)
+Corrected type: "Galaxy" (via other_types field)
+Expected: Uses correct Galaxy strategy, not misclassified
+Red flag: Score unusually low suggests type correction failed
+```
+
 ---
 
 ## Monitoring Tasks
@@ -229,17 +321,22 @@ Phase 5 model considered "calibrated" when:
 
 ## Current Status
 
-**As of 2026-02-10:**
+**As of 2026-02-12:**
 - ✅ Phase 5 implemented with realism corrections
-- ✅ 13 benchmark tests created with real-world objects
+- ✅ Phase 8 API integration complete (OpenNGC, SIMBAD, Horizons)
+- ✅ Multi-provider data sources available for validation
+- ⏳ Provider consistency tests not yet implemented
+- ⏳ Representative sample sets not yet created
 - ⏳ Real-world calibration not yet started
 - ⏳ Community feedback system not yet implemented
 
 **Next Steps:**
-1. Run benchmark tests against current scoring
-2. Analyze test results for patterns
-3. Decide: Community feedback OR historical data analysis
-4. Begin calibration adjustments if needed
+1. **Create representative sample sets** from all 3 providers
+2. **Implement provider consistency tests** (cross-provider validation)
+3. **Run benchmark tests** against current scoring with multi-provider data
+4. **Analyze test results** for provider-specific patterns
+5. **Identify edge cases** (missing SB, dynamic objects, type corrections)
+6. Begin calibration adjustments if systematic errors detected
 
 ---
 
