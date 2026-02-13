@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QComboBox, QPushButton, QWidget, QCheckBox
 from PySide6.QtWidgets import QMessageBox
 
 from app.domain.model.light_pollution import LightPollution
@@ -34,6 +34,9 @@ class ObservationSiteDetailsDialog(QDialog):
             self.light_pollution_combo.addItem(lp.value, lp.name)
         self.light_pollution_combo.setCurrentText(observation_site.light_pollution.value if observation_site else "")
 
+        self.dew_heaters_checkbox = QCheckBox("Dew heaters available")
+        self.dew_heaters_checkbox.setChecked(observation_site.has_dew_heaters if observation_site else False)
+
         self.save_button = QPushButton("Save")
         self.cancel_button = QPushButton("Cancel")
 
@@ -43,6 +46,7 @@ class ObservationSiteDetailsDialog(QDialog):
         form_layout.addRow("Latitude:", self.latitude_edit)
         form_layout.addRow("Longitude:", self.longitude_edit)
         form_layout.addRow("Light Pollution:", self.light_pollution_combo)
+        form_layout.addRow("Accessories:", self.dew_heaters_checkbox)
 
         # Add buttons to the layout
         layout.addLayout(form_layout)
@@ -58,6 +62,7 @@ class ObservationSiteDetailsDialog(QDialog):
         self.latitude_edit.setText(str(observation_site.latitude) if observation_site.latitude else "")
         self.longitude_edit.setText(str(observation_site.longitude) if observation_site.longitude else "")
         self.light_pollution_combo.setCurrentText(self.determine_light_pollution_selection(observation_site))
+        self.dew_heaters_checkbox.setChecked(observation_site.has_dew_heaters)
 
     @staticmethod
     def determine_light_pollution_selection(observation_site):
@@ -78,5 +83,6 @@ class ObservationSiteDetailsDialog(QDialog):
             name=self.name_edit.text(),
             latitude=parse_str_float(self.latitude_edit.text()),
             longitude=parse_str_float(self.longitude_edit.text()),
-            light_pollution=LightPollution[self.light_pollution_combo.currentData()]
+            light_pollution=LightPollution[self.light_pollution_combo.currentData()],
+            has_dew_heaters=self.dew_heaters_checkbox.isChecked()
         )

@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, cast, Protocol, List
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table, Boolean
 from sqlalchemy.orm import declarative_base, relationship, DeclarativeMeta
 
 from app.domain.model.light_pollution import LightPollution
@@ -51,6 +51,9 @@ class ObservationSite(Base):
     latitude: float | None = cast(float, Column(Float, nullable=True))
     longitude: float | None = cast(float, Column(Float, nullable=True))
     light_pollution: LightPollution = cast(LightPollution, Column(Enum(LightPollution), nullable=False))
+
+    # UI-only flag (stored in DB for convenience); currently has no impact on scoring.
+    has_dew_heaters: bool = cast(bool, Column(Boolean, nullable=False, default=False))
 
     telescopes = relationship("Telescope", secondary=observation_site_telescope_association, back_populates="observation_sites", cascade="")
     eyepieces = relationship("Eyepiece", secondary=observation_site_eyepiece_association, back_populates="observation_sites", cascade="")
