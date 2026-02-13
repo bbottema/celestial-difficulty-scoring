@@ -77,18 +77,27 @@ Phase 6 ✅ COMPLETE (Test Suite Overhaul)
 
 ### Phase 6: Test Suite Overhaul ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
+
+Transformed test suite from implementation-driven to user-experience-driven testing.
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 6.5: Hierarchical Model ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
+
+Eliminated aperture double-counting by implementing hierarchical scoring model.
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 2: Moon Proximity Integration ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
+
+Implemented moon proximity penalty factor with inverse square falloff.
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
@@ -151,18 +160,27 @@ Make all scoring factors explicit and visible for debugging.
 
 ### Phase 5: Limiting Magnitude Model ✅ COMPLETE
 **Status:** COMPLETE (2026-02-09)
+
+Physics-based limiting magnitude model with realism corrections.
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 7: Object-Type-Aware Scoring ✅ COMPLETE
 **Status:** COMPLETE (2026-02-12)
+
+Tailored detection headroom based on object classification (planetary nebula, spiral galaxy, etc.).
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 8: Astronomical API Integration ✅ COMPLETE
 **Status:** COMPLETE (2026-02-12)
+
+Replaced AstroPlanner Excel exports with proper astronomical catalog APIs.
+
 **Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
