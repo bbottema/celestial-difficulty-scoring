@@ -1,13 +1,13 @@
 from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout, QFrame,
-    QDateEdit, QTimeEdit
+    QDateEdit, QTimeEdit, QProgressDialog, QMessageBox, QGroupBox
 )
 from PySide6.QtCore import Qt, QDate, QTime
 from injector import inject
 
 from app.config.autowire import component
 from app.config.event_bus_config import bus, CelestialEvent
-from app.domain.model.celestial_object import ScoredCelestialsList, CelestialsList
+from app.domain.model.celestial_object import ScoredCelestialsList, CelestialsList, CelestialObject
 from app.domain.model.weather_conditions import WeatherConditions
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.services.observation_site_service import ObservationSiteService
@@ -15,7 +15,8 @@ from app.orm.services.telescope_service import TelescopeService
 from app.orm.services.eyepiece_service import EyepieceService
 from app.utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 from app.utils.gui_helper import default_table, centered_table_widget_item
-from app.utils.ui_debug_clipboard_watch import CUSTOM_NAME_PROPERTY
+from app.object_lists.object_list_loader import ObjectListLoader
+from app.object_lists.models import ResolutionFailure
 
 
 @component
@@ -31,6 +32,7 @@ class ObservationDataComponent(QWidget):
         self.observation_site_service = observation_site_service
         self.telescope_service = telescope_service
         self.eyepiece_service = eyepiece_service
+        self.object_list_loader = ObjectListLoader()  # Phase 9.1: Pre-curated lists
         self.tab_widget = None  # Will be set by MainWindow
         self.layout = QVBoxLayout()
         self.init_ui()
@@ -52,6 +54,21 @@ class ObservationDataComponent(QWidget):
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
         self.layout.addWidget(separator)
+
+        # Phase 9.1: Pre-curated Object List selector
+        object_list_section = self._create_object_list_section()
+        self.layout.addWidget(object_list_section)
+
+        # Add separator between object lists and legacy import
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setFrameShadow(QFrame.Sunken)
+        self.layout.addWidget(separator2)
+
+        # Legacy import buttons (kept for backward compatibility)
+        import_label = QLabel("Or import from file:")
+        import_label.setStyleSheet("color: #666; font-style: italic; margin-top: 5px;")
+        self.layout.addWidget(import_label)
 
         # Import buttons
         button_layout = QHBoxLayout()
@@ -382,6 +399,153 @@ class ObservationDataComponent(QWidget):
         site = self.site_combo.currentData()
         return telescope, eyepiece, site
 
+    def _create_object_list_section(self) -> QGroupBox:
+        """
+        Phase 9.1: Create the pre-curated object list selector section.
+        
+        Provides dropdown for Messier, Caldwell, Solar System, etc.
+        """
+        group = QGroupBox("📋 Select Object List")
+        layout = QHBoxLayout(group)
+
+        # Dropdown for available lists
+        self.object_list_combo = QComboBox()
+        self.object_list_combo.setMinimumWidth(250)
+        self._populate_object_list_dropdown()
+        layout.addWidget(self.object_list_combo)
+
+        # Load & Score button
+        self.load_list_button = QPushButton("Load && Score")
+        self.load_list_button.setToolTip(
+            "Load the selected object list, resolve objects via catalog,\n"
+            "and score them for observability with your equipment."
+        )
+        self.load_list_button.clicked.connect(self._load_and_score_object_list)
+        layout.addWidget(self.load_list_button)
+
+        # Status label for resolution results
+        self.list_status_label = QLabel("")
+        self.list_status_label.setStyleSheet("color: #666; font-style: italic;")
+        layout.addWidget(self.list_status_label)
+
+        layout.addStretch()
+
+        return group
+
+    def _populate_object_list_dropdown(self):
+        """Populate the object list dropdown with available lists"""
+        self.object_list_combo.clear()
+        self.object_list_combo.addItem("Select a catalog...", None)
+
+        try:
+            available_lists = self.object_list_loader.get_available_lists()
+            for list_meta in available_lists:
+                display_text = f"{list_meta.name} ({list_meta.object_count} objects)"
+                self.object_list_combo.addItem(display_text, list_meta.list_id)
+        except Exception as e:
+            self.object_list_combo.addItem(f"Error loading lists: {e}", None)
+
+    def _load_and_score_object_list(self):
+        """
+        Load selected object list, resolve objects, and score them.
+        
+        Phase 9.1: Core workflow for pre-curated lists.
+        """
+        list_id = self.object_list_combo.currentData()
+        if not list_id:
+            self.list_status_label.setText("Please select a catalog first")
+            self.list_status_label.setStyleSheet("color: #ff9800; font-style: italic;")
+            return
+
+        # Get list name for display
+        list_name = self.object_list_combo.currentText()
+
+        try:
+            # Load the list
+            obj_list = self.object_list_loader.load_list(list_id)
+            total_objects = len(obj_list.objects)
+
+            # Create progress dialog
+            progress = QProgressDialog(
+                f"Resolving {list_name}...",
+                "Cancel",
+                0,
+                total_objects,
+                self
+            )
+            progress.setWindowTitle("Loading Object List")
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setMinimumDuration(500)  # Only show if takes > 500ms
+
+            # Track if cancelled
+            cancelled = False
+
+            def update_progress(current, total):
+                nonlocal cancelled
+                progress.setValue(current)
+                progress.setLabelText(f"Resolving objects... {current}/{total}")
+                if progress.wasCanceled():
+                    cancelled = True
+
+            # Resolve objects
+            result = self.object_list_loader.resolve_objects(obj_list, progress_callback=update_progress)
+            progress.close()
+
+            if cancelled:
+                self.list_status_label.setText("Cancelled")
+                self.list_status_label.setStyleSheet("color: #888; font-style: italic;")
+                return
+
+            # Update status
+            if result.failure_count > 0:
+                self.list_status_label.setText(
+                    f"✓ {result.success_count}/{result.total_count} resolved"
+                )
+                self.list_status_label.setStyleSheet("color: #ff9800; font-style: italic;")
+            else:
+                self.list_status_label.setText(f"✓ {result.success_count} objects loaded")
+                self.list_status_label.setStyleSheet("color: #4caf50; font-style: italic;")
+
+            # Get selected equipment and score
+            telescope, eyepiece, site = self._get_selected_equipment()
+            scored_objects = self.observability_calculation_service.score_celestial_objects(
+                result.resolved, telescope, eyepiece, site
+            )
+
+            # Create failure entries for table display (Decision #2: show in table)
+            failure_entries = self._create_failure_table_entries(result.failures)
+
+            # Populate table with scored objects + failures
+            self.populate_table(
+                scored_objects,
+                data_source=f"Object List: {list_name}",
+                failure_entries=failure_entries
+            )
+
+        except FileNotFoundError as e:
+            QMessageBox.warning(self, "List Not Found", str(e))
+        except Exception as e:
+            QMessageBox.critical(self, "Error Loading List", f"Failed to load list: {e}")
+
+    def _create_failure_table_entries(self, failures: list[ResolutionFailure]) -> list[dict]:
+        """
+        Create table entry dicts for failed resolutions.
+        
+        Decision #2: Include failures in the table with reason shown.
+        """
+        entries = []
+        for failure in failures:
+            entries.append({
+                'name': failure.name,
+                'type': '(Not Found)',
+                'magnitude': '-',
+                'size': '-',
+                'altitude': '-',
+                'score': '-',
+                'normalized_score': failure.reason
+            })
+        return entries
+
     def _create_guidance_section(self) -> QFrame:
         """Creates the guidance panel with setup status and instructions"""
         frame = QFrame()
@@ -481,7 +645,15 @@ class ObservationDataComponent(QWidget):
 
         return widget
 
-    def populate_table(self, data: ScoredCelestialsList, data_source: str = ""):
+    def populate_table(self, data: ScoredCelestialsList, data_source: str = "", failure_entries: list[dict] = None):
+        """
+        Populate the results table with scored objects.
+        
+        Args:
+            data: List of scored celestial objects
+            data_source: Display name for data source (e.g., "Messier Catalog")
+            failure_entries: Optional list of failed resolution dicts to append (Phase 9.1)
+        """
         # Sort by normalized score (descending - best targets first)
         sorted_data = sorted(data, key=lambda x: x.observability_score.normalized_score, reverse=True)
 
@@ -489,7 +661,7 @@ class ObservationDataComponent(QWidget):
         self.table.setRowCount(0)
 
         # Show table and hide empty state when we have data
-        if sorted_data:
+        if sorted_data or failure_entries:
             self.empty_state_label.hide()
             self.table.show()
 
@@ -498,6 +670,7 @@ class ObservationDataComponent(QWidget):
                 self.data_source_label.setText(f"📂 {data_source}")
                 self.data_source_label.show()
 
+        # Add scored objects
         for i, celestial_object in enumerate(sorted_data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(celestial_object.name))
@@ -507,6 +680,29 @@ class ObservationDataComponent(QWidget):
             self.table.setItem(i, 4, centered_table_widget_item(str(celestial_object.altitude)))
             self.table.setItem(i, 5, centered_table_widget_item(str(celestial_object.observability_score.score)))
             self.table.setItem(i, 6, centered_table_widget_item(str(celestial_object.observability_score.normalized_score)))
+
+        # Add failure entries at the bottom (Phase 9.1: show failures in table)
+        if failure_entries:
+            start_row = len(sorted_data)
+            for j, failure in enumerate(failure_entries):
+                row = start_row + j
+                self.table.insertRow(row)
+                
+                # Name with warning icon
+                name_item = centered_table_widget_item(f"⚠️ {failure['name']}")
+                name_item.setToolTip(failure.get('normalized_score', 'Resolution failed'))
+                self.table.setItem(row, 0, name_item)
+                
+                # Type shows "(Not Found)"
+                type_item = centered_table_widget_item(failure['type'])
+                type_item.setForeground(Qt.gray)
+                self.table.setItem(row, 1, type_item)
+                
+                # Other columns are empty/dashes
+                for col in range(2, 7):
+                    item = centered_table_widget_item('-')
+                    item.setForeground(Qt.gray)
+                    self.table.setItem(row, col, item)
 
     def _subscribe_to_events(self):
         """Subscribe to equipment and site events to refresh configuration status and dropdowns"""
