@@ -62,7 +62,7 @@ class Filter(Base):
     # ❌ Not used anywhere in scoring logic
 
 class OpticalAid(Base):
-    magnification: float  # 2x Barlow, 0.5x reducer, etc.
+    magnification: float  # 2x Barlow, 0.5x reducer, primary mirror mask (aperture stop/off-axis mask), etc.
     # ❌ Not used anywhere in scoring logic
 
 class Imager(Base):
