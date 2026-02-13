@@ -186,10 +186,12 @@ Replaced AstroPlanner Excel exports with proper astronomical catalog APIs.
 ---
 
 ### Phase 9: Object Selection Workflow 🔨 IN PROGRESS
-**Status:** RESEARCH COMPLETE, PLANNING
+**Status:** IMPLEMENTATION STARTED
 **Priority:** HIGH - Critical for replacing AstroPlanner Excel workflow
 **Dependencies:** Phase 8 (complete)
-**File:** `planning/phase-9_object-selection-workflow.md`
+**Files:** 
+- `planning/phase-9_object-selection-workflow.md` (full spec)
+- `planning/phase-9.1_implementation_plan.md` (current implementation)
 
 Create UI workflow for discovering and selecting celestial objects for observability scoring.
 
@@ -198,15 +200,17 @@ Create UI workflow for discovering and selecting celestial objects for observabi
 - ✅ Identified universal patterns: two-layer architecture (browse + search), three entry points (tonight/browse/search), hierarchical list management
 - ✅ Pre-curated lists solve 90% of use cases (Messier, Caldwell, Herschel 400)
 
-**Phase 9.1 - Pre-Curated Lists** (Week 1, 2-3 days):
-- 🔨 Implement named catalog lists (Messier 110, Caldwell 109, etc.)
-- 🔨 UI selector for pre-curated lists
-- 🔨 Batch scoring workflow
+**Phase 9.1 - Pre-Curated Lists** (Week 1, 2-3 days) - IN PROGRESS:
+- 🔨 ObjectListLoader service with JSON file loading
+- 🔨 Pre-curated JSON lists (Messier 110, Caldwell, Solar System, etc.)
+- 🔨 UI dropdown selector + "Load & Score" button
+- 🔨 Resolution via CatalogService → scoring pipeline
 
 **Future Sub-phases:**
-- Phase 9.2: Browse & Filter UI (constellation, type, magnitude filters)
-- Phase 9.3: "Tonight" recommendations (dynamic, scored lists)
-- Phase 9.4: Session management (dated observing plans)
+- Phase 9.2: Target List Management (custom lists, SQLite storage, CRUD)
+- Phase 9.3: "Tonight" Mode (dynamic scored lists, filters)
+- Phase 9.4: Browse/Filter OpenNGC (query builder for catalog)
+- Phase 9.5: Session Planning & Logging (at-scope mode, observation logs)
 
 ---
 
