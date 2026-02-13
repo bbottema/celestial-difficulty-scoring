@@ -77,68 +77,19 @@ Phase 6 ✅ COMPLETE (Test Suite Overhaul)
 
 ### Phase 6: Test Suite Overhaul ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
-**Priority:** N/A
-**Dependencies:** None
-**File:** `planning/TEST_SUITE_OVERHAUL_STATUS.md`
-
-Transformed test suite from implementation-driven to user-experience-driven testing.
-
-**Completed Actions:**
-- Removed 40 arbitrary threshold tests (33% of suite)
-- Reduced from 131 → 113 tests (92% pass rate)
-- Focus on physics-based ordering and relative comparisons
-- Converted 2 moon proximity tests to pure relative comparisons
-- Removed 2 redundant light pollution tests
-
-**Impact:** Clearer test failures, easier maintenance, flexible calibration
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 6.5: Hierarchical Model ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
-**Priority:** N/A
-**Dependencies:** Phase 5 (complete), Phase 6 (complete)
-**Files:** `planning/PHASE_6.5_APERTURE_MODEL_SPLIT.md`, `planning/PHASE_6.5_STATUS.md`
-
-Implemented hierarchical scoring model to eliminate aperture double-counting and prepare for Phase 7.
-
-**Key Achievement:** Separated aperture into SINGLE location (detection_factor) and made all other factors aperture-independent.
-
-**Completed:**
-- ✅ Created `aperture_models.py` with split components (optical, seeing, observer)
-- ✅ Integrated into `light_pollution_models.py` with backward compatibility
-- ✅ MAJOR REFACTOR: Implemented hierarchical model in `deep_sky_strategy.py`
-  - Detection factor (aperture-dependent) via limiting magnitude
-  - Magnification factor (aperture-independent) - mag/size matching
-  - Sky darkness factor (aperture-independent) - Bortle penalties
-- ✅ Updated 3 test thresholds to match physics (Horsehead, Whirlpool, Jupiter)
-- ✅ Fixed 3 aperture tests: 9 failures → 8 failures (93% pass rate)
-
-**Impact:** Eliminated "three-body problem" of multiplicative compounding, prepares for Phase 7 object-type refinement
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 2: Moon Proximity Integration ✅ COMPLETE
 **Status:** COMPLETE (2026-02-11)
-**Priority:** N/A
-**Dependencies:** None
-**File:** `planning/phase-2_moon-proximity.md`
-
-Implemented moon proximity penalty factor to avoid recommending targets near a bright moon.
-
-**Implementation:**
-- ✅ Moon proximity factor in `strategy_utils.py:calculate_moon_proximity_factor()`
-- ✅ Inverse square falloff with smooth scaling (C=3.0 factor)
-- ✅ Special cases: < 1° = occluded (factor 0.0), > 60° = no penalty (factor 1.0)
-- ✅ Penalties: 5° ≈ 98% penalty, 10° ≈ 92% penalty, 30° ≈ 57% penalty
-- ✅ Applied to all deep sky strategies
-- ✅ Solar system objects (planets, sun, moon) unaffected
-
-**Tests Fixed:**
-- ✅ `test_separation_gradient` - Monotonic score increase with separation ✓
-- ✅ `test_barely_past_moon_still_very_hard` - 0.5° vs 60° comparison ✓
-- ✅ `test_occultation_zero_score` - Objects at 0° separation score 0.0 ✓
-- ✅ All moon proximity tests now passing (11 tests)
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
@@ -200,82 +151,19 @@ Make all scoring factors explicit and visible for debugging.
 
 ### Phase 5: Limiting Magnitude Model ✅ COMPLETE
 **Status:** COMPLETE (2026-02-09)
-**Priority:** N/A
-**Dependencies:** None
-**File:** See below for summary
-
-Physics-based limiting magnitude model with realism corrections.
-
-**Completed Features:**
-- Hard cutoffs: objects below limiting magnitude return 0.0
-- Exponential falloff near detection threshold
-- Aperture gain factor (0.85) corrects theoretical formula
-- Graduated headroom scale by object size
-- Removed double-penalty in LargeObjectStrategy
-- 19 new tests (all passing)
-
-**User Impact:**
-- ✅ Fewer false positives in bright skies
-- ✅ Equipment differences realistically reflected
-- ✅ Large faint objects appropriately rated
-- ✅ Foundation for visibility status labels
-
-**Known Limitations:** Object type classification limited to "DeepSky" (addressed in Phase 7).
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 7: Object-Type-Aware Scoring ✅ COMPLETE
 **Status:** COMPLETE (2026-02-12)
-**Priority:** N/A
-**Dependencies:** Phase 8 (API integration), Phase 6.5 (Hierarchical Model)
-**Documentation:** See `planning/COMPLETED_PHASES.md`
-
-Tailored detection headroom based on actual object classification (planetary nebula, spiral galaxy, globular cluster, etc.).
-
-**Completed Implementation:**
-- ✅ Type-aware headroom constants (1.3-3.5 mag range by object type)
-- ✅ Updated `calculate_light_pollution_factor_with_surface_brightness()` to accept classification
-- ✅ Created `_get_detection_headroom()` with type-aware logic + Phase 5 fallback
-- ✅ Updated scoring strategies to pass object classification
-- ✅ Removed legacy type system ('Sun', 'Moon', 'Planet', 'DeepSky')
-- ✅ Updated all source files with proper classification types
-- ✅ Fixed 88 test errors from Phase 8 dataclass changes
-- ✅ Converted 5 arbitrary threshold tests to relative comparisons
-- ✅ 113/113 tests passing (100% pass rate)
-
-**Impact:** Expected 15-25% accuracy improvement for type-specific scoring. Enables Phase 9 with classification-based filtering.
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
 ### Phase 8: Astronomical API Integration ✅ COMPLETE
 **Status:** COMPLETE (2026-02-12)
-**Priority:** N/A
-**Dependencies:** None
-**File:** `planning/phase-8_astronomical-api-integration.md`
-
-Replaced AstroPlanner Excel exports with proper astronomical catalog APIs.
-
-**Completed Implementation:**
-- ✅ OpenNGC provider (13,970 DSO objects, offline CSV)
-- ✅ SIMBAD provider (online enrichment with rate limiting)
-- ✅ Horizons provider (Solar System ephemerides)
-- ✅ CatalogService with decision tree logic (OpenNGC → SIMBAD → WDS → Horizons)
-- ✅ CatalogRepository with caching (TTL: OpenNGC 1yr, SIMBAD 1wk, Horizons never)
-- ✅ Classification mapper with type corrections (fixes SIMBAD misclassifications)
-- ✅ Surface brightness calculations for galaxies
-- ✅ Full domain models: ObjectClassification, DataProvenance
-- ✅ Comprehensive test suite (1,482 lines, 6 test files)
-- ✅ CatalogDataComponent UI (716 lines) integrated into main window
-
-**Key Features:**
-- **Object resolution:** Name → OpenNGC → SIMBAD fallback → Horizons for planets
-- **Type mapping:** Corrects SIMBAD errors (M31→"AGN", NGC7000→"Cluster")
-- **Surface brightness:** Computed from size + magnitude for undetected objects
-- **Offline-first:** OpenNGC catalog provides 13,970 DSO without API calls
-
-**Dependencies Added:** astroquery, astropy, pandas, skyfield, pyvo
-
-**Impact:** Unblocks Phase 7 (Object Types) and Phase 9 (Object Selection Workflow)
+**Details:** See `planning/COMPLETED_PHASES.md`
 
 ---
 
