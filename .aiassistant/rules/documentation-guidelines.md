@@ -1,14 +1,12 @@
 ---
-apply: by file patterns
+apply: by model decision
 patterns: *.md
+instructions: Apply when changing  .md docs
 ---
 
-## Documentation Synchronization
+## Documentation Sync
 
-When updating project documentation, ensure consistency across related documents:
-
-### SCORING_IMPROVEMENT_PLAN.md Synchronization
-
-- **Ongoing Work**: Changes to `SCORING_IMPROVEMENT_PLAN.md` must be reflected in the corresponding phase document under `/planning/phase-N_<phase-name>.md`
-- **Completed Phases**: When marking work as complete, move the relevant content from `SCORING_IMPROVEMENT_PLAN.md` to `/planning/COMPLETED_PHASES.md` and update the specific phase document accordingly
-- Always maintain **bidirectional consistency** – changes in phase documents should be reflected in the main plan
+Keep `SCORING_IMPROVEMENT_PLAN.md` aligned with planning docs:
+- Ongoing work: mirror the matching `/planning/phase-*` doc.
+- Completed work: align with `/planning/COMPLETED_PHASES.md` and the phase doc.
+- Keep both sides in sync.
