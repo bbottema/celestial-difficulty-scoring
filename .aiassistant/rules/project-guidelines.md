@@ -1,31 +1,12 @@
-CODE word: moomoo
+---
+apply: always
+---
 
-# Project Guidelines
+## Testing Principles
 
-This document provides baseline instructions for maintaining consistency across the Celestial Difficulty Scoring project.
-
-## Documentation Synchronization
-
-When updating project documentation, ensure consistency across related documents:
-
-### SCORING_IMPROVEMENT_PLAN.md Synchronization
-
-- **Ongoing Work**: Changes to `SCORING_IMPROVEMENT_PLAN.md` must be reflected in the corresponding phase document under `/planning/phase-N_<phase-name>.md`
-- **Completed Phases**: When marking work as complete, move the relevant content from `SCORING_IMPROVEMENT_PLAN.md` to `/planning/COMPLETED_PHASES.md` and update the specific phase document accordingly
-- Always maintain bidirectional consistency – changes in phase documents should be reflected in the main plan
-
-## Test-Driven Development (TDD)
-
-**Write tests first, then implement.**
-
-### Testing Principles
-
-1. **Tests Before Implementation**: Always write the test cases before implementing the feature or fix
+1. **Tests Before Implementation (TDD)**: Always write the test cases before implementing the feature or fix
 2. **Relative Assertions**: Tests should use relative assertions, never arbitrary threshold assertions
-   - ✅ Good: `assert result > baseline` or `assert abs(actual - expected) < tolerance * expected`
-   - ❌ Bad: `assert result < 100` or `assert value == 42`
 3. **Meaningful Test Cases**: Tests should validate behavior and relationships, not magic numbers
-4. Ensure tests **are descriptive and self-documenting**
 
 ## Event Architecture
 
@@ -56,19 +37,13 @@ Follow the principles from "Clean Code" by Robert C. Martin (Uncle Bob), with pr
 
 ### Function and Class Design
 
-- **Prefer small, focused functions and classes**: Each function should have a clear, single purpose. Classes should be focussed.
+- **Prefer small, focused functions and classes**
 - **Avoid god-functions and classes**: Break down large functions into smaller, well-named helper functions. Each class should have one reason to change.
-- **Pragmatic approach**: Balance purity with practicality - not every function needs to be a single-line operation
+- **Pragmatic approach**: not every function needs to be a single-line operation
 
 ### Class Design
 
 - **Dependency Injection**: Use the autowiring system in `src/app/config/autowire.py`
-
-### Documentation
-
-- **Don't document what you can self-describe**: If a variable or function name clearly expresses intent, additional documentation is unnecessary
-- **Document the "why" not the "what"**: Comments should explain reasoning, edge cases, or non-obvious decisions
-- **Keep documentation synchronized**: When code changes, update corresponding documentation
 
 ### Code Organization
 
@@ -79,6 +54,11 @@ Follow the principles from "Clean Code" by Robert C. Martin (Uncle Bob), with pr
   - `src/app/ui/`: UI components
   - `src/app/config/`: Configuration and dependency injection
   - `tests/`: Mirror the source structure
+
+## Code Documentation
+
+- **Don't document what you can self-describe**
+- **Document the "why" not the "what"**
 
 ### Type Hints
 
