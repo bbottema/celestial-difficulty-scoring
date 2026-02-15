@@ -3,6 +3,23 @@ from app.utils.scoring_constants import *
 from app.utils.scoring_presets import get_active_preset
 
 
+def get_size_arcmin(celestial_object) -> float:
+    """
+    Extract size in arcminutes from a celestial object.
+
+    Args:
+        celestial_object: CelestialObject with size attribute (AngularSize or None)
+
+    Returns:
+        Size in arcminutes as float (major axis), or 0.0 if no size
+    """
+    if celestial_object.size is None:
+        return 0.0
+
+    # Extract the major axis from AngularSize object
+    return celestial_object.size.major_arcmin
+
+
 def calculate_weather_factor(context: 'ScoringContext') -> float:
     """
     Weather impact on observability.

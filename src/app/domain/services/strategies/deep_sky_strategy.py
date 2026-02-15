@@ -1,5 +1,5 @@
 from app.domain.model.scoring_context import ScoringContext
-from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor
+from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor, get_size_arcmin
 from app.utils.scoring_constants import *
 from app.utils.scoring_presets import get_active_preset
 from app.utils.light_pollution_models import (
@@ -30,7 +30,8 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         # For point sources (stars), size=0, so base score is just flux-based
         # For extended objects (>= 1 arcmin), add size contribution
         # Use same threshold as ReflectedLight: only add size if >= 1 arcmin
-        size_contribution = (celestial_object.size / 10.0) * 0.20 if celestial_object.size >= 1.0 else 0.0
+        size_arcmin = get_size_arcmin(celestial_object)
+        size_contribution = (size_arcmin / 10.0) * 0.20 if size_arcmin >= 1.0 else 0.0
         base_score = (flux / 100.0) * 0.80 + size_contribution
 
         # HIERARCHICAL FACTORS (Phase 6.5 refactor):
@@ -85,9 +86,10 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
         # Phase 7: Pass object_classification for type-aware headroom
         # NOTE: We set use_legacy_penalty=False to get PURE limiting magnitude model
         # The sky_darkness_factor will handle Bortle penalties separately
+        size_arcmin = get_size_arcmin(celestial_object)
         factor = calculate_light_pollution_factor_with_surface_brightness(
             celestial_object.magnitude,
-            celestial_object.size,
+            size_arcmin,
             bortle,
             aperture,
             telescope_type=telescope_type,
@@ -125,6 +127,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
                 return 0.40  # Faint objects hard without equipment
 
         magnification = context.get_magnification()
+        size_arcmin = get_size_arcmin(celestial_object)
 
         # For very faint objects, magnification matching is less critical
         # Detection is paramount - if you can see it at all, that's what matters
@@ -138,7 +141,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
 
         # Magnification matching based on object size
         # For faint objects (leniency > 1), we're very forgiving - just don't be extreme
-        if celestial_object.size > 60:  # Very large (Andromeda, Pleiades, etc.)
+        if size_arcmin > 60:  # Very large (Andromeda, Pleiades, etc.)
             # Need very low magnification, but faint ones are forgiving
             if magnification < 100:
                 return 1.0  # Good enough for very large objects
@@ -147,7 +150,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             else:
                 return min(0.7 * leniency, 1.0)  # Too high but tolerable if faint
 
-        elif celestial_object.size > 20:  # Large (many nebulae)
+        elif size_arcmin > 20:  # Large (many nebulae)
             # Need low-moderate magnification
             if magnification < 150:
                 return 1.0  # Wide acceptable range
@@ -156,7 +159,7 @@ class DeepSkyScoringStrategy(IObservabilityScoringStrategy):
             else:
                 return min(0.8 * leniency, 1.0)
 
-        elif celestial_object.size > 5:  # Medium (many galaxies)
+        elif size_arcmin > 5:  # Medium (many galaxies)
             # Moderate magnification best
             if 50 <= magnification <= 150:
                 return min(1.0 * leniency, 1.0)

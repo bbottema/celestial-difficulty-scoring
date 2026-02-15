@@ -12,7 +12,7 @@ by treating them through their physical properties.
 """
 
 from app.domain.model.scoring_context import ScoringContext
-from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor
+from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor, get_size_arcmin
 from app.utils.scoring_constants import *
 from app.domain.services.strategies.base_strategy import IObservabilityScoringStrategy
 
@@ -37,7 +37,8 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
         # Size is in arcminutes (0.1-30 range)
         # Only add size contribution for objects >= 1 arcmin (extended objects)
         # For tiny objects (planets < 1'), size shouldn't outweigh brightness
-        size_contribution = (celestial_object.size / 10.0) * 0.20 if celestial_object.size >= 1.0 else 0.0
+        size_arcmin = get_size_arcmin(celestial_object)
+        size_contribution = (size_arcmin / 10.0) * 0.20 if size_arcmin >= 1.0 else 0.0
         base_score = (flux / 100.0) * 0.80 + size_contribution
 
         # Equipment factor: magnification needs depend on angular size
@@ -65,13 +66,15 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
         Tiny objects (Planets): need high magnification to see detail
         Medium objects (Large comets): medium magnification
         """
+        size_arcmin = get_size_arcmin(celestial_object)
+        
         if not context.has_equipment():
             # Naked-eye viewing depends on size
             # Large objects (Moon) are spectacular naked-eye
             # Planets are visible but lack detail without magnification
-            if celestial_object.size > 10.0:  # Moon-like (>10 arcmin)
+            if size_arcmin > 10.0:  # Moon-like (>10 arcmin)
                 return 0.95  # Essentially perfect naked-eye
-            elif celestial_object.size > 1.0:  # Large extended objects (comets)
+            elif size_arcmin > 1.0:  # Large extended objects (comets)
                 return 0.80  # Good naked-eye
             elif celestial_object.magnitude < 0.0:  # Very bright planets (Venus, Jupiter)
                 return 0.75  # Bright but tiny - visible but no detail
@@ -81,7 +84,7 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
         magnification = context.get_magnification()
 
         # Magnification preferences based on angular size
-        if celestial_object.size > 10.0:  # Moon-like objects (huge)
+        if size_arcmin > 10.0:  # Moon-like objects (huge)
             # Prefer LOW magnification (wide field, entire object visible)
             if magnification <= 50:
                 return 1.2  # Optimal
@@ -90,7 +93,7 @@ class ReflectedLightStrategy(IObservabilityScoringStrategy):
             else:
                 return 0.8  # Too much mag, loses field of view
 
-        elif celestial_object.size > 1.0:  # Large comets/extended objects
+        elif size_arcmin > 1.0:  # Large comets/extended objects
             # Prefer LOW to MEDIUM magnification
             if magnification <= 80:
                 return 1.2  # Optimal

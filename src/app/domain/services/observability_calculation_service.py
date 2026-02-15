@@ -10,6 +10,7 @@ from app.domain.services.strategies.deep_sky_strategy import DeepSkyScoringStrat
 from app.domain.services.strategies.large_faint_object_strategy import LargeFaintObjectScoringStrategy
 from app.domain.services.strategies.reflected_light_strategy import ReflectedLightStrategy
 from app.domain.services.strategies.sun_strategy import SunStrategy
+from app.domain.services.strategies.strategy_utils import get_size_arcmin
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.utils.scoring_constants import LARGE_OBJECT_SIZE_THRESHOLD
 
@@ -84,11 +85,18 @@ class ObservabilityCalculationService:
         # Deep-sky objects: galaxies, nebulae, clusters, stars
         elif obj_type in ['galaxy', 'nebula', 'cluster', 'star', 'double_star', 'variable_star']:
             # Get size value (handle both float and AngularSize object)
-            size_arcmin = celestial_object.size
-            if hasattr(size_arcmin, 'major_arcmin'):
-                size_arcmin = size_arcmin.major_arcmin
+            size_arcmin = get_size_arcmin(celestial_object)
 
             # Large extended objects need special handling
+            if size_arcmin and size_arcmin > LARGE_OBJECT_SIZE_THRESHOLD:
+                return LargeFaintObjectScoringStrategy()
+            else:
+                return DeepSkyScoringStrategy()
+
+        # Unknown type: treat as deep-sky object with conservative scoring
+        # This allows objects with unrecognized classification to still be scored
+        elif obj_type == 'unknown' or obj_type is None:
+            size_arcmin = get_size_arcmin(celestial_object)
             if size_arcmin and size_arcmin > LARGE_OBJECT_SIZE_THRESHOLD:
                 return LargeFaintObjectScoringStrategy()
             else:

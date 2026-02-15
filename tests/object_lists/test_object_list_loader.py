@@ -3,10 +3,14 @@ Unit tests for ObjectListLoader service.
 """
 import json
 import pytest
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
 from app.object_lists.object_list_loader import ObjectListLoader
 from app.object_lists.models import ObjectList, ObjectListMetadata, ResolutionResult

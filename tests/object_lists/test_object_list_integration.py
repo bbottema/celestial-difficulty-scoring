@@ -4,7 +4,11 @@ Integration tests for object list functionality.
 Tests the full workflow: load list → resolve objects → verify resolution rates.
 """
 import pytest
+import sys
 from pathlib import Path
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
 from app.object_lists.object_list_loader import ObjectListLoader
 from app.catalog.catalog_service import CatalogService
@@ -38,8 +42,9 @@ class TestMessierListIntegration:
         obj_list = real_loader.load_list('messier_110')
 
         assert obj_list.metadata.name == 'Messier Catalog'
-        assert obj_list.metadata.object_count == 110
-        assert len(obj_list.objects) == 110
+        # Note: 109 objects (M102 is a duplicate entry)
+        assert obj_list.metadata.object_count == 109
+        assert len(obj_list.objects) == 109
 
     def test_messier_resolution_rate_above_95_percent(self, real_loader):
         """
@@ -180,3 +185,178 @@ class TestAllListsQualityGate:
             assert not duplicates, (
                 f"List {list_meta.name} has duplicate canonical_ids: {set(duplicates)}"
             )
+
+
+@pytest.mark.skipif(not lists_exist(), reason="Object list files not generated yet")
+class TestObjectListScoringEndToEnd:
+    """
+    END-TO-END SCORING TESTS: Load → Resolve → Score workflow
+    
+    These tests catch issues that load/resolve tests miss, like:
+    - Missing classification data
+    - Unknown object types
+    - Invalid size handling (AngularSize vs float)
+    - Strategy routing errors
+    """
+
+    @pytest.fixture
+    def scoring_context(self):
+        """Create minimal but valid context for scoring"""
+        from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
+        from app.domain.model.telescope_type import TelescopeType
+        from app.domain.model.light_pollution import LightPollution
+
+        telescope = Telescope(
+            name="Test Scope",
+            focal_length=1000,
+            aperture=200,
+            focal_ratio=5.0,
+            type=TelescopeType.NEWTONIAN
+        )
+        eyepiece = Eyepiece(
+            name="Test Eyepiece",
+            focal_length=10,
+            apparent_field_of_view=50,
+            barrel_size=1.25
+        )
+        observation_site = ObservationSite(
+            name="Test Site",
+            latitude=40.0,
+            longitude=-80.0,
+            light_pollution=LightPollution.BORTLE_5
+        )
+        return {
+            'telescope': telescope,
+            'eyepiece': eyepiece,
+            'observation_site': observation_site
+        }
+
+    def test_messier_list_loads_resolves_and_scores(self, real_loader, scoring_context):
+        """
+        CRITICAL: Full workflow test for Messier catalog.
+        
+        This catches issues that load/resolve tests miss:
+        - Classification data availability
+        - Unknown object types
+        - Strategy routing errors
+        - AngularSize handling in scoring
+        
+        This test would have caught the "Unknown celestial object type: unknown" error.
+        """
+        from app.domain.services.observability_calculation_service import ObservabilityCalculationService
+        
+        # Load and resolve
+        messier_list = real_loader.load_list('messier_110')
+        resolution_result = real_loader.resolve_objects(messier_list)
+        
+        assert resolution_result.success_count > 100, (
+            f"Expected >100 Messier objects resolved, got {resolution_result.success_count}"
+        )
+        
+        # Score all resolved objects
+        observability_service = ObservabilityCalculationService()
+        
+        try:
+            scored_objects = observability_service.score_celestial_objects(
+                resolution_result.resolved,
+                telescope=scoring_context['telescope'],
+                eyepiece=scoring_context['eyepiece'],
+                observation_site=scoring_context['observation_site']
+            )
+        except ValueError as e:
+            if "Unknown celestial object type" in str(e):
+                pytest.fail(
+                    f"Failed to score Messier objects: {e}\n"
+                    f"This means resolved objects lack proper classification.\n"
+                    f"Check: CatalogService.get_object() returns CelestialObject with classification."
+                )
+            raise
+        
+        # Verify scoring succeeded
+        assert len(scored_objects) == len(resolution_result.resolved), (
+            f"Expected {len(resolution_result.resolved)} scored objects, "
+            f"got {len(scored_objects)}"
+        )
+        
+        # Verify scores are in reasonable range
+        for obj in scored_objects:
+            assert 0.0 <= obj.observability_score.normalized_score <= 1.0, (
+                f"{obj.name} has invalid score: {obj.observability_score.normalized_score}"
+            )
+        
+        # Verify at least some objects scored well (not all scoring 0)
+        scores = [obj.observability_score.normalized_score for obj in scored_objects]
+        max_score = max(scores)
+        assert max_score > 0.5, (
+            f"Messier objects all have low scores (max={max_score:.3f}). "
+            f"Something is wrong with scoring logic."
+        )
+
+    def test_caldwell_list_loads_resolves_and_scores(self, real_loader, scoring_context):
+        """Full workflow test for Caldwell catalog"""
+        from app.domain.services.observability_calculation_service import ObservabilityCalculationService
+        
+        caldwell_list = real_loader.load_list('caldwell_109')
+        resolution_result = real_loader.resolve_objects(caldwell_list)
+        
+        assert resolution_result.success_count > 100, (
+            f"Expected >100 Caldwell objects resolved, got {resolution_result.success_count}"
+        )
+        
+        observability_service = ObservabilityCalculationService()
+        
+        try:
+            scored_objects = observability_service.score_celestial_objects(
+                resolution_result.resolved,
+                telescope=scoring_context['telescope'],
+                eyepiece=scoring_context['eyepiece'],
+                observation_site=scoring_context['observation_site']
+            )
+        except ValueError as e:
+            if "Unknown celestial object type" in str(e):
+                pytest.fail(
+                    f"Failed to score Caldwell objects: {e}\n"
+                    f"Objects missing classification data."
+                )
+            raise
+        
+        assert len(scored_objects) == len(resolution_result.resolved)
+
+    def test_all_object_types_handle_size_correctly(self, real_loader, scoring_context):
+        """
+        Test that AngularSize objects are handled correctly in scoring.
+        
+        This verifies the fix for: '>=' not supported between instances 
+        of 'AngularSize' and 'float'
+        """
+        from app.domain.services.observability_calculation_service import ObservabilityCalculationService
+        
+        messier_list = real_loader.load_list('messier_110')
+        resolution_result = real_loader.resolve_objects(messier_list)
+        
+        observability_service = ObservabilityCalculationService()
+        
+        # This should not raise TypeError about AngularSize comparisons
+        try:
+            scored_objects = observability_service.score_celestial_objects(
+                resolution_result.resolved,
+                telescope=scoring_context['telescope'],
+                eyepiece=scoring_context['eyepiece'],
+                observation_site=scoring_context['observation_site']
+            )
+        except TypeError as e:
+            if "'>=' not supported between instances of 'AngularSize'" in str(e):
+                pytest.fail(
+                    f"AngularSize comparison error: {e}\n"
+                    f"The get_size_arcmin() helper is not being used correctly."
+                )
+            raise
+        
+        # Verify objects with various size types scored successfully
+        size_types = set()
+        for obj in resolution_result.resolved:
+            if obj.size is not None:
+                size_types.add(type(obj.size).__name__)
+        
+        # Should have both AngularSize and possibly others
+        assert len(size_types) > 0, "No sized objects in Messier catalog"

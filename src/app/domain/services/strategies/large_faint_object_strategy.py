@@ -1,5 +1,5 @@
 from app.domain.model.scoring_context import ScoringContext
-from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor
+from app.domain.services.strategies.strategy_utils import calculate_weather_factor, calculate_moon_proximity_factor, get_size_arcmin
 from app.utils.scoring_constants import *
 from app.utils.scoring_presets import get_active_preset
 from app.utils.light_pollution_models import (
@@ -19,7 +19,8 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         magnitude_score = max(0, (FAINT_OBJECT_MAGNITUDE_BASELINE - celestial_object.magnitude))
 
         # Adjust the size score to increase with size
-        size_score = min(celestial_object.size / MAX_DEEPSKY_SIZE_LARGE, 1)  # Cap the size score at 1
+        size_arcmin = get_size_arcmin(celestial_object)
+        size_score = min(size_arcmin / MAX_DEEPSKY_SIZE_LARGE, 1)  # Cap the size score at 1
 
         # Combine scores
         base_score = (WEIGHT_MAGNITUDE_LARGE_OBJECTS * magnitude_score) + (WEIGHT_SIZE_LARGE_OBJECTS * size_score)
@@ -97,9 +98,10 @@ class LargeFaintObjectScoringStrategy(IObservabilityScoringStrategy):
         # No additional size penalty needed - that would be double-penalizing
         # Phase 6.5: Pass telescope properties for split aperture model
         # Phase 7: Pass object_classification for type-aware headroom
+        size_arcmin = get_size_arcmin(celestial_object)
         factor = calculate_light_pollution_factor_with_surface_brightness(
             celestial_object.magnitude,
-            celestial_object.size,
+            size_arcmin,
             bortle,
             aperture,
             telescope_type=telescope_type,

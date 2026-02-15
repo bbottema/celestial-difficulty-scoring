@@ -11,7 +11,7 @@ Safety is paramount - score is 0 without proper solar filter.
 """
 
 from app.domain.model.scoring_context import ScoringContext
-from app.domain.services.strategies.strategy_utils import calculate_weather_factor
+from app.domain.services.strategies.strategy_utils import calculate_weather_factor, get_size_arcmin
 from app.utils.scoring_constants import *
 from app.domain.services.strategies.base_strategy import IObservabilityScoringStrategy
 
@@ -28,7 +28,8 @@ class SunStrategy(IObservabilityScoringStrategy):
         flux = 10 ** (-0.4 * celestial_object.magnitude)
         # Sun: mag -26.74 → flux = 49,659,232,145
         # Use same formula: flux/100 * 0.80 + size/10 * 0.20
-        base_score = (flux / 100.0) * 0.80 + (celestial_object.size / 10.0) * 0.20
+        size_arcmin = get_size_arcmin(celestial_object)
+        base_score = (flux / 100.0) * 0.80 + (size_arcmin / 10.0) * 0.20
 
         # Equipment factor: MUST have solar filter (safety!)
         equipment_factor = self._calculate_equipment_factor(celestial_object, context)

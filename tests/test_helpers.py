@@ -6,7 +6,7 @@ and creates objects with proper classification.
 """
 
 from app.domain.model.celestial_object import CelestialObject
-from app.domain.model.object_classification import ObjectClassification
+from app.domain.model.object_classification import ObjectClassification, AngularSize
 
 
 def create_test_celestial_object(
@@ -48,11 +48,16 @@ def create_test_celestial_object(
     if not classification:
         raise ValueError(f"Unknown legacy object_type: {object_type}")
 
+    # Convert float size to AngularSize if non-zero
+    angular_size = None
+    if size > 0:
+        angular_size = AngularSize(major_arcmin=size, minor_arcmin=size)
+
     return CelestialObject(
         name=name,
         canonical_id=name.replace(' ', '_').lower(),
         magnitude=magnitude,
-        size=size,
+        size=angular_size,
         altitude=altitude,
         ra=ra,
         dec=dec,

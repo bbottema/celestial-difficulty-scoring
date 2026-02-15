@@ -39,7 +39,7 @@ class CelestialObject:
     @property
     def object_type(self) -> str:
         """Returns the primary classification type (e.g., 'galaxy', 'nebula', 'planet', 'star')"""
-        if self.classification:
+        if self.classification and self.classification.primary_type:
             return self.classification.primary_type
         return "unknown"
 
