@@ -7,7 +7,7 @@ These tests cover features not yet implemented - expect failures initially.
 import unittest
 from assertpy import assert_that
 
-from tests.test_helpers import create_test_celestial_object
+from test_helpers import create_test_celestial_object
 from app.domain.model.moon_conditions import MoonConditions
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite

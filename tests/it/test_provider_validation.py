@@ -180,7 +180,7 @@ class TestCrossProviderConsistency:
         Expected: Scores match within 5%
         """
         # Get M31 from both providers
-        m31_openngc = catalog_service.openngc.get_object_by_name("M31")
+        m31_openngc = catalog_service.openngc.get_object("M31")
         m31_simbad = catalog_service.simbad.get_object("M31")
 
         assert m31_openngc is not None, "M31 not found in OpenNGC"
@@ -398,7 +398,7 @@ class TestProviderDataQuality:
 
         has_sb = 0
         for name in galaxy_sample:
-            obj = catalog_service.openngc.get_object_by_name(name)
+            obj = catalog_service.openngc.get_object(name)
             if obj and obj.surface_brightness:
                 has_sb += 1
 
@@ -441,7 +441,7 @@ def run_validation_summary(catalog_service: CatalogService):
     openngc_total = len(TestRepresentativeSamples.OPENNGC_SAMPLE)
 
     for name in TestRepresentativeSamples.OPENNGC_SAMPLE:
-        obj = catalog_service.openngc.get_object_by_name(name)
+        obj = catalog_service.openngc.get_object(name)
         if obj:
             openngc_success += 1
 

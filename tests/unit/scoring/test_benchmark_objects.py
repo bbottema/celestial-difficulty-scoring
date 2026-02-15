@@ -15,7 +15,7 @@ The RA/Dec data is preserved in comments for reference but not used in testing.
 import unittest
 from assertpy import assert_that
 
-from tests.test_helpers import create_test_celestial_object
+from test_helpers import create_test_celestial_object
 from app.domain.model.celestial_object import CelestialObject
 from app.domain.services.strategies.deep_sky_strategy import DeepSkyScoringStrategy
 from app.domain.services.strategies.large_faint_object_strategy import LargeFaintObjectScoringStrategy

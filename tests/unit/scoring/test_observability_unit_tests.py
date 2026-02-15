@@ -9,7 +9,7 @@ Most tests will initially fail as features are not yet implemented - this is exp
 import unittest
 from assertpy import assert_that
 
-from tests.test_helpers import create_test_celestial_object
+from test_helpers import create_test_celestial_object
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
 from app.orm.model.entities import Telescope, Eyepiece, ObservationSite
 from app.domain.model.light_pollution import LightPollution

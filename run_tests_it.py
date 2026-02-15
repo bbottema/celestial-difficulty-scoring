@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-Test runner for unit tests (fast, no external dependencies).
+Test runner for integration tests (tests with external network/API dependencies).
 
 Usage:
-    python run_tests.py            # Run unit tests
-    python run_tests.py -v         # Verbose output
-    python run_tests.py -vv        # Very verbose output
+    python run_tests_it.py         # Run integration tests
+    python run_tests_it.py -v      # Verbose output
+    python run_tests_it.py -vv     # Very verbose output
 
-Note: For integration tests with external APIs, use run_tests_it.py
+Warning: These tests make real API calls and may be slow or fail if services are down.
 """
 import sys
 import os
@@ -17,11 +17,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 
 def run_tests(verbosity=2):
-    """Run unit tests."""
+    """Run integration tests (external API calls)."""
     import pytest
 
     args = [
-        'tests/unit/',
+        'tests/it/',
         '-v' if verbosity >= 2 else '',
         '-vv' if verbosity >= 3 else '',
         '--tb=short',
@@ -30,7 +30,8 @@ def run_tests(verbosity=2):
     # Filter out empty strings
     args = [arg for arg in args if arg]
 
-    print("Running unit tests...")
+    print("Running integration tests (with external API calls)...")
+    print("WARNING: These tests make real network calls and may be slow.\n")
     print(f"Command: pytest {' '.join(args)}\n")
     print("=" * 70)
 
@@ -38,9 +39,9 @@ def run_tests(verbosity=2):
 
     print("\n" + "=" * 70)
     if exit_code == 0:
-        print("\n[PASS] ALL UNIT TESTS PASSED!")
+        print("\n[PASS] ALL INTEGRATION TESTS PASSED!")
     else:
-        print(f"\n[FAIL] Some tests failed (exit code: {exit_code})")
+        print(f"\n[FAIL] Some integration tests failed (exit code: {exit_code})")
 
     return exit_code
 
