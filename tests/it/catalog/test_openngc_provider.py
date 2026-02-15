@@ -15,7 +15,8 @@ class TestOpenNGCNameResolution:
     @pytest.fixture
     def provider(self):
         """Load test subset of OpenNGC data"""
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        # Navigate from tests/it/catalog/ up to project root, then to data/
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         return OpenNGCProvider(test_csv)
 
     def test_resolve_messier_number(self, provider):
@@ -61,7 +62,7 @@ class TestOpenNGCCoordinateConversion:
 
     @pytest.fixture
     def provider(self):
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         return OpenNGCProvider(test_csv)
 
     def test_ra_conversion(self, provider):
@@ -93,7 +94,7 @@ class TestOpenNGCObjectRetrieval:
 
     @pytest.fixture
     def provider(self):
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         return OpenNGCProvider(test_csv)
 
     def test_get_m31(self, provider):
@@ -137,10 +138,11 @@ class TestOpenNGCCSVLoading:
 
     def test_csv_loads_successfully(self):
         """Test CSV loads without errors"""
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         provider = OpenNGCProvider(test_csv)
 
-        assert len(provider.df) == 7
+        # Provider loads NGC_test.csv (7 rows) + addendum.csv (64 rows) = 71 total
+        assert len(provider.df) == 71
         assert 'name' in provider.df.columns
         assert 'obj_type' in provider.df.columns
         assert 'ra' in provider.df.columns
@@ -148,7 +150,7 @@ class TestOpenNGCCSVLoading:
 
     def test_numeric_fields_converted(self):
         """Test numeric fields are properly converted"""
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         provider = OpenNGCProvider(test_csv)
 
         row = provider.df[provider.df['name'] == 'NGC0224'].iloc[0]
@@ -161,7 +163,7 @@ class TestOpenNGCCSVLoading:
 
     def test_string_fields_fillna(self):
         """Test string fields have NaN filled with empty strings"""
-        test_csv = Path(__file__).parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
+        test_csv = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC_test.csv'
         provider = OpenNGCProvider(test_csv)
 
         # NGC 7000 has no Messier number
