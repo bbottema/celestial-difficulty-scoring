@@ -213,8 +213,8 @@ class TestCrossProviderConsistency:
         assert 8.0 <= m51.magnitude <= 8.5, "M51 magnitude out of range"
 
         if m51.size:
-            # M51 is approximately 11x7 arcmin
-            assert 6.0 <= m51.size.major_arcmin <= 12.0, "M51 size out of range"
+            # M51 is approximately 11x7 arcmin (OpenNGC reports 13.71x11.67)
+            assert 6.0 <= m51.size.major_arcmin <= 15.0, "M51 size out of range"
 
         if m51.surface_brightness:
             # Expected SB around 23.0 mag/arcsec²
@@ -222,16 +222,16 @@ class TestCrossProviderConsistency:
                 "M51 surface brightness out of range"
 
     @pytest.mark.parametrize("object_name,expected_sources", [
-        ("M31", {CatalogSource.OPENNGC}),  # Should come from OpenNGC
-        ("M42", {CatalogSource.OPENNGC}),  # Should come from OpenNGC
-        ("Jupiter", {CatalogSource.HORIZONS}),  # Should come from Horizons
+        ("M31", {"OpenNGC"}),  # Should come from OpenNGC
+        ("M42", {"OpenNGC"}),  # Should come from OpenNGC
+        ("Jupiter", {"Horizons"}),  # Should come from Horizons
     ])
     def test_provider_selection_logic(self, catalog_service, object_name, expected_sources):
         """Verify catalog service selects correct provider for each object type"""
         obj = catalog_service.get_object(object_name)
         assert obj is not None, f"{object_name} not found"
 
-        # Check provenance indicates correct source
+        # Check provenance indicates correct source (source is stored as string, not enum)
         if obj.provenance:
             sources = {p.source for p in obj.provenance}
             assert sources.intersection(expected_sources), \
@@ -311,10 +311,10 @@ class TestDynamicSolarSystemObjects:
         # Jupiter should always be bright
         assert jupiter.magnitude < 0, "Jupiter should have negative magnitude"
 
-        # Check size is reasonable (30-50 arcsec)
+        # Check size is reasonable (0.4-0.9 arcmin = 25-55 arcsec)
         if jupiter.size:
-            assert 25 <= jupiter.size.major_arcsec <= 55, \
-                f"Jupiter angular size {jupiter.size.major_arcsec}\" out of range"
+            assert 0.4 <= jupiter.size.major_arcmin <= 0.9, \
+                f"Jupiter angular size {jupiter.size.major_arcmin}' out of range"
 
     def test_all_planets_retrievable(self, catalog_service):
         """Verify all major planets can be retrieved from Horizons"""
