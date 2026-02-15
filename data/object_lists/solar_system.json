@@ -1,18 +1,81 @@
 {
   "name": "Solar System",
-  "description": "The planets and Moon of our Solar System. Positions are calculated dynamically for current date/time via JPL Horizons.",
+  "description": "The planets and Moon of our Solar System. Positions are calculated dynamically for current date/time.",
   "category": "named_catalog",
   "version": "1.0",
   "created_date": "2026-02-13",
   "objects": [
-    {"name": "Mercury", "canonical_id": "Mercury", "type": "planet", "ra": 0, "dec": 0, "magnitude": 0.0},
-    {"name": "Venus", "canonical_id": "Venus", "type": "planet", "ra": 0, "dec": 0, "magnitude": -4.0},
-    {"name": "Mars", "canonical_id": "Mars", "type": "planet", "ra": 0, "dec": 0, "magnitude": 0.5},
-    {"name": "Jupiter", "canonical_id": "Jupiter", "type": "planet", "ra": 0, "dec": 0, "magnitude": -2.5},
-    {"name": "Saturn", "canonical_id": "Saturn", "type": "planet", "ra": 0, "dec": 0, "magnitude": 0.5},
-    {"name": "Uranus", "canonical_id": "Uranus", "type": "planet", "ra": 0, "dec": 0, "magnitude": 5.7},
-    {"name": "Neptune", "canonical_id": "Neptune", "type": "planet", "ra": 0, "dec": 0, "magnitude": 7.8},
-    {"name": "Moon", "canonical_id": "Moon", "type": "moon", "ra": 0, "dec": 0, "magnitude": -12.6},
-    {"name": "Sun", "canonical_id": "Sun", "type": "star", "ra": 0, "dec": 0, "magnitude": -26.7}
+    {
+      "name": "Mercury",
+      "canonical_id": "Mercury",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": 0
+    },
+    {
+      "name": "Venus",
+      "canonical_id": "Venus",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": -4.0
+    },
+    {
+      "name": "Mars",
+      "canonical_id": "Mars",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": 0.5
+    },
+    {
+      "name": "Jupiter",
+      "canonical_id": "Jupiter",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": -2.5
+    },
+    {
+      "name": "Saturn",
+      "canonical_id": "Saturn",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": 0.5
+    },
+    {
+      "name": "Uranus",
+      "canonical_id": "Uranus",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": 5.7
+    },
+    {
+      "name": "Neptune",
+      "canonical_id": "Neptune",
+      "type": "planet",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": 7.8
+    },
+    {
+      "name": "Moon",
+      "canonical_id": "Moon",
+      "type": "moon",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": -12.6
+    },
+    {
+      "name": "Sun",
+      "canonical_id": "Sun",
+      "type": "star",
+      "ra": 0,
+      "dec": 0,
+      "magnitude": -26.7
+    }
   ]
 }

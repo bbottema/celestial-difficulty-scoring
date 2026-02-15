@@ -5,114 +5,877 @@
   "version": "1.0",
   "created_date": "2026-02-13",
   "objects": [
-    {"name": "C1", "canonical_id": "NGC0188", "type": "open_cluster", "ra": 11.798, "dec": 85.2554, "magnitude": 8.1},
-    {"name": "C2", "canonical_id": "NGC0040", "type": "planetary_nebula", "ra": 3.2529, "dec": 72.5214, "magnitude": 11.4},
-    {"name": "C3", "canonical_id": "NGC4236", "type": "galaxy", "ra": 184.1739, "dec": 69.4653, "magnitude": 9.7},
-    {"name": "C4", "canonical_id": "NGC7023", "type": "reflection_nebula", "ra": 315.3958, "dec": 68.1667, "magnitude": 7.1},
-    {"name": "C5", "canonical_id": "IC0342", "type": "galaxy", "ra": 56.7021, "dec": 68.0964, "magnitude": 9.1},
-    {"name": "C6", "canonical_id": "NGC6543", "type": "planetary_nebula", "ra": 269.6352, "dec": 66.6328, "magnitude": 8.1},
-    {"name": "C7", "canonical_id": "NGC2403", "type": "galaxy", "ra": 114.2142, "dec": 65.6025, "magnitude": 8.5},
-    {"name": "C8", "canonical_id": "NGC0559", "type": "open_cluster", "ra": 22.4208, "dec": 63.3, "magnitude": 9.5},
-    {"name": "C9", "canonical_id": "NGC0225", "type": "open_cluster", "ra": 10.7625, "dec": 61.775, "magnitude": 7.0},
-    {"name": "C10", "canonical_id": "NGC0663", "type": "open_cluster", "ra": 26.5792, "dec": 61.2167, "magnitude": 7.1},
-    {"name": "C11", "canonical_id": "NGC7635", "type": "emission_nebula", "ra": 350.2, "dec": 61.2017, "magnitude": 10.0},
-    {"name": "C12", "canonical_id": "NGC6946", "type": "galaxy", "ra": 308.7179, "dec": 60.1539, "magnitude": 8.8},
-    {"name": "C13", "canonical_id": "NGC0457", "type": "open_cluster", "ra": 19.8958, "dec": 58.2833, "magnitude": 6.4},
-    {"name": "C14", "canonical_id": "NGC0869", "type": "open_cluster", "ra": 35.0958, "dec": 57.1333, "magnitude": 4.3},
-    {"name": "C15", "canonical_id": "NGC6826", "type": "planetary_nebula", "ra": 296.2008, "dec": 50.5253, "magnitude": 8.8},
-    {"name": "C16", "canonical_id": "NGC7243", "type": "open_cluster", "ra": 333.7833, "dec": 49.8667, "magnitude": 6.4},
-    {"name": "C17", "canonical_id": "NGC0147", "type": "galaxy", "ra": 8.3004, "dec": 48.5072, "magnitude": 9.5},
-    {"name": "C18", "canonical_id": "NGC0185", "type": "galaxy", "ra": 9.7417, "dec": 48.3372, "magnitude": 9.2},
-    {"name": "C19", "canonical_id": "IC5146", "type": "emission_nebula", "ra": 328.3708, "dec": 47.2667, "magnitude": 7.2},
-    {"name": "C20", "canonical_id": "NGC7000", "type": "emission_nebula", "ra": 314.6833, "dec": 44.5333, "magnitude": 4.0},
-    {"name": "C21", "canonical_id": "NGC4449", "type": "galaxy", "ra": 187.0462, "dec": 44.0936, "magnitude": 9.6},
-    {"name": "C22", "canonical_id": "NGC7662", "type": "planetary_nebula", "ra": 351.8208, "dec": 42.5461, "magnitude": 8.3},
-    {"name": "C23", "canonical_id": "NGC0891", "type": "galaxy", "ra": 35.6393, "dec": 42.3492, "magnitude": 9.9},
-    {"name": "C24", "canonical_id": "NGC1275", "type": "galaxy", "ra": 49.9507, "dec": 41.5117, "magnitude": 11.9},
-    {"name": "C25", "canonical_id": "NGC2419", "type": "globular_cluster", "ra": 114.5354, "dec": 38.8822, "magnitude": 10.4},
-    {"name": "C26", "canonical_id": "NGC4244", "type": "galaxy", "ra": 184.3737, "dec": 37.8072, "magnitude": 10.4},
-    {"name": "C27", "canonical_id": "NGC6888", "type": "emission_nebula", "ra": 303.0583, "dec": 38.3583, "magnitude": 7.4},
-    {"name": "C28", "canonical_id": "NGC0752", "type": "open_cluster", "ra": 29.2167, "dec": 37.6833, "magnitude": 5.7},
-    {"name": "C29", "canonical_id": "NGC5005", "type": "galaxy", "ra": 197.7342, "dec": 37.0586, "magnitude": 9.8},
-    {"name": "C30", "canonical_id": "NGC7331", "type": "galaxy", "ra": 339.2671, "dec": 34.4158, "magnitude": 9.5},
-    {"name": "C31", "canonical_id": "IC0405", "type": "emission_nebula", "ra": 81.5125, "dec": 34.2667, "magnitude": 6.0},
-    {"name": "C32", "canonical_id": "NGC4631", "type": "galaxy", "ra": 190.5333, "dec": 32.5414, "magnitude": 9.2},
-    {"name": "C33", "canonical_id": "NGC6992", "type": "supernova_remnant", "ra": 314.0167, "dec": 31.7167, "magnitude": 7.0},
-    {"name": "C34", "canonical_id": "NGC6960", "type": "supernova_remnant", "ra": 312.7583, "dec": 30.7083, "magnitude": 7.0},
-    {"name": "C35", "canonical_id": "NGC4889", "type": "galaxy", "ra": 195.0338, "dec": 27.9769, "magnitude": 11.5},
-    {"name": "C36", "canonical_id": "NGC4559", "type": "galaxy", "ra": 188.9904, "dec": 27.9597, "magnitude": 9.6},
-    {"name": "C37", "canonical_id": "NGC6885", "type": "open_cluster", "ra": 301.9792, "dec": 26.4667, "magnitude": 5.7},
-    {"name": "C38", "canonical_id": "NGC4565", "type": "galaxy", "ra": 189.0867, "dec": 25.9875, "magnitude": 9.6},
-    {"name": "C39", "canonical_id": "NGC2392", "type": "planetary_nebula", "ra": 112.2958, "dec": 20.9114, "magnitude": 9.2},
-    {"name": "C40", "canonical_id": "NGC3626", "type": "galaxy", "ra": 170.0158, "dec": 18.3569, "magnitude": 10.9},
-    {"name": "C41", "canonical_id": "NGC0884", "type": "open_cluster", "ra": 35.5583, "dec": 57.1333, "magnitude": 4.4},
-    {"name": "C42", "canonical_id": "NGC7006", "type": "globular_cluster", "ra": 315.3725, "dec": 16.1872, "magnitude": 10.6},
-    {"name": "C43", "canonical_id": "NGC7814", "type": "galaxy", "ra": 0.8129, "dec": 16.1453, "magnitude": 10.6},
-    {"name": "C44", "canonical_id": "NGC7479", "type": "galaxy", "ra": 346.2358, "dec": 12.3228, "magnitude": 10.9},
-    {"name": "C45", "canonical_id": "NGC5248", "type": "galaxy", "ra": 204.3838, "dec": 8.8853, "magnitude": 10.2},
-    {"name": "C46", "canonical_id": "NGC2261", "type": "reflection_nebula", "ra": 100.2417, "dec": 8.7333, "magnitude": 9.0},
-    {"name": "C47", "canonical_id": "NGC6934", "type": "globular_cluster", "ra": 308.5474, "dec": 7.4044, "magnitude": 8.8},
-    {"name": "C48", "canonical_id": "NGC2775", "type": "galaxy", "ra": 137.5767, "dec": 7.0381, "magnitude": 10.3},
-    {"name": "C49", "canonical_id": "NGC2237", "type": "emission_nebula", "ra": 97.9667, "dec": 5.05, "magnitude": 9.0},
-    {"name": "C50", "canonical_id": "NGC2244", "type": "open_cluster", "ra": 98.0333, "dec": 4.8833, "magnitude": 4.8},
-    {"name": "C51", "canonical_id": "IC1613", "type": "galaxy", "ra": 16.1992, "dec": 2.1181, "magnitude": 9.2},
-    {"name": "C52", "canonical_id": "NGC4697", "type": "galaxy", "ra": 192.1496, "dec": -5.8008, "magnitude": 9.2},
-    {"name": "C53", "canonical_id": "NGC3115", "type": "galaxy", "ra": 151.3083, "dec": -7.7186, "magnitude": 8.9},
-    {"name": "C54", "canonical_id": "NGC2506", "type": "open_cluster", "ra": 120.0042, "dec": -10.7667, "magnitude": 7.6},
-    {"name": "C55", "canonical_id": "NGC7009", "type": "planetary_nebula", "ra": 316.0442, "dec": -11.3633, "magnitude": 7.8},
-    {"name": "C56", "canonical_id": "NGC0246", "type": "planetary_nebula", "ra": 11.7646, "dec": -11.8725, "magnitude": 10.4},
-    {"name": "C57", "canonical_id": "NGC6822", "type": "galaxy", "ra": 296.2354, "dec": -14.8028, "magnitude": 8.8},
-    {"name": "C58", "canonical_id": "NGC2360", "type": "open_cluster", "ra": 109.4375, "dec": -15.6333, "magnitude": 7.2},
-    {"name": "C59", "canonical_id": "NGC3242", "type": "planetary_nebula", "ra": 156.1558, "dec": -18.6414, "magnitude": 7.3},
-    {"name": "C60", "canonical_id": "NGC4038", "type": "galaxy", "ra": 180.4713, "dec": -18.8678, "magnitude": 10.7},
-    {"name": "C61", "canonical_id": "NGC4039", "type": "galaxy", "ra": 180.5288, "dec": -18.8853, "magnitude": 10.7},
-    {"name": "C62", "canonical_id": "NGC0247", "type": "galaxy", "ra": 11.7858, "dec": -20.7603, "magnitude": 9.1},
-    {"name": "C63", "canonical_id": "NGC7293", "type": "planetary_nebula", "ra": 337.4108, "dec": -20.8372, "magnitude": 7.3},
-    {"name": "C64", "canonical_id": "NGC2362", "type": "open_cluster", "ra": 109.6792, "dec": -24.9583, "magnitude": 4.1},
-    {"name": "C65", "canonical_id": "NGC0253", "type": "galaxy", "ra": 11.888, "dec": -25.2883, "magnitude": 7.6},
-    {"name": "C66", "canonical_id": "NGC5694", "type": "globular_cluster", "ra": 219.9013, "dec": -26.5389, "magnitude": 10.2},
-    {"name": "C67", "canonical_id": "NGC1097", "type": "galaxy", "ra": 41.5792, "dec": -30.2747, "magnitude": 9.5},
-    {"name": "C68", "canonical_id": "NGC6729", "type": "reflection_nebula", "ra": 286.4042, "dec": -36.9517, "magnitude": 9.7},
-    {"name": "C69", "canonical_id": "NGC6302", "type": "planetary_nebula", "ra": 258.0625, "dec": -37.1042, "magnitude": 9.6},
-    {"name": "C70", "canonical_id": "NGC0300", "type": "galaxy", "ra": 13.7229, "dec": -37.6847, "magnitude": 8.1},
-    {"name": "C71", "canonical_id": "NGC2477", "type": "open_cluster", "ra": 118.0458, "dec": -38.5333, "magnitude": 5.8},
-    {"name": "C72", "canonical_id": "NGC0055", "type": "galaxy", "ra": 3.7233, "dec": -39.1972, "magnitude": 8.0},
-    {"name": "C73", "canonical_id": "NGC1851", "type": "globular_cluster", "ra": 78.5281, "dec": -40.0464, "magnitude": 7.3},
-    {"name": "C74", "canonical_id": "NGC3132", "type": "planetary_nebula", "ra": 151.7551, "dec": -40.4369, "magnitude": 9.2},
-    {"name": "C75", "canonical_id": "NGC6124", "type": "open_cluster", "ra": 246.3167, "dec": -40.6667, "magnitude": 5.8},
-    {"name": "C76", "canonical_id": "NGC6231", "type": "open_cluster", "ra": 253.5417, "dec": -41.8167, "magnitude": 2.6},
-    {"name": "C77", "canonical_id": "NGC5128", "type": "galaxy", "ra": 201.3651, "dec": -43.0182, "magnitude": 6.8},
-    {"name": "C78", "canonical_id": "NGC6541", "type": "globular_cluster", "ra": 272.0098, "dec": -43.7147, "magnitude": 6.6},
-    {"name": "C79", "canonical_id": "NGC3201", "type": "globular_cluster", "ra": 154.4035, "dec": -46.4125, "magnitude": 6.7},
-    {"name": "C80", "canonical_id": "NGC5139", "type": "globular_cluster", "ra": 201.6968, "dec": -47.4795, "magnitude": 3.7},
-    {"name": "C81", "canonical_id": "NGC6352", "type": "globular_cluster", "ra": 261.3713, "dec": -48.4222, "magnitude": 8.1},
-    {"name": "C82", "canonical_id": "NGC6193", "type": "open_cluster", "ra": 250.275, "dec": -48.7667, "magnitude": 5.2},
-    {"name": "C83", "canonical_id": "NGC4945", "type": "galaxy", "ra": 196.3646, "dec": -49.4681, "magnitude": 8.6},
-    {"name": "C84", "canonical_id": "NGC5286", "type": "globular_cluster", "ra": 206.6117, "dec": -51.3736, "magnitude": 7.6},
-    {"name": "C85", "canonical_id": "IC2391", "type": "open_cluster", "ra": 130.0625, "dec": -53.0333, "magnitude": 2.5},
-    {"name": "C86", "canonical_id": "NGC6397", "type": "globular_cluster", "ra": 265.1754, "dec": -53.6744, "magnitude": 5.7},
-    {"name": "C87", "canonical_id": "NGC1261", "type": "globular_cluster", "ra": 48.0675, "dec": -55.2161, "magnitude": 8.4},
-    {"name": "C88", "canonical_id": "NGC5823", "type": "open_cluster", "ra": 226.0833, "dec": -55.6, "magnitude": 7.9},
-    {"name": "C89", "canonical_id": "NGC6087", "type": "open_cluster", "ra": 244.7542, "dec": -57.9333, "magnitude": 5.4},
-    {"name": "C90", "canonical_id": "NGC2867", "type": "planetary_nebula", "ra": 140.4683, "dec": -58.3108, "magnitude": 9.7},
-    {"name": "C91", "canonical_id": "NGC3532", "type": "open_cluster", "ra": 166.4125, "dec": -58.7333, "magnitude": 3.0},
-    {"name": "C92", "canonical_id": "NGC3372", "type": "emission_nebula", "ra": 160.9375, "dec": -59.8667, "magnitude": 3.0},
-    {"name": "C93", "canonical_id": "NGC6752", "type": "globular_cluster", "ra": 287.7171, "dec": -59.9847, "magnitude": 5.4},
-    {"name": "C94", "canonical_id": "NGC4755", "type": "open_cluster", "ra": 193.4042, "dec": -60.3667, "magnitude": 4.2},
-    {"name": "C95", "canonical_id": "NGC6025", "type": "open_cluster", "ra": 240.775, "dec": -60.5, "magnitude": 5.1},
-    {"name": "C96", "canonical_id": "NGC2516", "type": "open_cluster", "ra": 119.5167, "dec": -60.8667, "magnitude": 3.8},
-    {"name": "C97", "canonical_id": "NGC3766", "type": "open_cluster", "ra": 174.1542, "dec": -61.6167, "magnitude": 5.3},
-    {"name": "C98", "canonical_id": "NGC4609", "type": "open_cluster", "ra": 190.5917, "dec": -62.9833, "magnitude": 6.9},
-    {"name": "C99", "canonical_id": "NGC3195", "type": "planetary_nebula", "ra": 152.7379, "dec": -80.8617, "magnitude": 11.6},
-    {"name": "C100", "canonical_id": "IC2944", "type": "open_cluster", "ra": 177.2833, "dec": -63.0333, "magnitude": 4.5},
-    {"name": "C101", "canonical_id": "NGC6744", "type": "galaxy", "ra": 287.4421, "dec": -63.8575, "magnitude": 8.3},
-    {"name": "C102", "canonical_id": "IC2602", "type": "open_cluster", "ra": 160.7375, "dec": -64.4, "magnitude": 1.9},
-    {"name": "C103", "canonical_id": "NGC2070", "type": "emission_nebula", "ra": 84.6767, "dec": -69.1011, "magnitude": 8.2},
-    {"name": "C104", "canonical_id": "NGC0362", "type": "globular_cluster", "ra": 15.8094, "dec": -70.8489, "magnitude": 6.4},
-    {"name": "C105", "canonical_id": "NGC4833", "type": "globular_cluster", "ra": 194.8913, "dec": -70.8764, "magnitude": 7.3},
-    {"name": "C106", "canonical_id": "NGC0104", "type": "globular_cluster", "ra": 6.0236, "dec": -72.0814, "magnitude": 4.0},
-    {"name": "C107", "canonical_id": "NGC6101", "type": "globular_cluster", "ra": 246.4504, "dec": -72.2017, "magnitude": 9.3},
-    {"name": "C108", "canonical_id": "NGC4372", "type": "globular_cluster", "ra": 186.4392, "dec": -72.6592, "magnitude": 7.8},
-    {"name": "C109", "canonical_id": "NGC3195", "type": "planetary_nebula", "ra": 152.7379, "dec": -80.8617, "magnitude": 11.6}
+    {
+      "name": "C1",
+      "canonical_id": "NGC0188",
+      "type": "open_cluster",
+      "ra": 11.8647,
+      "dec": 85.2696,
+      "magnitude": 8.1
+    },
+    {
+      "name": "C2",
+      "canonical_id": "NGC0040",
+      "type": "planetary_nebula",
+      "ra": 3.2543,
+      "dec": 72.5219,
+      "magnitude": 11.9
+    },
+    {
+      "name": "C3",
+      "canonical_id": "NGC4236",
+      "type": "galaxy",
+      "ra": 184.1755,
+      "dec": 69.4626,
+      "magnitude": 9.8
+    },
+    {
+      "name": "C4",
+      "canonical_id": "NGC7023",
+      "type": "reflection_nebula",
+      "ra": 315.3984,
+      "dec": 68.1696,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C5",
+      "canonical_id": "IC0342",
+      "type": "galaxy",
+      "ra": 56.7021,
+      "dec": 68.0964,
+      "magnitude": 9.7
+    },
+    {
+      "name": "C6",
+      "canonical_id": "NGC6543",
+      "type": "planetary_nebula",
+      "ra": 269.6391,
+      "dec": 66.6332,
+      "magnitude": 9.0
+    },
+    {
+      "name": "C7",
+      "canonical_id": "NGC2403",
+      "type": "galaxy",
+      "ra": 114.2142,
+      "dec": 65.6026,
+      "magnitude": 8.4
+    },
+    {
+      "name": "C8",
+      "canonical_id": "NGC0559",
+      "type": "open_cluster",
+      "ra": 22.3882,
+      "dec": 63.3014,
+      "magnitude": 9.5
+    },
+    {
+      "name": "C9",
+      "canonical_id": "C009",
+      "type": "emission_nebula",
+      "ra": 344.475,
+      "dec": 62.5183,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C10",
+      "canonical_id": "NGC0663",
+      "type": "open_cluster",
+      "ra": 26.5669,
+      "dec": 61.2182,
+      "magnitude": 7.1
+    },
+    {
+      "name": "C11",
+      "canonical_id": "NGC7635",
+      "type": "emission_nebula",
+      "ra": 350.19,
+      "dec": 61.2124,
+      "magnitude": 11.0
+    },
+    {
+      "name": "C12",
+      "canonical_id": "NGC6946",
+      "type": "galaxy",
+      "ra": 308.718,
+      "dec": 60.1539,
+      "magnitude": 9.1
+    },
+    {
+      "name": "C13",
+      "canonical_id": "NGC0457",
+      "type": "open_cluster",
+      "ra": 19.886,
+      "dec": 58.2907,
+      "magnitude": 6.4
+    },
+    {
+      "name": "C14",
+      "canonical_id": "C014",
+      "type": "open_cluster",
+      "ra": 35.175,
+      "dec": 57.1375,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C15",
+      "canonical_id": "NGC6826",
+      "type": "planetary_nebula",
+      "ra": 296.2005,
+      "dec": 50.525,
+      "magnitude": 9.4
+    },
+    {
+      "name": "C16",
+      "canonical_id": "NGC7243",
+      "type": "open_cluster",
+      "ra": 333.7858,
+      "dec": 49.8975,
+      "magnitude": 6.4
+    },
+    {
+      "name": "C17",
+      "canonical_id": "NGC0147",
+      "type": "galaxy",
+      "ra": 8.3005,
+      "dec": 48.5087,
+      "magnitude": 9.7
+    },
+    {
+      "name": "C18",
+      "canonical_id": "NGC0185",
+      "type": "galaxy",
+      "ra": 9.7415,
+      "dec": 48.3374,
+      "magnitude": 9.2
+    },
+    {
+      "name": "C19",
+      "canonical_id": "IC5146",
+      "type": "emission_nebula",
+      "ra": 328.3698,
+      "dec": 47.2669,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C20",
+      "canonical_id": "NGC7000",
+      "type": "emission_nebula",
+      "ra": 314.8214,
+      "dec": 44.5288,
+      "magnitude": 4.0
+    },
+    {
+      "name": "C21",
+      "canonical_id": "NGC4449",
+      "type": "galaxy",
+      "ra": 187.0462,
+      "dec": 44.0936,
+      "magnitude": 9.6
+    },
+    {
+      "name": "C22",
+      "canonical_id": "NGC7662",
+      "type": "planetary_nebula",
+      "ra": 351.4746,
+      "dec": 42.5349,
+      "magnitude": 8.3
+    },
+    {
+      "name": "C23",
+      "canonical_id": "NGC0891",
+      "type": "galaxy",
+      "ra": 35.6392,
+      "dec": 42.3491,
+      "magnitude": 10.0
+    },
+    {
+      "name": "C24",
+      "canonical_id": "NGC1275",
+      "type": "galaxy",
+      "ra": 49.9507,
+      "dec": 41.5117,
+      "magnitude": 12.2
+    },
+    {
+      "name": "C25",
+      "canonical_id": "NGC2419",
+      "type": "globular_cluster",
+      "ra": 114.5331,
+      "dec": 38.88,
+      "magnitude": 10.1
+    },
+    {
+      "name": "C26",
+      "canonical_id": "NGC4244",
+      "type": "galaxy",
+      "ra": 184.3736,
+      "dec": 37.8071,
+      "magnitude": 10.2
+    },
+    {
+      "name": "C27",
+      "canonical_id": "NGC6888",
+      "type": "emission_nebula",
+      "ra": 303.0273,
+      "dec": 38.3549,
+      "magnitude": 7.4
+    },
+    {
+      "name": "C28",
+      "canonical_id": "NGC0752",
+      "type": "open_cluster",
+      "ra": 29.3951,
+      "dec": 37.8334,
+      "magnitude": 5.7
+    },
+    {
+      "name": "C29",
+      "canonical_id": "NGC5005",
+      "type": "galaxy",
+      "ra": 197.7343,
+      "dec": 37.0592,
+      "magnitude": 10.7
+    },
+    {
+      "name": "C30",
+      "canonical_id": "NGC7331",
+      "type": "galaxy",
+      "ra": 339.2667,
+      "dec": 34.4155,
+      "magnitude": 9.4
+    },
+    {
+      "name": "C31",
+      "canonical_id": "IC0405",
+      "type": "emission_nebula",
+      "ra": 79.1228,
+      "dec": 34.3562,
+      "magnitude": 10.0
+    },
+    {
+      "name": "C32",
+      "canonical_id": "NGC4631",
+      "type": "galaxy",
+      "ra": 190.5334,
+      "dec": 32.5415,
+      "magnitude": 9.2
+    },
+    {
+      "name": "C33",
+      "canonical_id": "NGC6992",
+      "type": "supernova_remnant",
+      "ra": 314.0795,
+      "dec": 31.7428,
+      "magnitude": 7.0
+    },
+    {
+      "name": "C34",
+      "canonical_id": "NGC6960",
+      "type": "supernova_remnant",
+      "ra": 311.4924,
+      "dec": 30.5951,
+      "magnitude": 7.0
+    },
+    {
+      "name": "C35",
+      "canonical_id": "NGC4889",
+      "type": "galaxy",
+      "ra": 195.0339,
+      "dec": 27.977,
+      "magnitude": 11.4
+    },
+    {
+      "name": "C36",
+      "canonical_id": "NGC4559",
+      "type": "galaxy",
+      "ra": 188.9902,
+      "dec": 27.96,
+      "magnitude": 9.9
+    },
+    {
+      "name": "C37",
+      "canonical_id": "NGC6885",
+      "type": "open_cluster",
+      "ra": 302.9828,
+      "dec": 26.4888,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C38",
+      "canonical_id": "NGC4565",
+      "type": "galaxy",
+      "ra": 189.0866,
+      "dec": 25.9877,
+      "magnitude": 10.9
+    },
+    {
+      "name": "C39",
+      "canonical_id": "NGC2392",
+      "type": "planetary_nebula",
+      "ra": 112.2948,
+      "dec": 20.9118,
+      "magnitude": 9.6
+    },
+    {
+      "name": "C40",
+      "canonical_id": "NGC3626",
+      "type": "galaxy",
+      "ra": 170.0159,
+      "dec": 18.3568,
+      "magnitude": 11.0
+    },
+    {
+      "name": "C41",
+      "canonical_id": "C041",
+      "type": "open_cluster",
+      "ra": 66.725,
+      "dec": 15.8667,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C42",
+      "canonical_id": "NGC7006",
+      "type": "globular_cluster",
+      "ra": 315.3719,
+      "dec": 16.1875,
+      "magnitude": 10.5
+    },
+    {
+      "name": "C43",
+      "canonical_id": "NGC7814",
+      "type": "galaxy",
+      "ra": 0.812,
+      "dec": 16.1454,
+      "magnitude": 10.6
+    },
+    {
+      "name": "C44",
+      "canonical_id": "NGC7479",
+      "type": "galaxy",
+      "ra": 346.236,
+      "dec": 12.3229,
+      "magnitude": 11.1
+    },
+    {
+      "name": "C45",
+      "canonical_id": "NGC5248",
+      "type": "galaxy",
+      "ra": 204.3834,
+      "dec": 8.8852,
+      "magnitude": 10.0
+    },
+    {
+      "name": "C46",
+      "canonical_id": "NGC2261",
+      "type": "reflection_nebula",
+      "ra": 99.7896,
+      "dec": 8.7443,
+      "magnitude": 11.8
+    },
+    {
+      "name": "C47",
+      "canonical_id": "NGC6934",
+      "type": "globular_cluster",
+      "ra": 308.5479,
+      "dec": 7.4041,
+      "magnitude": 9.8
+    },
+    {
+      "name": "C48",
+      "canonical_id": "NGC2775",
+      "type": "galaxy",
+      "ra": 137.5838,
+      "dec": 7.0379,
+      "magnitude": 10.2
+    },
+    {
+      "name": "C49",
+      "canonical_id": "NGC2237",
+      "type": "emission_nebula",
+      "ra": 97.7275,
+      "dec": 5.0492,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C50",
+      "canonical_id": "NGC2244",
+      "type": "open_cluster",
+      "ra": 97.9815,
+      "dec": 4.9429,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C51",
+      "canonical_id": "IC1613",
+      "type": "galaxy",
+      "ra": 16.1991,
+      "dec": 2.1178,
+      "magnitude": 9.5
+    },
+    {
+      "name": "C52",
+      "canonical_id": "NGC4697",
+      "type": "galaxy",
+      "ra": 192.1495,
+      "dec": -5.8007,
+      "magnitude": 9.4
+    },
+    {
+      "name": "C53",
+      "canonical_id": "NGC3115",
+      "type": "galaxy",
+      "ra": 151.3082,
+      "dec": -7.7186,
+      "magnitude": 9.1
+    },
+    {
+      "name": "C54",
+      "canonical_id": "NGC2506",
+      "type": "open_cluster",
+      "ra": 120.0074,
+      "dec": -10.7696,
+      "magnitude": 7.6
+    },
+    {
+      "name": "C55",
+      "canonical_id": "NGC7009",
+      "type": "planetary_nebula",
+      "ra": 316.045,
+      "dec": -11.3632,
+      "magnitude": 8.0
+    },
+    {
+      "name": "C56",
+      "canonical_id": "NGC0246",
+      "type": "planetary_nebula",
+      "ra": 11.764,
+      "dec": -11.8719,
+      "magnitude": 10.9
+    },
+    {
+      "name": "C57",
+      "canonical_id": "NGC6822",
+      "type": "galaxy",
+      "ra": 296.2406,
+      "dec": -14.8034,
+      "magnitude": 10.1
+    },
+    {
+      "name": "C58",
+      "canonical_id": "NGC2360",
+      "type": "open_cluster",
+      "ra": 109.4297,
+      "dec": -15.6413,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C59",
+      "canonical_id": "NGC3242",
+      "type": "planetary_nebula",
+      "ra": 156.192,
+      "dec": -18.6422,
+      "magnitude": 7.7
+    },
+    {
+      "name": "C60",
+      "canonical_id": "NGC4038",
+      "type": "galaxy",
+      "ra": 180.4709,
+      "dec": -18.8676,
+      "magnitude": 10.2
+    },
+    {
+      "name": "C61",
+      "canonical_id": "NGC4039",
+      "type": "galaxy",
+      "ra": 180.473,
+      "dec": -18.8862,
+      "magnitude": 11.0
+    },
+    {
+      "name": "C62",
+      "canonical_id": "NGC0247",
+      "type": "galaxy",
+      "ra": 11.7856,
+      "dec": -20.7604,
+      "magnitude": 9.2
+    },
+    {
+      "name": "C63",
+      "canonical_id": "NGC7293",
+      "type": "planetary_nebula",
+      "ra": 337.4107,
+      "dec": -20.8373,
+      "magnitude": 7.3
+    },
+    {
+      "name": "C64",
+      "canonical_id": "NGC2362",
+      "type": "open_cluster",
+      "ra": 109.6728,
+      "dec": -24.9542,
+      "magnitude": 4.1
+    },
+    {
+      "name": "C65",
+      "canonical_id": "NGC0253",
+      "type": "galaxy",
+      "ra": 11.888,
+      "dec": -25.2882,
+      "magnitude": 11.1
+    },
+    {
+      "name": "C66",
+      "canonical_id": "NGC5694",
+      "type": "globular_cluster",
+      "ra": 219.9021,
+      "dec": -26.5383,
+      "magnitude": 10.9
+    },
+    {
+      "name": "C67",
+      "canonical_id": "NGC1097",
+      "type": "galaxy",
+      "ra": 41.5794,
+      "dec": -30.2749,
+      "magnitude": 9.8
+    },
+    {
+      "name": "C68",
+      "canonical_id": "NGC6729",
+      "type": "reflection_nebula",
+      "ra": 285.4808,
+      "dec": -36.9576,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C69",
+      "canonical_id": "NGC6302",
+      "type": "planetary_nebula",
+      "ra": 258.436,
+      "dec": -37.1031,
+      "magnitude": 9.6
+    },
+    {
+      "name": "C70",
+      "canonical_id": "NGC0300",
+      "type": "galaxy",
+      "ra": 13.7228,
+      "dec": -37.6844,
+      "magnitude": 8.7
+    },
+    {
+      "name": "C71",
+      "canonical_id": "NGC2477",
+      "type": "open_cluster",
+      "ra": 118.0408,
+      "dec": -38.5333,
+      "magnitude": 5.8
+    },
+    {
+      "name": "C72",
+      "canonical_id": "NGC0055",
+      "type": "galaxy",
+      "ra": 3.7233,
+      "dec": -39.1966,
+      "magnitude": 8.5
+    },
+    {
+      "name": "C73",
+      "canonical_id": "NGC1851",
+      "type": "globular_cluster",
+      "ra": 78.528,
+      "dec": -40.0466,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C74",
+      "canonical_id": "NGC3132",
+      "type": "planetary_nebula",
+      "ra": 151.7572,
+      "dec": -40.4366,
+      "magnitude": 9.2
+    },
+    {
+      "name": "C75",
+      "canonical_id": "NGC6124",
+      "type": "open_cluster",
+      "ra": 246.3336,
+      "dec": -40.6537,
+      "magnitude": 5.8
+    },
+    {
+      "name": "C76",
+      "canonical_id": "NGC6231",
+      "type": "open_cluster",
+      "ra": 253.5455,
+      "dec": -41.8243,
+      "magnitude": 2.6
+    },
+    {
+      "name": "C77",
+      "canonical_id": "NGC5128",
+      "type": "galaxy",
+      "ra": 201.3651,
+      "dec": -43.0191,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C78",
+      "canonical_id": "NGC6541",
+      "type": "globular_cluster",
+      "ra": 272.0097,
+      "dec": -43.7159,
+      "magnitude": 7.3
+    },
+    {
+      "name": "C79",
+      "canonical_id": "NGC3201",
+      "type": "globular_cluster",
+      "ra": 154.4032,
+      "dec": -46.4112,
+      "magnitude": 8.2
+    },
+    {
+      "name": "C80",
+      "canonical_id": "NGC5139",
+      "type": "globular_cluster",
+      "ra": 201.6912,
+      "dec": -47.4769,
+      "magnitude": 5.3
+    },
+    {
+      "name": "C81",
+      "canonical_id": "NGC6352",
+      "type": "globular_cluster",
+      "ra": 261.3715,
+      "dec": -48.4227,
+      "magnitude": 8.9
+    },
+    {
+      "name": "C82",
+      "canonical_id": "NGC6193",
+      "type": "open_cluster",
+      "ra": 250.3343,
+      "dec": -48.7625,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C83",
+      "canonical_id": "NGC4945",
+      "type": "galaxy",
+      "ra": 196.3645,
+      "dec": -49.4682,
+      "magnitude": 11.9
+    },
+    {
+      "name": "C84",
+      "canonical_id": "NGC5286",
+      "type": "globular_cluster",
+      "ra": 206.6108,
+      "dec": -51.3735,
+      "magnitude": 8.3
+    },
+    {
+      "name": "C85",
+      "canonical_id": "IC2391",
+      "type": "open_cluster",
+      "ra": 130.1328,
+      "dec": -53.0355,
+      "magnitude": 2.5
+    },
+    {
+      "name": "C86",
+      "canonical_id": "NGC6397",
+      "type": "globular_cluster",
+      "ra": 265.1723,
+      "dec": -53.6737,
+      "magnitude": 5.2
+    },
+    {
+      "name": "C87",
+      "canonical_id": "NGC1261",
+      "type": "globular_cluster",
+      "ra": 48.0639,
+      "dec": -55.2168,
+      "magnitude": 8.6
+    },
+    {
+      "name": "C88",
+      "canonical_id": "NGC5823",
+      "type": "open_cluster",
+      "ra": 226.3776,
+      "dec": -55.6037,
+      "magnitude": 7.9
+    },
+    {
+      "name": "C89",
+      "canonical_id": "NGC6087",
+      "type": "open_cluster",
+      "ra": 244.7108,
+      "dec": -57.9346,
+      "magnitude": 5.4
+    },
+    {
+      "name": "C90",
+      "canonical_id": "NGC2867",
+      "type": "planetary_nebula",
+      "ra": 140.354,
+      "dec": -58.3117,
+      "magnitude": 9.7
+    },
+    {
+      "name": "C91",
+      "canonical_id": "NGC3532",
+      "type": "open_cluster",
+      "ra": 166.4493,
+      "dec": -58.7705,
+      "magnitude": 3.0
+    },
+    {
+      "name": "C92",
+      "canonical_id": "NGC3372",
+      "type": "emission_nebula",
+      "ra": 161.2855,
+      "dec": -59.8667,
+      "magnitude": 3.0
+    },
+    {
+      "name": "C93",
+      "canonical_id": "NGC6752",
+      "type": "globular_cluster",
+      "ra": 287.7158,
+      "dec": -59.9819,
+      "magnitude": 6.3
+    },
+    {
+      "name": "C94",
+      "canonical_id": "NGC4755",
+      "type": "open_cluster",
+      "ra": 193.4045,
+      "dec": -60.3563,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C95",
+      "canonical_id": "NGC6025",
+      "type": "open_cluster",
+      "ra": 240.8241,
+      "dec": -60.4314,
+      "magnitude": 5.1
+    },
+    {
+      "name": "C96",
+      "canonical_id": "NGC2516",
+      "type": "open_cluster",
+      "ra": 119.5294,
+      "dec": -60.7535,
+      "magnitude": 3.8
+    },
+    {
+      "name": "C97",
+      "canonical_id": "NGC3766",
+      "type": "open_cluster",
+      "ra": 174.06,
+      "dec": -61.6052,
+      "magnitude": 5.3
+    },
+    {
+      "name": "C98",
+      "canonical_id": "NGC4609",
+      "type": "open_cluster",
+      "ra": 190.5701,
+      "dec": -62.9958,
+      "magnitude": 6.9
+    },
+    {
+      "name": "C99",
+      "canonical_id": "C099",
+      "type": "dark_nebula",
+      "ra": 187.8292,
+      "dec": -63.7433,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C100",
+      "canonical_id": "IC2944",
+      "type": "open_cluster",
+      "ra": 173.9455,
+      "dec": -63.0198,
+      "magnitude": 4.5
+    },
+    {
+      "name": "C101",
+      "canonical_id": "NGC6744",
+      "type": "galaxy",
+      "ra": 287.4421,
+      "dec": -63.8575,
+      "magnitude": 9.2
+    },
+    {
+      "name": "C102",
+      "canonical_id": "IC2602",
+      "type": "open_cluster",
+      "ra": 160.7395,
+      "dec": -64.3942,
+      "magnitude": 99.0
+    },
+    {
+      "name": "C103",
+      "canonical_id": "NGC2070",
+      "type": "emission_nebula",
+      "ra": 84.6765,
+      "dec": -69.1009,
+      "magnitude": 7.2
+    },
+    {
+      "name": "C104",
+      "canonical_id": "NGC0362",
+      "type": "globular_cluster",
+      "ra": 15.8093,
+      "dec": -70.8482,
+      "magnitude": 6.6
+    },
+    {
+      "name": "C105",
+      "canonical_id": "NGC4833",
+      "type": "globular_cluster",
+      "ra": 194.8956,
+      "dec": -70.8746,
+      "magnitude": 7.8
+    },
+    {
+      "name": "C106",
+      "canonical_id": "NGC0104",
+      "type": "globular_cluster",
+      "ra": 6.0223,
+      "dec": -72.0814,
+      "magnitude": 4.1
+    },
+    {
+      "name": "C107",
+      "canonical_id": "NGC6101",
+      "type": "globular_cluster",
+      "ra": 246.4524,
+      "dec": -72.2016,
+      "magnitude": 10.1
+    },
+    {
+      "name": "C108",
+      "canonical_id": "NGC4372",
+      "type": "globular_cluster",
+      "ra": 186.4391,
+      "dec": -72.6591,
+      "magnitude": 9.8
+    },
+    {
+      "name": "C109",
+      "canonical_id": "NGC3195",
+      "type": "planetary_nebula",
+      "ra": 152.3374,
+      "dec": -80.8586,
+      "magnitude": 11.6
+    }
   ]
 }
