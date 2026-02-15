@@ -180,10 +180,11 @@ class TestCrossProviderConsistency:
         Expected: Scores match within 5%
         """
         # Get M31 from both providers
-        m31_openngc = catalog_service.openngc.get_object("M31")
+        # OpenNGC requires NGC identifier (M31 → NGC0224)
+        m31_openngc = catalog_service.openngc.get_object("NGC0224")
         m31_simbad = catalog_service.simbad.get_object("M31")
 
-        assert m31_openngc is not None, "M31 not found in OpenNGC"
+        assert m31_openngc is not None, "NGC0224 (M31) not found in OpenNGC"
         assert m31_simbad is not None, "M31 not found in SIMBAD"
 
         # Verify basic properties match
@@ -270,8 +271,9 @@ class TestMissingSurfaceBrightness:
         # Compute SB
         computed_sb = magnitude + 2.5 * math.log10(area_arcsec2)
 
-        # Expected: ~13.8 mag/arcsec²
-        assert 13.0 <= computed_sb <= 14.5, \
+        # Expected: ~21.5 mag/arcsec² (for 2.5'x1.8' object at mag 11.2)
+        # Formula: mag + 2.5 * log10(area) = 11.2 + 2.5 * log10(12723) = 21.46
+        assert 21.0 <= computed_sb <= 22.0, \
             f"Computed SB {computed_sb:.1f} out of expected range"
 
         print(f"Computed SB: {computed_sb:.2f} mag/arcsec² for {major_arcmin}'x{minor_arcmin}' object at mag {magnitude}")
@@ -393,19 +395,20 @@ class TestProviderDataQuality:
 
     def test_openngc_surface_brightness_coverage(self, catalog_service):
         """Verify OpenNGC objects have measured surface brightness"""
-        # Test sample of galaxies - should have SB data
-        galaxy_sample = ["M31", "M51", "M81", "M101"]
+        # Test sample of galaxies - use NGC identifiers for direct OpenNGC access
+        # M31=NGC0224, M51=NGC5194, M81=NGC3031, M101=NGC5457
+        galaxy_sample = ["NGC0224", "NGC5194", "NGC3031", "NGC5457"]
 
         has_sb = 0
-        for name in galaxy_sample:
-            obj = catalog_service.openngc.get_object(name)
+        for ngc_id in galaxy_sample:
+            obj = catalog_service.openngc.get_object(ngc_id)
             if obj and obj.surface_brightness:
                 has_sb += 1
 
         # Expect >75% coverage for bright galaxies
         coverage = has_sb / len(galaxy_sample)
         assert coverage >= 0.75, \
-            f"Only {coverage*100:.0f}% of galaxies have SB data"
+            f"Only {coverage*100:.0f}% of galaxies have SB data (got {has_sb}/{len(galaxy_sample)})"
 
     def test_data_provenance_tracking(self, catalog_service):
         """Verify all objects have provenance information"""

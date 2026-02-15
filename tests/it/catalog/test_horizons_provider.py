@@ -162,7 +162,8 @@ class TestHorizonsErrorHandling:
 
     def test_network_error(self, provider):
         """Test handling of network errors"""
-        with patch('astroquery.jplhorizons.Horizons.ephemerides', side_effect=Exception("Network error")):
+        # Mock Horizons where it's used, not where it's defined
+        with patch('app.catalog.providers.horizons_provider.Horizons', side_effect=Exception("Network error")):
             result = provider.get_object('Jupiter')
             assert result is None
 
