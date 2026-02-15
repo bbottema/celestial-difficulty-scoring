@@ -1,7 +1,7 @@
 # Celestial Observability Scoring - Improvement Plan
 
-**Last Updated:** 2026-02-12
-**Status:** Phase 7 (Object-Type-Aware Scoring) ✅ | Phase 9 (Object Selection) 🔨
+**Last Updated:** 2026-02-15
+**Status:** Phase 9.1 Testing Infrastructure ✅ | Phase 9 (Object Selection) 🔨
 
 ---
 
@@ -9,7 +9,7 @@
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
 - **Current Priority:** Phase 9 (Object Selection Workflow)
-- **Latest Completion:** Phase 7 (Object-Type-Aware Scoring) - Type-specific detection headroom with legacy type removal
+- **Latest Completion:** Phase 9.1 Testing Infrastructure - Comprehensive test suite reorganization with 99%+ pass rate
 
 ---
 
@@ -28,15 +28,18 @@
 - **Phase 2:** Moon proximity penalties with inverse square falloff
 - **Phase 8:** Astronomical API integration - OpenNGC, SIMBAD, Horizons providers with catalog UI
 - **Phase 7:** Object-type-aware scoring - type-specific detection headroom with legacy type removal
+- **Phase 9.1 Testing:** Comprehensive test reorganization - separated unit/integration tests with proper infrastructure
 
 ### 📊 Test Status
-- **113 tests total** (down from 131 - removed arbitrary threshold tests)
-- **113 passing** (100% pass rate) ✅
-- **0 failing**
-- **Test philosophy:** Physics-based ordering and relative comparisons (no magic number thresholds)
+- **291 tests total** (148 unit + 143 integration)
+- **Unit tests:** 148/148 passing (100%) in ~2.2s ✅
+- **Integration tests:** 142/143 passing (99.3%) in ~2.5min ✅
+- **Test organization:** `tests/unit/` (fast, no network) | `tests/it/` (external APIs)
+- **Test runners:** `run_tests.py` (unit only) | `run_tests_it.py` (integration only)
+- **Scoring normalization:** Fixed to 0-25 scale (Phase 6 design preserved)
 
 ### 🎯 Goal
-Implement Phase 9 object selection workflow to replace AstroPlanner Excel imports.
+Complete Phase 9 object selection workflow to replace AstroPlanner Excel imports.
 
 ---
 
@@ -200,11 +203,14 @@ Create UI workflow for discovering and selecting celestial objects for observabi
 - ✅ Identified universal patterns: two-layer architecture (browse + search), three entry points (tonight/browse/search), hierarchical list management
 - ✅ Pre-curated lists solve 90% of use cases (Messier, Caldwell, Herschel 400)
 
-**Phase 9.1 - Pre-Curated Lists** (Week 1, 2-3 days) - IN PROGRESS:
-- 🔨 ObjectListLoader service with JSON file loading
-- 🔨 Pre-curated JSON lists (Messier 110, Caldwell, Solar System, etc.)
-- 🔨 UI dropdown selector + "Load & Score" button
-- 🔨 Resolution via CatalogService → scoring pipeline
+**Phase 9.1 - Pre-Curated Lists** (Week 1, 2-3 days) - NEAR COMPLETE:
+- ✅ ObjectListLoader service with JSON file loading
+- ✅ Pre-curated JSON lists (Messier 110, Caldwell, Solar System, etc.)
+- ✅ Resolution via CatalogService → scoring pipeline
+- ✅ Test infrastructure: Unit tests (148, 100% pass) + Integration tests (143, 99.3% pass)
+- ✅ Test organization: Separated unit (`tests/unit/`) and integration (`tests/it/`)
+- ✅ Scoring fixes: AngularSize type consistency, normalization (0-25 scale)
+- 🔨 UI dropdown selector + "Load & Score" button (remaining work)
 
 **Future Sub-phases:**
 - Phase 9.2: Target List Management (custom lists, SQLite storage, CRUD)
