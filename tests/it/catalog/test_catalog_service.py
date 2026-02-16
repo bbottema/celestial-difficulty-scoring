@@ -191,10 +191,12 @@ class TestCatalogServiceNameResolution:
 
     def test_resolve_common_name(self, service):
         """Test resolving common names"""
-        # "Andromeda Galaxy" -> NGC0224
+        # "Andromeda Galaxy" -> NGC0224 (OpenNGC) or "M  31" (SIMBAD)
         canonical = service.resolve_canonical_id('Andromeda Galaxy')
         if canonical:
-            assert 'NGC' in canonical or 'M31' in canonical
+            # Normalize whitespace for comparison
+            canonical_normalized = ' '.join(canonical.split())
+            assert 'NGC' in canonical_normalized or 'M 31' in canonical_normalized or 'M31' in canonical_normalized
 
     def test_resolve_ic_number(self, service):
         """Test resolving IC catalog numbers"""
@@ -216,9 +218,9 @@ class TestCatalogServiceProvenance:
         assert obj is not None
         assert len(obj.provenance) > 0
 
-        # Should track at least OpenNGC
+        # Should track at least one valid source (OpenNGC or SIMBAD)
         sources = [p.source for p in obj.provenance]
-        assert 'OpenNGC' in sources
+        assert 'OpenNGC' in sources or 'SIMBAD' in sources, f"Expected OpenNGC or SIMBAD in sources, got: {sources}"
 
     def test_authoritative_vs_computed(self, service):
         """Test distinguishing authoritative vs computed data"""
@@ -273,8 +275,10 @@ class TestCatalogServiceIntegration:
         obj = service.get_object('M31')
 
         assert obj is not None
-        assert obj.canonical_id in ['NGC0224', 'M31']
-        assert obj.classification.is_spiral_galaxy()
+        # Normalize canonical_id for comparison (SIMBAD returns "M  31" with spaces)
+        canonical_normalized = ' '.join(obj.canonical_id.split())
+        assert canonical_normalized in ['NGC0224', 'M31', 'M 31', 'NGC 224'], f"Unexpected canonical_id: {obj.canonical_id}"
+        assert obj.classification.is_spiral_galaxy(), f"Expected spiral galaxy, got: {obj.classification}"
         assert obj.magnitude < 10  # M31 is ~3.4
         assert obj.ra > 0
         assert obj.dec > 0

@@ -16,3 +16,11 @@ if str(src_path) not in sys.path:
 test_unit_path = Path(__file__).parent / 'unit'
 if str(test_unit_path) not in sys.path:
     sys.path.insert(0, str(test_unit_path))
+
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line(
+        "markers",
+        "remote: marks tests as requiring remote/network access (may be skipped with -m 'not remote')"
+    )

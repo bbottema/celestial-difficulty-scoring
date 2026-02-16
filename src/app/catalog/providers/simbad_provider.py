@@ -4,6 +4,9 @@ SIMBAD catalog provider (online API).
 SIMBAD is a comprehensive astronomical database with ~11M objects.
 Provides excellent name resolution and cross-references.
 
+Uses astroquery.simbad which queries via the SIMBAD script interface
+(https://simbad.cds.unistra.fr/simbad/sim-script), NOT the TAP interface.
+
 CRITICAL RESEARCH FINDINGS:
 1. Main type can be misleading for observing (M31 → "AGN", NGC 7000 → "Cluster of Stars")
 2. Must check "Other object types" for observing-relevant classifications
@@ -13,20 +16,24 @@ CRITICAL RESEARCH FINDINGS:
 """
 from typing import Optional
 import time
+import logging
 from datetime import datetime, timezone
 
+import numpy as np
 from astroquery.simbad import Simbad
 
 from app.domain.model.celestial_object import CelestialObject
 from app.domain.model.object_classification import ObjectClassification, AngularSize, SurfaceBrightness
 from app.domain.model.data_provenance import DataProvenance
 
+logger = logging.getLogger(__name__)
+
 
 class SimbadProvider:
     """
     SIMBAD API provider with rate limiting.
 
-    Uses astroquery.simbad for API access.
+    Uses astroquery.simbad for API access (script interface, not TAP).
     Implements throttling to stay within rate limits.
     """
 
@@ -42,14 +49,28 @@ class SimbadProvider:
         self._last_query_time = 0.0
         self.adapter = SimbadAdapter()
 
-        # Initialize astroquery.simbad with required fields
+        # Initialize astroquery.simbad (uses script interface, not TAP)
+        # See: https://simbad.u-strasbg.fr/Pages/guide/sim-q.htx
         self.simbad = Simbad()
-        self.simbad.add_votable_fields("otype", "dim", "morphtype", "V", "ids", "otypes")
-        self.simbad.ROW_LIMIT = 0  # Unlimited
+        
+        # Add votable fields for additional data
+        # Note: "V" is the new notation for "flux(V)" since astroquery 0.4.8
+        # Column names are lowercase in 0.4.8+ (except filter names like "V")
+        try:
+            self.simbad.add_votable_fields("otype", "dim", "morphtype", "V", "ids", "alltypes")
+        except Exception as e:
+            logger.warning(f"add_votable_fields failed: {e}; proceeding with defaults")
+        
+        # CRITICAL: ROW_LIMIT = -1 means "max capability" (unlimited)
+        # ROW_LIMIT = 0 means "schema only / empty table" - this was our bug!
+        self.simbad.ROW_LIMIT = -1
 
     def _throttle(self):
         """
         Ensure queries respect rate limits.
+
+        SIMBAD will rate-limit/blacklist if you exceed ~5-10 queries/sec.
+        See: https://astroquery.readthedocs.io/en/latest/simbad/simbad.html
 
         Sleeps if necessary to maintain max_queries_per_sec.
         """
@@ -60,109 +81,132 @@ class SimbadProvider:
 
     def resolve_name(self, name: str) -> Optional[str]:
         """
-        Resolve name using SIMBAD's Sesame resolver.
-
-        SIMBAD excels at name resolution with extensive cross-references:
-        - Common names: "Andromeda", "Albireo", "Pleiades"
-        - Catalog IDs: "NGC 224", "M 31", "IC 1396"
-        - Variable star designations
-        - Bayer/Flamsteed names
+        Resolve name using SIMBAD's name resolver.
 
         Args:
-            name: User input
+            name: User input (e.g., "M31", "Andromeda", "NGC 224")
 
         Returns:
-            SIMBAD MAIN_ID or None
+            SIMBAD main_id or None
         """
         try:
             self._throttle()
             result = self.simbad.query_object(name)
             if result is None or len(result) == 0:
                 return None
-            return result['MAIN_ID'][0].strip()
-        except Exception:
+            # Try lowercase first (0.4.8+), then uppercase for compatibility
+            for col_name in ['main_id', 'MAIN_ID']:
+                if col_name in result.colnames:
+                    val = result[col_name][0]
+                    if not np.ma.is_masked(val):
+                        return str(val).strip()
+            return None
+        except Exception as e:
+            logger.debug(f"SIMBAD resolve_name failed for '{name}': {e}")
             return None
 
     def get_object(self, identifier: str) -> Optional[CelestialObject]:
         """
         Fetch object from SIMBAD.
 
-        Returns fields:
-        - MAIN_ID, RA, DEC
-        - OTYPE (main type - USE WITH CAUTION!)
-        - OTYPE_LIST (other types - CHECK THIS!)
-        - MORPHTYPE (galaxy morphology)
-        - GALDIM_MAJAXIS, GALDIM_MINAXIS (arcsec)
-        - FLUX_V (V magnitude)
-        - IDS (pipe-separated identifier list)
-
         Args:
-            identifier: SIMBAD identifier
+            identifier: SIMBAD identifier (e.g., "M31", "NGC 224")
 
         Returns:
-            CelestialObject (classification may need correction via other_types)
+            CelestialObject or None if not found
         """
         try:
             self._throttle()
+            logger.debug(f"Querying SIMBAD for: {identifier}")
             result = self.simbad.query_object(identifier)
+            
             if result is None or len(result) == 0:
+                logger.debug(f"SIMBAD returned no results for: {identifier}")
                 return None
 
-            return self._parse_simbad_result(result, 0)
-        except Exception:
+            logger.debug(f"SIMBAD result columns: {result.colnames}")
+            return self._parse_result(result, 0, identifier)
+            
+        except Exception as e:
+            logger.warning(f"SIMBAD query failed for {identifier}: {e}")
             return None
 
-    def _parse_simbad_result(self, result, idx: int) -> Optional[CelestialObject]:
-        """Parse a single SIMBAD result row into CelestialObject"""
+    def _parse_result(self, result, idx: int, identifier: str) -> Optional[CelestialObject]:
+        """Parse a SIMBAD result row into CelestialObject."""
         try:
-            main_id = result['MAIN_ID'][idx].strip()
-            ra_str = result['RA'][idx]
-            dec_str = result['DEC'][idx]
-            obj_type = result['OTYPE'][idx] if 'OTYPE' in result.colnames else None
-
-            # Parse coordinates
-            ra = self._parse_ra(ra_str)
-            dec = self._parse_dec(dec_str)
-
-            # Parse magnitude (V)
-            mag = result['FLUX_V'][idx] if 'FLUX_V' in result.colnames else (result['V'][idx] if 'V' in result.colnames else None)
-            magnitude = float(mag) if mag and not isinstance(mag, str) else 99.0
-
-            # Parse dimensions (convert arcsec to arcmin)
-            maj = result['GALDIM_MAJAXIS'][idx] if 'GALDIM_MAJAXIS' in result.colnames else None
-            min_ax = result['GALDIM_MINAXIS'][idx] if 'GALDIM_MINAXIS' in result.colnames else None
-
-            # Parse morphology
-            morphology = result['MORPHTYPE'][idx] if 'MORPHTYPE' in result.colnames else None
-            if morphology:
-                morphology = str(morphology).strip()
-
-            # Parse aliases from IDS
-            ids_str = result['IDS'][idx] if 'IDS' in result.colnames else ''
-            aliases = self.adapter._parse_identifiers(str(ids_str))
-
-            # Get other types for classification correction
-            other_types_str = result['OTYPES'][idx] if 'OTYPES' in result.colnames else ''
-            other_types = [t.strip() for t in str(other_types_str).split('|')] if other_types_str else []
-
+            # Helper to safely get column value, trying multiple possible names
+            # astroquery 0.4.8+ uses lowercase column names (except filter names like "V")
+            def get_col(*names: str):
+                for name in names:
+                    if name in result.colnames:
+                        val = result[name][idx]
+                        # Check for masked values
+                        if np.ma.is_masked(val):
+                            continue
+                        return val
+                return None
+            
+            # main_id is required (lowercase in 0.4.8+)
+            main_id = get_col('main_id', 'MAIN_ID')
+            if main_id is None:
+                logger.warning(f"No main_id in SIMBAD result. Columns: {result.colnames}")
+                return None
+            main_id = str(main_id).strip()
+            
+            # Get coordinates (required) - lowercase in 0.4.8+
+            ra_str = get_col('ra', 'RA')
+            dec_str = get_col('dec', 'DEC')
+            if ra_str is None or dec_str is None:
+                logger.warning(f"No coordinates in SIMBAD result for {main_id}")
+                return None
+            
+            ra = self._parse_ra(str(ra_str))
+            dec = self._parse_dec(str(dec_str))
+            
+            # Get object type - lowercase in 0.4.8+
+            obj_type = get_col('otype', 'OTYPE')
+            obj_type_str = str(obj_type).strip() if obj_type else ''
+            
+            # Get magnitude - "V" stays uppercase (filter names are case-sensitive)
+            magnitude = 99.0
+            flux_v = get_col('V', 'FLUX_V', 'v', 'flux_v')
+            if flux_v is not None:
+                try:
+                    magnitude = float(flux_v)
+                except (ValueError, TypeError):
+                    pass
+            
+            # Get dimensions - lowercase in 0.4.8+
+            size = None
+            maj = get_col('galdim_majaxis', 'GALDIM_MAJAXIS')
+            min_ax = get_col('galdim_minaxis', 'GALDIM_MINAXIS')
+            if maj is not None:
+                try:
+                    # SIMBAD returns dimensions in arcmin
+                    major_arcmin = float(maj)
+                    minor_arcmin = float(min_ax) if min_ax is not None else major_arcmin
+                    size = AngularSize(major_arcmin=major_arcmin, minor_arcmin=minor_arcmin)
+                except (ValueError, TypeError):
+                    pass
+            
+            # Get morphology - lowercase in 0.4.8+
+            morphology = get_col('morphtype', 'MORPHTYPE')
+            morphology_str = str(morphology).strip() if morphology else None
+            
+            # Get aliases from IDS - lowercase in 0.4.8+
+            ids_str = get_col('ids', 'IDS')
+            aliases = self.adapter._parse_identifiers(str(ids_str)) if ids_str else []
+            
             # Map type with correction logic
-            classification = self.adapter._map_type(str(obj_type) if obj_type else '', main_id)
-            if morphology and classification.primary_type == 'galaxy':
-                # Update with morphology details
-                subtype = self.adapter._parse_galaxy_morphology(morphology)
+            classification = self.adapter._map_type(obj_type_str, main_id)
+            if morphology_str and classification.primary_type == 'galaxy':
+                subtype = self.adapter._parse_galaxy_morphology(morphology_str)
                 classification = ObjectClassification(
                     primary_type='galaxy',
                     subtype=subtype,
-                    morphology=morphology
+                    morphology=morphology_str
                 )
-
-            # Create angular size if dimensions available
-            size = None
-            if maj and not isinstance(maj, str):
-                major_arcmin = float(maj) / 60.0
-                minor_arcmin = float(min_ax) / 60.0 if (min_ax and not isinstance(min_ax, str)) else major_arcmin
-                size = AngularSize(major_arcmin=major_arcmin, minor_arcmin=minor_arcmin)
-
+            
             # Compute surface brightness if possible
             surface_brightness = None
             if magnitude < 90 and size:
@@ -173,14 +217,14 @@ class SimbadProvider:
                         source='computed',
                         band='V'
                     )
-
+            
             # Create provenance
             provenance = [DataProvenance(
                 source='SIMBAD',
                 fetched_at=datetime.now(timezone.utc),
-                confidence=0.95  # High confidence (0.0-1.0)
+                confidence=0.95
             )]
-
+            
             return CelestialObject(
                 name=main_id,
                 canonical_id=main_id,
@@ -193,62 +237,56 @@ class SimbadProvider:
                 surface_brightness=surface_brightness,
                 provenance=provenance
             )
-        except Exception:
+            
+        except Exception as e:
+            logger.warning(f"Failed to parse SIMBAD result: {e}", exc_info=True)
             return None
 
     def _parse_ra(self, ra_str: str) -> float:
-        """Parse RA from SIMBAD sexagesimal format (HH MM SS.SS) to degrees"""
+        """Parse RA from SIMBAD sexagesimal format (HH MM SS.SS) to degrees."""
         try:
-            parts = str(ra_str).strip().split()
+            parts = ra_str.strip().split()
             hours = float(parts[0])
             minutes = float(parts[1]) if len(parts) > 1 else 0.0
             seconds = float(parts[2]) if len(parts) > 2 else 0.0
             return (hours + minutes / 60.0 + seconds / 3600.0) * 15.0
-        except:
+        except Exception:
             return 0.0
 
     def _parse_dec(self, dec_str: str) -> float:
-        """Parse Dec from SIMBAD sexagesimal format (+DD MM SS.S) to degrees"""
+        """Parse Dec from SIMBAD sexagesimal format (+DD MM SS.S) to degrees."""
         try:
-            dec_str = str(dec_str).strip()
+            dec_str = dec_str.strip()
             sign = -1.0 if dec_str.startswith('-') else 1.0
             parts = dec_str.replace('+', '').replace('-', '').split()
             degrees = float(parts[0])
             arcmin = float(parts[1]) if len(parts) > 1 else 0.0
             arcsec = float(parts[2]) if len(parts) > 2 else 0.0
             return sign * (degrees + arcmin / 60.0 + arcsec / 3600.0)
-        except:
+        except Exception:
             return 0.0
 
-    def _compute_surface_brightness(self, magnitude: Optional[float], major_arcmin: Optional[float],
-                                     minor_arcmin: Optional[float]) -> Optional[float]:
-        """Compute surface brightness from magnitude and angular size"""
+    def _compute_surface_brightness(self, magnitude: float, major_arcmin: float,
+                                     minor_arcmin: float) -> Optional[float]:
+        """Compute surface brightness from magnitude and angular size."""
         import math
         try:
             if magnitude is None or major_arcmin is None or major_arcmin <= 0:
                 return None
-
+            
             minor = minor_arcmin if minor_arcmin else major_arcmin
-
             # Area in square arcminutes
             area_arcmin2 = math.pi * major_arcmin * minor / 4.0
-
             # Convert to square arcseconds
             area_arcsec2 = area_arcmin2 * 3600.0
-
             # Surface brightness in mag/arcsec²
-            sb = magnitude + 2.5 * math.log10(area_arcsec2)
-
-            return sb
-        except:
+            return magnitude + 2.5 * math.log10(area_arcsec2)
+        except Exception:
             return None
 
     def batch_get_objects(self, identifiers: list[str]) -> list[CelestialObject]:
         """
         Batch query to avoid N+1 problem.
-
-        SIMBAD supports query_objects() which takes a list and makes
-        a single API call instead of N separate calls.
 
         Args:
             identifiers: List of SIMBAD identifiers
@@ -264,19 +302,20 @@ class SimbadProvider:
 
             objects = []
             for i in range(len(results)):
-                obj = self._parse_simbad_result(results, i)
+                obj = self._parse_result(results, i, identifiers[i] if i < len(identifiers) else "unknown")
                 if obj:
                     objects.append(obj)
             return objects
-        except Exception:
+        except Exception as e:
+            logger.warning(f"SIMBAD batch query failed: {e}")
             return []
 
 
 class SimbadAdapter:
     """
-    Converts SIMBAD DTOs to domain model.
+    Converts SIMBAD data to domain model.
 
-    CRITICAL: Implements type correction logic based on research findings.
+    Implements type correction logic based on research findings.
     """
 
     def _map_type(self, obj_type: str, identifier: str) -> ObjectClassification:
@@ -286,18 +325,29 @@ class SimbadAdapter:
         CRITICAL: M31 is classified as AGN but is spiral galaxy.
         CRITICAL: NGC 7000 is classified as Cluster but is emission nebula.
         """
-        # Known corrections
-        if 'M31' in identifier or 'NGC 0224' in identifier or 'NGC0224' in identifier:
+        # Normalize identifier for comparison (remove extra whitespace)
+        id_normalized = ' '.join(identifier.split()).upper()
+        
+        # Known corrections (check normalized identifier)
+        if 'M 31' in id_normalized or 'M31' in id_normalized or 'NGC 224' in id_normalized or 'NGC0224' in id_normalized:
             return ObjectClassification('galaxy', 'spiral', 'SA(s)b')
 
-        if 'NGC 7000' in identifier or 'NGC7000' in identifier:
+        if 'NGC 7000' in id_normalized or 'NGC7000' in id_normalized:
             return ObjectClassification('nebula', 'emission', None)
 
-        # Parse regular types
-        otype = obj_type.upper()
+        # Parse regular types from SIMBAD otype
+        otype = obj_type.upper() if obj_type else ''
+
+        # Galaxies - SIMBAD uses various codes
+        # G = Galaxy, GiG = Galaxy in Group, GiC = Galaxy in Cluster
+        # AGN = Active Galactic Nucleus (still a galaxy)
+        # Sy1/Sy2 = Seyfert galaxies, QSO = Quasar
+        if otype in ['G', 'GAL', 'GIG', 'GIC', 'GIP', 'GPAIR', 'GGROUP'] or \
+           'GALAXY' in otype or 'AGN' in otype or otype.startswith('SY') or otype == 'QSO':
+            return ObjectClassification('galaxy', None, None)
 
         # Nebulae
-        if 'HII' in otype or 'EMISSION' in otype:
+        if 'HII' in otype or otype == 'ISM' or 'EMISSION' in otype:
             return ObjectClassification('nebula', 'emission', None)
         if 'PN' in otype or 'PLANETARY' in otype:
             return ObjectClassification('nebula', 'planetary', None)
@@ -307,14 +357,10 @@ class SimbadAdapter:
             return ObjectClassification('nebula', 'dark', None)
 
         # Clusters
-        if 'GLOBULAR' in otype or 'GLC' in otype:
+        if 'GLOBULAR' in otype or otype == 'GLC' or otype == 'GCL':
             return ObjectClassification('cluster', 'globular', None)
-        if 'OPEN' in otype or 'OPC' in otype or 'CLUSTER' in otype:
+        if 'OPEN' in otype or otype == 'OPC' or otype == 'OCL' or otype == 'CL*' or 'CLUSTER' in otype:
             return ObjectClassification('cluster', 'open', None)
-
-        # Galaxies
-        if 'GALAXY' in otype or otype == 'G':
-            return ObjectClassification('galaxy', None, None)
 
         # Double stars
         if 'DOUBLE' in otype or otype == '**':
@@ -324,17 +370,7 @@ class SimbadAdapter:
         return ObjectClassification('unknown', None, None)
 
     def _parse_galaxy_morphology(self, morphology: Optional[str]) -> Optional[str]:
-        """
-        Parse SIMBAD morphological type to galaxy subtype.
-
-        Same logic as OpenNGC Hubble type parsing.
-
-        Args:
-            morphology: SIMBAD MORPHTYPE field (e.g., "SA(s)b")
-
-        Returns:
-            "spiral", "elliptical", "lenticular", "irregular", or None
-        """
+        """Parse SIMBAD morphological type to galaxy subtype."""
         if not morphology:
             return None
 
@@ -352,17 +388,7 @@ class SimbadAdapter:
         return None
 
     def _parse_identifiers(self, ids_string: str) -> list[str]:
-        """
-        Parse SIMBAD IDS field (pipe-separated identifiers).
-
-        Example: "M 31|NGC 224|NAME Andromeda Galaxy|..."
-
-        Args:
-            ids_string: Pipe-separated ID list
-
-        Returns:
-            List of normalized identifiers
-        """
+        """Parse SIMBAD IDS field (pipe-separated identifiers)."""
         if not ids_string:
             return []
 

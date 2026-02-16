@@ -197,15 +197,20 @@ class OpenNGCProvider:
 
     def get_object(self, identifier: str) -> Optional[CelestialObject]:
         """
-        Fetch DSO by NGC/IC identifier.
+        Fetch DSO by NGC/IC identifier or Messier number.
 
         Args:
-            identifier: NGC or IC identifier (e.g., "NGC 224", "IC 1396", "Mel022")
+            identifier: NGC, IC, or Messier identifier (e.g., "NGC 224", "IC 1396", "M31", "Mel022")
 
         Returns:
             CelestialObject with all OpenNGC fields populated
         """
         identifier_stripped = identifier.strip()
+
+        # First, try to resolve Messier/common names to canonical NGC/IC identifier
+        canonical_id = self.resolve_name(identifier_stripped)
+        if canonical_id:
+            identifier_stripped = canonical_id
 
         # Try exact match first (for addendum objects like "Mel022")
         row = self.df[self.df['name'] == identifier_stripped]

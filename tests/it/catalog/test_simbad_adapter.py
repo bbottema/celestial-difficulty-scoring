@@ -107,7 +107,8 @@ class TestSimbadErrorHandling:
     def test_network_error_handling(self, provider):
         """Test handling of network errors"""
         # Provider should gracefully handle connection errors
-        with patch('astroquery.simbad.Simbad.query_object', side_effect=Exception("Network error")):
+        # Patch the instance's simbad object's query_object method
+        with patch.object(provider.simbad, 'query_object', side_effect=Exception("Network error")):
             result = provider.get_object('M31')
             assert result is None
 
