@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QDate, QTime
 from injector import inject
 
 from app.config.autowire import component
-from app.config.event_bus_config import bus, CelestialEvent
+from app.config.event_bus_config import bus, NightGuideEvent
 from app.domain.model.celestial_object import ScoredCelestialsList, CelestialsList, CelestialObject
 from app.domain.model.weather_conditions import WeatherConditions
 from app.domain.services.observability_calculation_service import ObservabilityCalculationService
@@ -707,16 +707,16 @@ class ObservationDataComponent(QWidget):
     def _subscribe_to_events(self):
         """Subscribe to equipment and site events to refresh configuration status and dropdowns"""
         # Observation site events
-        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda _: self._on_equipment_changed())
-        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.OBSERVATION_SITE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.OBSERVATION_SITE_DELETED, lambda _: self._on_equipment_changed())
 
         # Telescope events
-        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_ADDED, lambda _: self._on_equipment_changed())
-        bus.on(CelestialEvent.EQUIPMENT_TELESCOPE_DELETED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.EQUIPMENT_TELESCOPE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.EQUIPMENT_TELESCOPE_DELETED, lambda _: self._on_equipment_changed())
 
         # Eyepiece events
-        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_ADDED, lambda _: self._on_equipment_changed())
-        bus.on(CelestialEvent.EQUIPMENT_EYEPIECE_DELETED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.EQUIPMENT_EYEPIECE_ADDED, lambda _: self._on_equipment_changed())
+        bus.on(NightGuideEvent.EQUIPMENT_EYEPIECE_DELETED, lambda _: self._on_equipment_changed())
 
     def _on_equipment_changed(self):
         """Refresh configuration status and equipment dropdowns when equipment changes"""

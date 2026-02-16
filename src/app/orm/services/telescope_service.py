@@ -3,7 +3,7 @@ import logging
 from injector import inject
 
 from app.config.autowire import component
-from app.config.event_bus_config import CelestialEvent
+from app.config.event_bus_config import NightGuideEvent
 from app.orm.model.entities import Telescope
 from app.orm.repositories.telescope_repository import TelescopeRepository
 from app.orm.services.base_service import BaseService, MutationEvents
@@ -19,8 +19,8 @@ class TelescopeService(BaseService[Telescope]):
         super().__init__(
             telescope_repository,
             MutationEvents(
-                added=CelestialEvent.EQUIPMENT_TELESCOPE_ADDED,
-                updated=CelestialEvent.EQUIPMENT_TELESCOPE_UPDATED,
-                deleted=CelestialEvent.EQUIPMENT_TELESCOPE_DELETED
+                added=NightGuideEvent.EQUIPMENT_TELESCOPE_ADDED,
+                updated=NightGuideEvent.EQUIPMENT_TELESCOPE_UPDATED,
+                deleted=NightGuideEvent.EQUIPMENT_TELESCOPE_DELETED
             )
         )

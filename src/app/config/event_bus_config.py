@@ -6,7 +6,7 @@ bus = RxBus()
 database_ready_bus: ReplaySubject = ReplaySubject()
 
 
-class MetaCelestialEvent(type):
+class MetaNightGuideEvent(type):
     def __iter__(cls):
         for attr in dir(cls):
             if not attr.startswith("__"):
@@ -15,7 +15,7 @@ class MetaCelestialEvent(type):
                     yield value
 
 
-class CelestialEvent(metaclass=MetaCelestialEvent):
+class NightGuideEvent(metaclass=MetaNightGuideEvent):
     OBSERVATION_SITE_ADDED = "observation_site_added"
     OBSERVATION_SITE_UPDATED = "observation_site_updated"
     OBSERVATION_SITE_DELETED = "observation_site_deleted"
@@ -34,4 +34,4 @@ class CelestialEvent(metaclass=MetaCelestialEvent):
     EQUIPMENT_IMAGER_ADDED = "equipment_imager_added"
     EQUIPMENT_IMAGER_UPDATED = "equipment_imager_updated"
     EQUIPMENT_IMAGER_DELETED = "equipment_imager_deleted"
-    CELESTIAL_APP_STARTED = "app_started"
+    APP_STARTED = "app_started"

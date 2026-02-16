@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from injector import inject
 
 from app.config.autowire import component
-from app.config.event_bus_config import CelestialEvent, database_ready_bus, bus
+from app.config.event_bus_config import NightGuideEvent, database_ready_bus, bus
 from app.orm.model.entities import ObservationSite
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.ui.main_window.observation_sites.observation_site_details_dialog import ObservationSiteDetailsDialog
@@ -34,7 +34,7 @@ class ObservationSitesComponent(QWidget):
         layout.addWidget(self.table)
         layout.addWidget(self.define_new_button)
 
-        for event in CelestialEvent:
+        for event in NightGuideEvent:
             logging.getLogger(__name__).info(f"Subscribing to {event}")
             bus.on(event, self.populate_table)
 

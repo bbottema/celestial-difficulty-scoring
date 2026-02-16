@@ -3,7 +3,7 @@ import logging
 from injector import inject
 
 from app.config.autowire import component
-from app.config.event_bus_config import CelestialEvent
+from app.config.event_bus_config import NightGuideEvent
 from app.orm.model.entities import Imager
 from app.orm.repositories.imager_repository import ImagerRepository
 from app.orm.services.base_service import BaseService, MutationEvents
@@ -19,8 +19,8 @@ class ImagerService(BaseService[Imager]):
         super().__init__(
             imager_repository,
             MutationEvents(
-                added=CelestialEvent.EQUIPMENT_IMAGER_ADDED,
-                updated=CelestialEvent.EQUIPMENT_IMAGER_UPDATED,
-                deleted=CelestialEvent.EQUIPMENT_IMAGER_DELETED
+                added=NightGuideEvent.EQUIPMENT_IMAGER_ADDED,
+                updated=NightGuideEvent.EQUIPMENT_IMAGER_UPDATED,
+                deleted=NightGuideEvent.EQUIPMENT_IMAGER_DELETED
             )
         )

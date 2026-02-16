@@ -14,7 +14,7 @@ from app.utils.scoring_presets import get_active_preset
 
 
 class MainWindow(QMainWindow):
-    settings: QSettings = QSettings('BennyBottema', 'CelestialObjectObservability')
+    settings: QSettings = QSettings('BennyBottema', 'NightGuide')
 
     @inject
     def __init__(self,
@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
     def update_window_title(self):
         """Update window title to show active scoring preset."""
         active_preset = get_active_preset()
-        self.setWindowTitle(f'Celestial Object Observability - {active_preset.name}')
+        self.setWindowTitle(f'NightGuide - {active_preset.name}')
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):

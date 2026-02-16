@@ -3,7 +3,7 @@ import logging
 from injector import inject
 
 from app.config.autowire import component
-from app.config.event_bus_config import CelestialEvent
+from app.config.event_bus_config import NightGuideEvent
 from app.orm.model.entities import ObservationSite
 from app.orm.repositories.observation_site_repository import ObservationSiteRepository
 from app.orm.services.base_service import BaseService, MutationEvents
@@ -18,9 +18,9 @@ class ObservationSiteService(BaseService[ObservationSite]):
         super().__init__(
             observation_site_repository,
             MutationEvents(
-                added=CelestialEvent.OBSERVATION_SITE_ADDED,
-                updated=CelestialEvent.OBSERVATION_SITE_UPDATED,
-                deleted=CelestialEvent.OBSERVATION_SITE_DELETED
+                added=NightGuideEvent.OBSERVATION_SITE_ADDED,
+                updated=NightGuideEvent.OBSERVATION_SITE_UPDATED,
+                deleted=NightGuideEvent.OBSERVATION_SITE_DELETED
             )
         )
 

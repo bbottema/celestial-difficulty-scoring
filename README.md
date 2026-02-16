@@ -1,4 +1,12 @@
-# Rapid Prototype Workflow
+# NightGuide
+
+**Turn Conditions Into Decisions.**
+
+NightGuide is an astronomy observation planning tool that helps amateur astronomers decide what celestial objects to observe based on current conditions, equipment, and experience level.
+
+---
+
+## Rapid Prototype Workflow
 
 This project uses **pipenv** (Pipfile / Pipfile.lock) to manage dependencies and the virtual environment.
 

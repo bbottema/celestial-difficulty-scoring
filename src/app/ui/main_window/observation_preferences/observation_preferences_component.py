@@ -27,7 +27,7 @@ class ObservationPreferencesComponent(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.settings = QSettings('BennyBottema', 'CelestialObjectObservability')
+        self.settings = QSettings('BennyBottema', 'NightGuide')
         self.init_ui()
         self.load_preferences()
 

@@ -4,7 +4,7 @@ from typing import TypeVar, Generic, Type, final
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import *
 
-from app.config.event_bus_config import bus, CelestialEvent
+from app.config.event_bus_config import bus, NightGuideEvent
 from app.orm.repositories.base_equipment_repository import EquipmentEntity
 from app.orm.services.base_service import MutationEvents, BaseService
 from app.orm.services.observation_site_service import ObservationSiteService
@@ -38,11 +38,11 @@ class ManageEquipmentTab(Generic[T], QWidget, ABC, metaclass=MetaQWidgetABCMeta)
         self.setup_equipment_tab()
 
         # necessary delay because the calls to resizeRowsToContents() only work after the app has been rendered
-        bus.on(CelestialEvent.CELESTIAL_APP_STARTED, lambda *args: self._populate_equipment_table(self.equipment_table))
+        bus.on(NightGuideEvent.APP_STARTED, lambda *args: self._populate_equipment_table(self.equipment_table))
 
-        bus.on(CelestialEvent.OBSERVATION_SITE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
-        bus.on(CelestialEvent.OBSERVATION_SITE_UPDATED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
-        bus.on(CelestialEvent.OBSERVATION_SITE_DELETED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(NightGuideEvent.OBSERVATION_SITE_ADDED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(NightGuideEvent.OBSERVATION_SITE_UPDATED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
+        bus.on(NightGuideEvent.OBSERVATION_SITE_DELETED, lambda *args: self._repopulate_equipment_table_on_repo_changes())
 
         bus.on(equipment_events.added, lambda *args: self._repopulate_equipment_table_on_repo_changes())
         bus.on(equipment_events.updated, lambda *args: self._repopulate_equipment_table_on_repo_changes())

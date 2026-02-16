@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-We are developing an astronomical observability scoring tool that helps amateur astronomers identify optimal targets based on their equipment, location, and observing conditions. We need to design a user workflow for selecting celestial objects to observe.
+We are developing **NightGuide**, an astronomical observability tool that helps amateur astronomers identify optimal targets based on their equipment, location, and observing conditions. We need to design a user workflow for selecting celestial objects to observe.
 
 **Current Challenge:**
 - We have transitioned from Excel-based imports (AstroPlanner exports) to API-based catalog access

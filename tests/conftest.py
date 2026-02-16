@@ -1,5 +1,5 @@
 """
-Pytest configuration for celestial-difficulty-scoring tests.
+Pytest configuration for NightGuide tests.
 
 This file automatically configures the Python path for all tests.
 """

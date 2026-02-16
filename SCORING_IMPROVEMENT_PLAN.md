@@ -1,4 +1,4 @@
-# Celestial Observability Scoring - Improvement Plan
+# NightGuide - Scoring System Improvement Plan
 
 **Last Updated:** 2026-02-15
 **Status:** Phase 9.1 Testing Infrastructure ✅ | Phase 9 (Object Selection) 🔨
