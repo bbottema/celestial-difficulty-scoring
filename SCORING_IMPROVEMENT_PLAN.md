@@ -1,6 +1,6 @@
 # NightGuide - Scoring System Improvement Plan
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-16
 **Status:** Phase 9.1 Testing Infrastructure ✅ | Phase 9 (Object Selection) 🔨
 
 ---
@@ -9,7 +9,7 @@
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
 - **Current Priority:** Phase 9 (Object Selection Workflow)
-- **Latest Completion:** Phase 9.1 Testing Infrastructure - Comprehensive test suite reorganization with 99%+ pass rate
+- **Latest Completion:** Phase 9.1 Testing Infrastructure - Comprehensive test suite with 100% pass rate
 
 ---
 
@@ -28,12 +28,12 @@
 - **Phase 2:** Moon proximity penalties with inverse square falloff
 - **Phase 8:** Astronomical API integration - OpenNGC, SIMBAD, Horizons providers with catalog UI
 - **Phase 7:** Object-type-aware scoring - type-specific detection headroom with legacy type removal
-- **Phase 9.1 Testing:** Comprehensive test reorganization - separated unit/integration tests with proper infrastructure
+- **Phase 9.1 Testing:** Comprehensive test reorganization with SIMBAD astroquery 0.4.8+ compatibility
 
 ### 📊 Test Status
 - **291 tests total** (148 unit + 143 integration)
 - **Unit tests:** 148/148 passing (100%) in ~2.2s ✅
-- **Integration tests:** 142/143 passing (99.3%) in ~2.5min ✅
+- **Integration tests:** 143/143 passing (100%) in ~2min ✅
 - **Test organization:** `tests/unit/` (fast, no network) | `tests/it/` (external APIs)
 - **Test runners:** `run_tests.py` (unit only) | `run_tests_it.py` (integration only)
 - **Scoring normalization:** Fixed to 0-25 scale (Phase 6 design preserved)
