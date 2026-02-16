@@ -1,15 +1,15 @@
 # NightGuide - Scoring System Improvement Plan
 
 **Last Updated:** 2026-02-16
-**Status:** Phase 9.1 Testing Infrastructure ✅ | Phase 9 (Object Selection) 🔨
+**Status:** Phase 9.1 Pre-Curated Lists ✅ | Phase 9.2 (Target List Management) 🔜
 
 ---
 
 ## Quick Navigation
 
 - **Phase Plans:** See `planning/` directory for detailed phase documentation
-- **Current Priority:** Phase 9 (Object Selection Workflow)
-- **Latest Completion:** Phase 9.1 Testing Infrastructure - Comprehensive test suite with 100% pass rate
+- **Current Priority:** Phase 9.2 (Target List Management) or Phase 13 (Equipment Integration)
+- **Latest Completion:** Phase 9.1 Pre-Curated Object Lists - Messier/Caldwell/Solar System lists with UI selector
 
 ---
 
@@ -28,7 +28,7 @@
 - **Phase 2:** Moon proximity penalties with inverse square falloff
 - **Phase 8:** Astronomical API integration - OpenNGC, SIMBAD, Horizons providers with catalog UI
 - **Phase 7:** Object-type-aware scoring - type-specific detection headroom with legacy type removal
-- **Phase 9.1 Testing:** Comprehensive test reorganization with SIMBAD astroquery 0.4.8+ compatibility
+- **Phase 9.1:** Pre-curated object lists - Messier/Caldwell/Solar System with UI dropdown selector
 
 ### 📊 Test Status
 - **291 tests total** (148 unit + 143 integration)

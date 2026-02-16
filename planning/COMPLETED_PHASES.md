@@ -1,44 +1,46 @@
 # Completed Phases - Summary
 
-## Phase 9.1: Testing Infrastructure ✅
+## Phase 9.1: Pre-Curated Object Lists ✅
 **Completed:** 2026-02-16
 
-**Goal:** Establish robust test infrastructure for Phase 9 object selection workflow with comprehensive test coverage and proper organization.
+**Goal:** Replace AstroPlanner Excel import workflow with built-in object lists (Messier, Caldwell, Solar System) that can be loaded and scored directly from the UI.
 
 **Implementation:**
-- **Test Reorganization:**
-  - Moved all tests from flat `tests/` to organized structure: `tests/unit/` (fast) and `tests/it/` (integration with external APIs)
-  - Created separate test runners: `run_tests.py` (unit, ~2s) and `run_tests_it.py` (integration, ~2min)
-  - Added `conftest.py` for pytest configuration and path setup
-  - Removed phase-specific test naming (e.g., `test_phase5_provider_validation.py` → `test_provider_validation.py`)
 
-- **Critical Bug Fixes:**
-  - **AngularSize type consistency**: Fixed `celestial_object.size` to always be `AngularSize | None` (never raw float)
-  - **Scoring normalization**: Preserved Phase 6 design of 0-25 scale (not 0-1)
-  - **Test expectations**: Fixed hardcoded values that didn't match actual behavior
+- **Service Layer (`src/app/object_lists/`):**
+  - `ObjectListLoader` service with `get_available_lists()`, `load_list()`, `resolve_objects()`
+  - Data models: `ObjectList`, `ObjectListItem`, `ObjectListMetadata`, `ResolutionResult`, `ResolutionFailure`
+  - In-memory caching for resolved objects with `clear_cache()` and `get_cache_stats()`
 
-- **SIMBAD Provider Fix (astroquery 0.4.8+ compatibility):**
-  - **Root cause:** `ROW_LIMIT=0` means "schema only" (empty table), not "unlimited". Fixed to `ROW_LIMIT=-1`
-  - **Column names:** Updated to lowercase (`main_id`, `ra`, `dec`, `otype`) per astroquery 0.4.8+ API
-  - **Flux notation:** Changed from deprecated `flux(V)` to `V` for magnitude field
-  - **Identifier matching:** Normalize whitespace when matching (SIMBAD returns `"M  31"` with spaces)
-  - **Type mapping:** Added more SIMBAD otype codes (G, GAL, GIG, GIC, AGN, SY*, QSO, GCL, OCL, CL*)
-  - **OpenNGC integration:** Fixed `get_object()` to resolve Messier numbers via `resolve_name()` first
+- **Pre-Curated JSON Lists (`data/object_lists/`):**
+  - `messier_110.json` - 110 Messier deep-sky objects with NGC canonical IDs
+  - `caldwell_109.json` - 109 Caldwell objects (supplement to Messier)
+  - `solar_system.json` - 9 Solar System objects (Sun, Moon, 8 planets)
 
-- **Test Fixes:**
-  - Fixed mock patching to use `patch.object()` for instance methods
-  - Updated assertions to handle SIMBAD's spaced identifiers
-  - Widened tolerance ranges for computed surface brightness values
-  - Accept both OpenNGC and SIMBAD as valid data sources
+- **UI Integration (`observation_data_component.py`):**
+  - Added "Select Object List" dropdown section above import controls
+  - Lists display with object counts: "Messier Catalog (110 objects)"
+  - "Load & Score" button resolves objects via CatalogService and runs scoring pipeline
+  - Progress dialog shows resolution status; failures appear with warning icon
+
+- **Test Infrastructure:**
+  - Reorganized tests: `tests/unit/` (fast) and `tests/it/` (integration with external APIs)
+  - Separate test runners: `run_tests.py` (unit, ~2s) and `run_tests_it.py` (integration, ~2min)
+  - Quality gates: ≥95% resolution rate for all shipped lists
+  - SIMBAD provider compatibility with astroquery 0.4.8+ (TAP-based backend)
+
+- **Critical Fixes:**
+  - **AngularSize type consistency**: `celestial_object.size` always returns `AngularSize | None`
+  - **Scoring normalization**: Preserved 0-25 scale (Phase 6 design)
+  - **SIMBAD ROW_LIMIT**: Fixed from `0` ("schema only") to `-1` ("unlimited")
 
 **Results:**
-- **291 tests total**: 148 unit + 143 integration
-- **Unit tests**: 148/148 passing (100%) in ~2.2s ✅
-- **Integration tests**: 143/143 passing (100%) in ~2min ✅
-- **Test organization**: Clean separation of fast unit tests vs slower integration tests
-- **SIMBAD integration**: Fully compatible with astroquery 0.4.8+ (TAP-based backend)
+- **291 tests total**: 148 unit + 143 integration (100% passing)
+- Users can select Messier/Caldwell/Solar System from dropdown and score immediately
+- Zero-setup experience: lists ship with app, no external tools needed
+- Resolution via CatalogService with graceful fallback for failed objects
 
-**Impact:** Solid foundation for Phase 9 development with comprehensive test coverage, fast feedback loop for unit tests, and reliable integration tests for external APIs.
+**Impact:** Replaces AstroPlanner Excel workflow. Users can now discover and score celestial objects without external tools.
 
 ---
 
