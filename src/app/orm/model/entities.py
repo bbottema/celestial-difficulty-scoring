@@ -1,8 +1,9 @@
 import logging
 from dataclasses import dataclass
 from typing import Any, cast, Protocol, List
+from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Table, Boolean, DateTime, Text, func
 from sqlalchemy.orm import declarative_base, relationship, DeclarativeMeta
 
 from app.domain.model.light_pollution import LightPollution
@@ -169,3 +170,65 @@ class Imager(Base, EquipmentEntity):
 
     def guide_sensor_size_height_mm(self) -> float:
         return calculate_sensor_size(self.guide_pixel_size_height, self.guide_number_of_pixels_height)
+
+
+@dataclass
+class TargetList(Base):
+    """
+    User-created target list for organizing celestial objects.
+    
+    Phase 9.2: Enables users to create and manage custom observing lists.
+    """
+    __tablename__ = 'target_lists'
+
+    id: int | None = cast(int, Column(Integer, primary_key=True))
+    name: str = cast(str, Column(String, unique=True, nullable=False))
+    description: str | None = cast(str, Column(Text, nullable=True))
+    category: str = cast(str, Column(String, nullable=False, default='custom'))  # 'custom', 'imported', 'generated'
+    created_at: datetime = cast(datetime, Column(DateTime, nullable=False, default=func.now()))
+    modified_at: datetime = cast(datetime, Column(DateTime, nullable=False, default=func.now(), onupdate=func.now()))
+
+    # Relationship to items
+    items = relationship("TargetListItem", back_populates="target_list", cascade="all, delete-orphan", order_by="TargetListItem.sort_order")
+
+    @property
+    def object_count(self) -> int:
+        return len(self.items) if self.items else 0
+
+    @property
+    def observed_count(self) -> int:
+        return sum(1 for item in self.items if item.observed) if self.items else 0
+
+
+@dataclass
+class TargetListItem(Base):
+    """
+    A single object entry in a target list.
+    
+    Stores resolved object data for offline access, plus observation tracking.
+    """
+    __tablename__ = 'target_list_items'
+
+    id: int | None = cast(int, Column(Integer, primary_key=True))
+    list_id: int = cast(int, Column(Integer, ForeignKey('target_lists.id', ondelete='CASCADE'), nullable=False))
+    
+    # Object identification
+    object_name: str = cast(str, Column(String, nullable=False))
+    canonical_id: str | None = cast(str, Column(String, nullable=True))
+    
+    # Cached object data (for offline access)
+    object_type: str | None = cast(str, Column(String, nullable=True))
+    ra: float | None = cast(float, Column(Float, nullable=True))
+    dec: float | None = cast(float, Column(Float, nullable=True))
+    magnitude: float | None = cast(float, Column(Float, nullable=True))
+    
+    # Observation tracking
+    observed: bool = cast(bool, Column(Boolean, nullable=False, default=False))
+    observed_date: datetime | None = cast(datetime, Column(DateTime, nullable=True))
+    notes: str | None = cast(str, Column(Text, nullable=True))
+    
+    # Display order
+    sort_order: int = cast(int, Column(Integer, nullable=False, default=0))
+
+    # Relationship back to list
+    target_list = relationship("TargetList", back_populates="items")
