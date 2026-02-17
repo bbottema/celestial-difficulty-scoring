@@ -34,14 +34,16 @@ class ObservationDataComponent(QWidget):
         self.eyepiece_service = eyepiece_service
         self.object_list_loader = ObjectListLoader()  # Phase 9.1: Pre-curated lists
         self.tab_widget = None  # Will be set by MainWindow
+        self.equipment_component = None  # Will be set by MainWindow
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
         self._subscribe_to_events()
 
-    def set_tab_widget(self, tab_widget):
+    def set_tab_widget(self, tab_widget, equipment_component=None):
         """Set reference to the parent tab widget for navigation"""
         self.tab_widget = tab_widget
+        self.equipment_component = equipment_component
 
     # noinspection PyAttributeOutsideInit
     def init_ui(self):
@@ -502,6 +504,19 @@ class ObservationDataComponent(QWidget):
                     f"✓ {result.success_count}/{result.total_count} resolved"
                 )
                 self.list_status_label.setStyleSheet("color: #ff9800; font-style: italic;")
+                
+                # Show warning if many objects failed to resolve
+                if result.success_rate < 50.0:
+                    failure_sample = result.failures[:5]
+                    failure_details = "\n".join([f"  • {f.name}: {f.reason}" for f in failure_sample])
+                    more_text = f"\n  ... and {len(result.failures) - 5} more" if len(result.failures) > 5 else ""
+                    QMessageBox.warning(
+                        self,
+                        "Low Resolution Rate",
+                        f"Only {result.success_count} of {result.total_count} objects could be resolved.\n\n"
+                        f"Sample failures:\n{failure_details}{more_text}\n\n"
+                        f"This may indicate a problem with the catalog data."
+                    )
             else:
                 self.list_status_label.setText(f"✓ {result.success_count} objects loaded")
                 self.list_status_label.setStyleSheet("color: #4caf50; font-style: italic;")
@@ -602,7 +617,7 @@ class ObservationDataComponent(QWidget):
             warning_widget = self._create_warning_widget(
                 "⚠️  No telescopes added",
                 "Add Telescope",
-                lambda: self._switch_to_tab(2)  # Tab index 2 = Setup: Equipment
+                lambda: self._switch_to_tab(2, 0)  # Tab index 2 = Setup: Equipment, sub-tab 0 = Telescopes
             )
             self.status_layout.addWidget(warning_widget)
             has_warnings = True
@@ -611,7 +626,7 @@ class ObservationDataComponent(QWidget):
             warning_widget = self._create_warning_widget(
                 "⚠️  No eyepieces added",
                 "Add Eyepiece",
-                lambda: self._switch_to_tab(2)  # Tab index 2 = Setup: Equipment
+                lambda: self._switch_to_tab(2, 1)  # Tab index 2 = Setup: Equipment, sub-tab 1 = Eyepieces
             )
             self.status_layout.addWidget(warning_widget)
             has_warnings = True
@@ -621,10 +636,13 @@ class ObservationDataComponent(QWidget):
             success_label.setStyleSheet("color: #4caf50;")
             self.status_layout.addWidget(success_label)
 
-    def _switch_to_tab(self, tab_index: int):
+    def _switch_to_tab(self, tab_index: int, sub_tab_index: int = None):
         """Switch to the specified tab in the parent tab widget"""
         if self.tab_widget:
             self.tab_widget.setCurrentIndex(tab_index)
+            # If switching to Equipment tab (index 2) and a sub-tab is specified
+            if tab_index == 2 and sub_tab_index is not None and self.equipment_component:
+                self.equipment_component.equipment_tabs.setCurrentIndex(sub_tab_index)
 
     def _create_warning_widget(self, message: str, button_text: str, callback) -> QWidget:
         """Creates a warning message with an action button"""
@@ -654,6 +672,10 @@ class ObservationDataComponent(QWidget):
             data_source: Display name for data source (e.g., "Messier Catalog")
             failure_entries: Optional list of failed resolution dicts to append (Phase 9.1)
         """
+        # IMPORTANT: Disable sorting during population to prevent Qt from 
+        # misplacing items as they're added
+        self.table.setSortingEnabled(False)
+        
         # Sort by normalized score (descending - best targets first)
         sorted_data = sorted(data, key=lambda x: x.observability_score.normalized_score, reverse=True)
 
@@ -674,12 +696,28 @@ class ObservationDataComponent(QWidget):
         for i, celestial_object in enumerate(sorted_data):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(celestial_object.name))
-            self.table.setItem(i, 1, centered_table_widget_item(celestial_object.object_type))
-            self.table.setItem(i, 2, centered_table_widget_item(str(celestial_object.magnitude)))
-            self.table.setItem(i, 3, centered_table_widget_item(str(celestial_object.size)))
-            self.table.setItem(i, 4, centered_table_widget_item(str(celestial_object.altitude)))
-            self.table.setItem(i, 5, centered_table_widget_item(str(celestial_object.observability_score.score)))
-            self.table.setItem(i, 6, centered_table_widget_item(str(celestial_object.observability_score.normalized_score)))
+            self.table.setItem(i, 1, centered_table_widget_item(celestial_object.object_type or '-'))
+            
+            # DEBUG: Print first few objects to console
+            if i < 3:
+                print(f"DEBUG populate_table[{i}]: name='{celestial_object.name}', "
+                      f"type='{celestial_object.object_type}', mag={celestial_object.magnitude}, "
+                      f"size={celestial_object.size}, alt={celestial_object.altitude}")
+            
+            # Handle magnitude display (99.0 means unknown)
+            mag_str = '-' if celestial_object.magnitude is None or celestial_object.magnitude >= 99.0 else f"{celestial_object.magnitude:.1f}"
+            self.table.setItem(i, 2, centered_table_widget_item(mag_str))
+            
+            # Handle size display (None means unknown)
+            size_str = '-' if celestial_object.size is None else f"{celestial_object.size:.1f}"
+            self.table.setItem(i, 3, centered_table_widget_item(size_str))
+            
+            # Handle altitude display
+            alt_str = '-' if celestial_object.altitude is None else f"{celestial_object.altitude:.1f}"
+            self.table.setItem(i, 4, centered_table_widget_item(alt_str))
+            
+            self.table.setItem(i, 5, centered_table_widget_item(f"{celestial_object.observability_score.score:.2f}"))
+            self.table.setItem(i, 6, centered_table_widget_item(f"{celestial_object.observability_score.normalized_score:.1f}"))
 
         # Add failure entries at the bottom (Phase 9.1: show failures in table)
         if failure_entries:
@@ -703,6 +741,9 @@ class ObservationDataComponent(QWidget):
                     item = centered_table_widget_item('-')
                     item.setForeground(Qt.gray)
                     self.table.setItem(row, col, item)
+        
+        # Re-enable sorting now that all items are added
+        self.table.setSortingEnabled(True)
 
     def _subscribe_to_events(self):
         """Subscribe to equipment and site events to refresh configuration status and dropdowns"""

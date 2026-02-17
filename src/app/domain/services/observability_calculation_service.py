@@ -39,9 +39,18 @@ class ObservabilityCalculationService:
         if hasattr(size_arcmin, 'major_arcmin'):
             size_arcmin = size_arcmin.major_arcmin
 
-        return ScoredCelestialObject(celestial_object.name, celestial_object.object_type, celestial_object.magnitude,
-                                     size_arcmin, celestial_object.altitude,
-                                     self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site, weather, moon_conditions))
+        score = self._calculate_observability_score(celestial_object, telescope, eyepiece, observation_site, weather, moon_conditions)
+        
+        scored = ScoredCelestialObject(
+            name=celestial_object.name,
+            object_type=celestial_object.object_type,
+            magnitude=celestial_object.magnitude,
+            size=size_arcmin,
+            altitude=celestial_object.altitude,
+            observability_score=score
+        )
+        
+        return scored
 
     def _calculate_observability_score(self,
                                        celestial_object: CelestialObject,

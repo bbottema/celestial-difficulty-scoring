@@ -60,7 +60,8 @@ class HorizonsProvider:
             'saturn': '699',
             'uranus': '799',
             'neptune': '899',
-            'moon': '301'
+            'moon': '301',
+            'sun': '10'  # Sun's Horizons ID
         }
 
     def _get_horizons_id(self, name: str) -> Optional[str]:
@@ -206,6 +207,7 @@ class HorizonsAdapter:
         Classify Solar System object by name.
 
         Simple heuristics:
+        - "Sun" → sun
         - "Moon" → moon
         - Mercury/Venus/Mars/Jupiter/Saturn/Uranus/Neptune → planet
         - Pluto, Ceres, etc. → dwarf_planet
@@ -216,18 +218,20 @@ class HorizonsAdapter:
             target_name: Horizons target name
 
         Returns:
-            ObjectClassification with solar_system primary type
+            ObjectClassification with appropriate primary type for scoring
         """
         name_lower = target_name.lower()
         planets = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
 
-        if 'moon' in name_lower:
-            return ObjectClassification('solar_system', 'moon', None)
+        if 'sun' in name_lower:
+            return ObjectClassification('sun', None, None)
+        elif 'moon' in name_lower:
+            return ObjectClassification('moon', None, None)
         elif any(p in name_lower for p in planets):
-            return ObjectClassification('solar_system', 'planet', None)
+            return ObjectClassification('planet', None, None)
         elif target_name.startswith('C/'):
-            return ObjectClassification('solar_system', 'comet', None)
+            return ObjectClassification('comet', None, None)
         elif target_name.isdigit():
-            return ObjectClassification('solar_system', 'asteroid', None)
+            return ObjectClassification('asteroid', None, None)
         else:
-            return ObjectClassification('solar_system', 'minor_body', None)
+            return ObjectClassification('unknown', None, None)

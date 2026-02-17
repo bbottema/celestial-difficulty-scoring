@@ -38,11 +38,11 @@ class EquipmentManagementComponent(QWidget):
     def init_ui(self):
         self.layout = QVBoxLayout(self)
 
-        equipment_tabs = QTabWidget(self)
-        equipment_tabs.addTab(ManageTelescopesTab(self.telescope_service, self.observation_site_service), "Telescopes")
-        equipment_tabs.addTab(ManageEyepiecesTab(self.eyepiece_service, self.observation_site_service), "Eyepieces")
-        equipment_tabs.addTab(ManageFiltersTab(self.filter_service, self.observation_site_service), "Filters")
-        equipment_tabs.addTab(ManageImagersTab(self.imager_service, self.observation_site_service), "Imagers")
-        equipment_tabs.addTab(ManageOpticalAidsTab(self.optical_aid_service, self.observation_site_service), "Optical Aids")
+        self.equipment_tabs = QTabWidget(self)
+        self.equipment_tabs.addTab(ManageTelescopesTab(self.telescope_service, self.observation_site_service), "Telescopes")
+        self.equipment_tabs.addTab(ManageEyepiecesTab(self.eyepiece_service, self.observation_site_service), "Eyepieces")
+        self.equipment_tabs.addTab(ManageFiltersTab(self.filter_service, self.observation_site_service), "Filters")
+        self.equipment_tabs.addTab(ManageImagersTab(self.imager_service, self.observation_site_service), "Imagers")
+        self.equipment_tabs.addTab(ManageOpticalAidsTab(self.optical_aid_service, self.observation_site_service), "Optical Aids")
 
-        self.layout.addWidget(equipment_tabs)
+        self.layout.addWidget(self.equipment_tabs)

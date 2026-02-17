@@ -196,16 +196,25 @@ class ObjectListLoader:
             CelestialObject if found, None otherwise
         """
         # Try canonical_id first
-        obj = self.catalog_service.get_object(item.canonical_id)
-        if obj is not None:
-            return obj
+        try:
+            obj = self.catalog_service.get_object(item.canonical_id)
+            if obj is not None:
+                logger.debug(f"Resolved {item.name} via canonical_id '{item.canonical_id}' -> {obj.name}")
+                return obj
+        except Exception as e:
+            logger.warning(f"Exception resolving {item.name} via canonical_id '{item.canonical_id}': {e}")
 
         # Fall back to name if different from canonical_id
         if item.name != item.canonical_id:
-            obj = self.catalog_service.get_object(item.name)
-            if obj is not None:
-                return obj
+            try:
+                obj = self.catalog_service.get_object(item.name)
+                if obj is not None:
+                    logger.debug(f"Resolved {item.name} via name fallback -> {obj.name}")
+                    return obj
+            except Exception as e:
+                logger.warning(f"Exception resolving {item.name} via name: {e}")
 
+        logger.warning(f"Failed to resolve: {item.name} (canonical_id: {item.canonical_id})")
         return None
 
     def clear_cache(self) -> None:

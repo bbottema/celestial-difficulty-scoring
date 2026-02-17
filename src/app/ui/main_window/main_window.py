@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.catalog_data_component, "Raw Data API's")
 
         # Pass tab widget reference to observation data component for navigation
-        self.observation_data_component.set_tab_widget(self.tabs)
+        self.observation_data_component.set_tab_widget(self.tabs, self.equipment_management_component)
 
         # Connect to preference changes to update title
         self.observation_preferences_component.preset_combo.currentTextChanged.connect(

@@ -8,6 +8,7 @@ Implements the research-validated decision tree:
 
 This service abstracts catalog complexity from domain code.
 """
+import logging
 from typing import Optional
 from pathlib import Path
 
@@ -23,6 +24,8 @@ except ImportError:
     # For testing environments without dependency injection
     def component(cls):
         return cls
+
+logger = logging.getLogger(__name__)
 
 
 @component
@@ -42,6 +45,12 @@ class CatalogService:
         """
         # Initialize providers
         ngc_path = Path(__file__).parent.parent.parent.parent / 'data' / 'catalogs' / 'NGC.csv'
+        
+        if not ngc_path.exists():
+            logger.error(f"NGC.csv not found at: {ngc_path}")
+            raise FileNotFoundError(f"NGC catalog file not found: {ngc_path}")
+        
+        logger.debug(f"Loading NGC catalog from: {ngc_path}")
         self.openngc = OpenNGCProvider(ngc_path)
         self.simbad = SimbadProvider()
         self.horizons = HorizonsProvider()
@@ -145,13 +154,15 @@ class CatalogService:
                     obj = self.horizons.get_object(identifier, time)
                     if obj:
                         return obj
-            except Exception:
-                # Provider failed, try next one
+            except Exception as e:
+                # Log the exception for debugging
+                logger.debug(f"Provider {source} failed for '{identifier}': {e}")
                 continue
 
         # If direct fetch failed, try resolving name first
         canonical_id = self.resolve_name(identifier)
         if canonical_id and canonical_id != identifier:
+            logger.debug(f"Resolved '{identifier}' to canonical_id '{canonical_id}'")
             # Try again with canonical ID
             for source in providers:
                 try:
@@ -167,9 +178,11 @@ class CatalogService:
                         obj = self.horizons.get_object(canonical_id, time)
                         if obj:
                             return obj
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"Provider {source} failed for canonical '{canonical_id}': {e}")
                     continue
 
+        logger.debug(f"Could not resolve object: '{identifier}'")
         return None
 
     def get_objects(self, identifiers: list[str]) -> dict[str, Optional[CelestialObject]]:
