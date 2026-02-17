@@ -171,6 +171,51 @@ class TargetListRepository:
             .filter(TargetListItem.canonical_id == canonical_id)\
             .first() is not None
 
+    def get_lists_for_object(self, session: Session, canonical_id: str) -> list[TargetList]:
+        """
+        Get all target lists that contain a specific object.
+        
+        Args:
+            canonical_id: The canonical ID of the object (e.g., "NGC0224")
+            
+        Returns:
+            List of TargetList objects containing this object
+        """
+        return session.query(TargetList)\
+            .join(TargetListItem)\
+            .filter(TargetListItem.canonical_id == canonical_id)\
+            .order_by(TargetList.name)\
+            .all()
+
+    def get_list_membership_bulk(self, session: Session, canonical_ids: list[str]) -> dict[str, list[TargetList]]:
+        """
+        Get list membership for multiple objects in one query.
+        
+        Efficient batch lookup for populating table indicators.
+        
+        Args:
+            canonical_ids: List of canonical IDs to check
+            
+        Returns:
+            Dict mapping canonical_id -> list of TargetList objects
+        """
+        if not canonical_ids:
+            return {}
+        
+        # Query all items matching any of the canonical_ids
+        items = session.query(TargetListItem, TargetList)\
+            .join(TargetList)\
+            .filter(TargetListItem.canonical_id.in_(canonical_ids))\
+            .all()
+        
+        # Build the result dict
+        result: dict[str, list[TargetList]] = {cid: [] for cid in canonical_ids}
+        for item, target_list in items:
+            if item.canonical_id in result:
+                result[item.canonical_id].append(target_list)
+        
+        return result
+
     def _touch_list(self, session: Session, list_id: int) -> None:
         """Update the modified_at timestamp of a list."""
         session.query(TargetList)\

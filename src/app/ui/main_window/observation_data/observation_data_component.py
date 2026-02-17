@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget, QFileDialog, QComboBox, QLabel, QHBoxLayout, QFrame,
-    QDateEdit, QTimeEdit, QProgressDialog, QMessageBox, QGroupBox
+    QDateEdit, QTimeEdit, QProgressDialog, QMessageBox, QGroupBox, QMenu, QTableWidget, QHeaderView,
+    QInputDialog, QTableWidgetItem
 )
 from PySide6.QtCore import Qt, QDate, QTime
+from PySide6.QtGui import QAction, QCursor
 from injector import inject
 
 from app.config.autowire import component
@@ -13,6 +15,8 @@ from app.domain.services.observability_calculation_service import ObservabilityC
 from app.orm.services.observation_site_service import ObservationSiteService
 from app.orm.services.telescope_service import TelescopeService
 from app.orm.services.eyepiece_service import EyepieceService
+from app.orm.services.target_list_service import TargetListService
+from app.orm.model.entities import TargetList
 from app.utils.astroplanner_excel_importer import AstroPlannerExcelImporter
 from app.utils.gui_helper import default_table, centered_table_widget_item
 from app.object_lists.object_list_loader import ObjectListLoader
@@ -26,15 +30,25 @@ class ObservationDataComponent(QWidget):
                  observability_calculation_service: ObservabilityCalculationService,
                  observation_site_service: ObservationSiteService,
                  telescope_service: TelescopeService,
-                 eyepiece_service: EyepieceService):
+                 eyepiece_service: EyepieceService,
+                 target_list_service: TargetListService):
         super().__init__(None)
         self.observability_calculation_service = observability_calculation_service
         self.observation_site_service = observation_site_service
         self.telescope_service = telescope_service
         self.eyepiece_service = eyepiece_service
+        self.target_list_service = target_list_service
         self.object_list_loader = ObjectListLoader()  # Phase 9.1: Pre-curated lists
         self.tab_widget = None  # Will be set by MainWindow
         self.equipment_component = None  # Will be set by MainWindow
+        
+        # Store resolved objects for context menu (canonical_id -> CelestialObject)
+        self._resolved_objects: dict[str, CelestialObject] = {}
+        # Store list membership for current table (canonical_id -> list of TargetList)
+        self._list_membership: dict[str, list[TargetList]] = {}
+        # Flag to suppress event-triggered refreshes during batch operations
+        self._batch_operation_in_progress: bool = False
+        
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
@@ -111,7 +125,8 @@ class ObservationDataComponent(QWidget):
             'Size (arcmin)',
             'Altitude (°)',
             'Observability Score',
-            'Normalized Score (0-25)'])
+            'Normalized Score (0-25)',
+            'Lists'])  # New column for list membership
 
         # Add tooltips to column headers
         self.table.horizontalHeaderItem(0).setToolTip("Name of the celestial object")
@@ -121,12 +136,20 @@ class ObservationDataComponent(QWidget):
         self.table.horizontalHeaderItem(4).setToolTip("Current altitude above horizon in degrees")
         self.table.horizontalHeaderItem(5).setToolTip("Raw observability score based on brightness and size")
         self.table.horizontalHeaderItem(6).setToolTip("Normalized difficulty score - higher is easier to observe")
+        self.table.horizontalHeaderItem(7).setToolTip("Custom target lists containing this object")
 
         # Enable sorting by clicking column headers
         self.table.setSortingEnabled(True)
+        
+        # Enable context menu for right-click actions
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
+        
+        # Enable row selection for context menu
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.ExtendedSelection)
 
         # Adjust column widths for better readability
-        from PySide6.QtWidgets import QHeaderView
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Object Name - stretch to fill
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Type
@@ -135,6 +158,7 @@ class ObservationDataComponent(QWidget):
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Altitude
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Observability Score
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Normalized Score
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # Lists
 
         # Empty state placeholder
         self.empty_state_label = QLabel(
@@ -174,10 +198,17 @@ class ObservationDataComponent(QWidget):
             scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(
                 celestial_objects, telescope, eyepiece, site)
 
+            # Build resolved objects dict for context menu
+            resolved_objects_dict = {obj.canonical_id: obj for obj in celestial_objects if obj.canonical_id}
+
             # Extract filename from path
             import os
             filename = os.path.basename(file_path)
-            self.populate_table(scored_celestial_objects, data_source=f"Imported from: {filename}")
+            self.populate_table(
+                scored_celestial_objects, 
+                data_source=f"Imported from: {filename}",
+                resolved_objects=resolved_objects_dict
+            )
 
     def load_sample_data(self) -> None:
         """Load sample celestial objects to demonstrate the functionality"""
@@ -200,10 +231,17 @@ class ObservationDataComponent(QWidget):
         # Get selected equipment
         telescope, eyepiece, site = self._get_selected_equipment()
 
+        # Build resolved objects dict for context menu
+        resolved_objects_dict = {obj.canonical_id: obj for obj in sample_objects}
+
         # Score with equipment
         scored_celestial_objects: ScoredCelestialsList = self.observability_calculation_service.score_celestial_objects(
             sample_objects, telescope, eyepiece, site)
-        self.populate_table(scored_celestial_objects, data_source="Sample Data (10 popular celestial objects)")
+        self.populate_table(
+            scored_celestial_objects, 
+            data_source="Sample Data (10 popular celestial objects)",
+            resolved_objects=resolved_objects_dict
+        )
 
     def _create_observation_planning_panel(self) -> QFrame:
         """Create the unified Observation Planning panel with When/Where/Equipment sections"""
@@ -514,6 +552,9 @@ class ObservationDataComponent(QWidget):
                 result.resolved, telescope, eyepiece, site
             )
 
+            # Build resolved objects dict for context menu (canonical_id -> CelestialObject)
+            resolved_objects_dict = {obj.canonical_id: obj for obj in result.resolved}
+
             # Create failure entries for table display (Decision #2: show in table)
             failure_entries = self._create_failure_table_entries(result.failures)
 
@@ -521,7 +562,8 @@ class ObservationDataComponent(QWidget):
             self.populate_table(
                 scored_objects,
                 data_source=f"Object List: {list_name}",
-                failure_entries=failure_entries
+                failure_entries=failure_entries,
+                resolved_objects=resolved_objects_dict
             )
 
         except FileNotFoundError as e:
@@ -650,7 +692,9 @@ class ObservationDataComponent(QWidget):
 
         return widget
 
-    def populate_table(self, data: ScoredCelestialsList, data_source: str = "", failure_entries: list[dict] = None):
+    def populate_table(self, data: ScoredCelestialsList, data_source: str = "", 
+                       failure_entries: list[dict] = None, 
+                       resolved_objects: dict[str, CelestialObject] = None):
         """
         Populate the results table with scored objects.
         
@@ -658,6 +702,7 @@ class ObservationDataComponent(QWidget):
             data: List of scored celestial objects
             data_source: Display name for data source (e.g., "Messier Catalog")
             failure_entries: Optional list of failed resolution dicts to append (Phase 9.1)
+            resolved_objects: Optional dict of canonical_id -> CelestialObject for context menu
         """
         # IMPORTANT: Disable sorting during population to prevent Qt from
         # misplacing items as they're added
@@ -666,8 +711,16 @@ class ObservationDataComponent(QWidget):
         # Sort by normalized score (descending - best targets first)
         sorted_data = sorted(data, key=lambda x: x.observability_score.normalized_score, reverse=True)
 
-        # Clear existing rows
+        # Clear existing rows and stored objects
         self.table.setRowCount(0)
+        self._resolved_objects = resolved_objects or {}
+        
+        # Get list membership for all objects in one query
+        canonical_ids = list(self._resolved_objects.keys())
+        if canonical_ids:
+            self._list_membership = self.target_list_service.get_list_membership_bulk(canonical_ids)
+        else:
+            self._list_membership = {}
 
         # Show table and hide empty state when we have data
         if sorted_data or failure_entries:
@@ -682,7 +735,15 @@ class ObservationDataComponent(QWidget):
         # Add scored objects
         for i, celestial_object in enumerate(sorted_data):
             self.table.insertRow(i)
-            self.table.setItem(i, 0, centered_table_widget_item(celestial_object.name))
+            
+            # Name item stores canonical_id for context menu
+            name_item = centered_table_widget_item(celestial_object.name)
+            # Find canonical_id from resolved objects
+            canonical_id = self._find_canonical_id(celestial_object.name)
+            if canonical_id:
+                name_item.setData(Qt.UserRole, canonical_id)
+            self.table.setItem(i, 0, name_item)
+            
             self.table.setItem(i, 1, centered_table_widget_item(celestial_object.object_type or '-'))
             
             # Handle magnitude display (99.0 means unknown)
@@ -699,6 +760,10 @@ class ObservationDataComponent(QWidget):
             
             self.table.setItem(i, 5, centered_table_widget_item(f"{celestial_object.observability_score.score:.2f}"))
             self.table.setItem(i, 6, centered_table_widget_item(f"{celestial_object.observability_score.normalized_score:.1f}"))
+            
+            # Lists column - show membership indicator
+            lists_item = self._create_list_membership_item(canonical_id)
+            self.table.setItem(i, 7, lists_item)
 
         # Add failure entries at the bottom (Phase 9.1: show failures in table)
         if failure_entries:
@@ -718,13 +783,169 @@ class ObservationDataComponent(QWidget):
                 self.table.setItem(row, 1, type_item)
                 
                 # Other columns are empty/dashes
-                for col in range(2, 7):
+                for col in range(2, 8):
                     item = centered_table_widget_item('-')
                     item.setForeground(Qt.gray)
                     self.table.setItem(row, col, item)
         
         # Re-enable sorting now that all items are added
         self.table.setSortingEnabled(True)
+
+    def _find_canonical_id(self, object_name: str) -> str | None:
+        """Find canonical_id by object name from resolved objects."""
+        for canonical_id, obj in self._resolved_objects.items():
+            if obj.name == object_name:
+                return canonical_id
+        return None
+
+    def _create_list_membership_item(self, canonical_id: str | None) -> QTableWidgetItem:
+        """Create a table item showing list membership."""
+        if not canonical_id or canonical_id not in self._list_membership:
+            return centered_table_widget_item('-')
+        
+        lists = self._list_membership.get(canonical_id, [])
+        if not lists:
+            return centered_table_widget_item('-')
+        
+        # Show count with icon
+        count = len(lists)
+        item = centered_table_widget_item(f"📋 {count}")
+        
+        # Tooltip shows list names
+        list_names = ", ".join(tl.name for tl in lists)
+        item.setToolTip(f"In lists: {list_names}")
+        
+        return item
+
+    def _show_context_menu(self, position):
+        """Show context menu for table row actions."""
+        # Get selected rows
+        selected_rows = self.table.selectionModel().selectedRows()
+        if not selected_rows:
+            return
+        
+        # Get canonical IDs for selected rows
+        selected_objects = []
+        for index in selected_rows:
+            row = index.row()
+            name_item = self.table.item(row, 0)
+            if name_item:
+                canonical_id = name_item.data(Qt.UserRole)
+                if canonical_id and canonical_id in self._resolved_objects:
+                    selected_objects.append((canonical_id, self._resolved_objects[canonical_id]))
+        
+        if not selected_objects:
+            return
+        
+        # Get all user's target lists
+        all_lists = self.target_list_service.get_all_lists()
+        
+        # Build context menu
+        menu = QMenu(self)
+        
+        # "Add to..." submenu
+        add_menu = menu.addMenu("Add to...")
+        
+        if all_lists:
+            for target_list in all_lists:
+                # Check if ALL selected objects are already in this list
+                all_in_list = all(
+                    target_list in self._list_membership.get(cid, [])
+                    for cid, _ in selected_objects
+                )
+                
+                action = add_menu.addAction(f"📋 {target_list.name}")
+                action.setData(('add', target_list.id))
+                if all_in_list:
+                    action.setEnabled(False)
+                    action.setText(f"✓ {target_list.name}")
+        
+        add_menu.addSeparator()
+        new_list_action = add_menu.addAction("➕ New List...")
+        new_list_action.setData(('new_list', None))
+        
+        # "Remove from..." submenu - only show lists that contain ANY selected object
+        lists_with_objects = set()
+        for cid, _ in selected_objects:
+            for tl in self._list_membership.get(cid, []):
+                lists_with_objects.add(tl.id)
+        
+        if lists_with_objects:
+            remove_menu = menu.addMenu("Remove from...")
+            for target_list in all_lists:
+                if target_list.id in lists_with_objects:
+                    action = remove_menu.addAction(f"📋 {target_list.name}")
+                    action.setData(('remove', target_list.id))
+        
+        # Execute menu and handle action
+        action = menu.exec(QCursor.pos())
+        if action:
+            action_data = action.data()
+            if action_data:
+                self._handle_context_menu_action(action_data, selected_objects)
+
+    def _handle_context_menu_action(self, action_data: tuple, selected_objects: list[tuple[str, CelestialObject]]):
+        """Handle context menu action."""
+        action_type, list_id = action_data
+        
+        if action_type == 'new_list':
+            # Create new list dialog
+            name, ok = QInputDialog.getText(self, "New Target List", "List name:")
+            if ok and name.strip():
+                try:
+                    new_list = self.target_list_service.create_list(name.strip())
+                    list_id = new_list.id
+                    action_type = 'add'  # Fall through to add
+                except ValueError as e:
+                    QMessageBox.warning(self, "Error", str(e))
+                    return
+        
+        # Suppress event-triggered refreshes during batch operation
+        self._batch_operation_in_progress = True
+        
+        try:
+            if action_type == 'add' and list_id:
+                added_count = 0
+                for canonical_id, celestial_obj in selected_objects:
+                    try:
+                        self.target_list_service.add_resolved_object(list_id, celestial_obj)
+                        added_count += 1
+                    except ValueError:
+                        pass  # Already in list
+            
+            elif action_type == 'remove' and list_id:
+                removed_count = 0
+                for canonical_id, _ in selected_objects:
+                    if self.target_list_service.remove_object_by_canonical_id(list_id, canonical_id):
+                        removed_count += 1
+        finally:
+            # Re-enable event-triggered refreshes and do single refresh
+            self._batch_operation_in_progress = False
+            self._refresh_list_membership()
+
+    def _refresh_list_membership(self, from_event: bool = False):
+        """
+        Refresh list membership indicators in the table.
+        
+        Args:
+            from_event: If True, this is called from an event handler and should
+                       be skipped during batch operations
+        """
+        # Skip event-triggered refreshes during batch operations
+        if from_event and self._batch_operation_in_progress:
+            return
+        
+        canonical_ids = list(self._resolved_objects.keys())
+        if canonical_ids:
+            self._list_membership = self.target_list_service.get_list_membership_bulk(canonical_ids)
+        
+        # Update the Lists column for all rows
+        for row in range(self.table.rowCount()):
+            name_item = self.table.item(row, 0)
+            if name_item:
+                canonical_id = name_item.data(Qt.UserRole)
+                lists_item = self._create_list_membership_item(canonical_id)
+                self.table.setItem(row, 7, lists_item)
 
     def _subscribe_to_events(self):
         """Subscribe to equipment and site events to refresh configuration status and dropdowns"""
@@ -735,6 +956,12 @@ class ObservationDataComponent(QWidget):
         # Telescope events
         bus.on(NightGuideEvent.EQUIPMENT_TELESCOPE_ADDED, lambda _: self._on_equipment_changed())
         bus.on(NightGuideEvent.EQUIPMENT_TELESCOPE_DELETED, lambda _: self._on_equipment_changed())
+        
+        # Target list events - refresh list membership indicators when lists change
+        # Pass from_event=True to skip during batch operations
+        bus.on(NightGuideEvent.TARGET_LIST_ITEM_ADDED, lambda _: self._refresh_list_membership(from_event=True))
+        bus.on(NightGuideEvent.TARGET_LIST_ITEM_REMOVED, lambda _: self._refresh_list_membership(from_event=True))
+        bus.on(NightGuideEvent.TARGET_LIST_DELETED, lambda _: self._refresh_list_membership(from_event=True))
 
         # Eyepiece events
         bus.on(NightGuideEvent.EQUIPMENT_EYEPIECE_ADDED, lambda _: self._on_equipment_changed())

@@ -300,3 +300,63 @@ class TargetListService:
         with session_scope() as session:
             items = self.repository.get_items_for_list(session, list_id)
             return [item for item in items if not item.observed]
+
+    # ----- List Membership Queries -----
+
+    def get_lists_for_object(self, canonical_id: str) -> list[TargetList]:
+        """
+        Get all target lists that contain a specific object.
+        
+        Used for context menu "Remove from..." submenu.
+        
+        Args:
+            canonical_id: The canonical ID of the object
+            
+        Returns:
+            List of TargetList objects containing this object
+        """
+        with session_scope() as session:
+            return self.repository.get_lists_for_object(session, canonical_id)
+
+    def get_list_membership_bulk(self, canonical_ids: list[str]) -> dict[str, list[TargetList]]:
+        """
+        Get list membership for multiple objects efficiently.
+        
+        Used for populating list membership indicators in results table.
+        
+        Args:
+            canonical_ids: List of canonical IDs to check
+            
+        Returns:
+            Dict mapping canonical_id -> list of TargetList objects
+        """
+        with session_scope() as session:
+            return self.repository.get_list_membership_bulk(session, canonical_ids)
+
+    def remove_object_by_canonical_id(self, list_id: int, canonical_id: str) -> bool:
+        """
+        Remove an object from a list by its canonical_id.
+        
+        Used for context menu "Remove from..." action.
+        
+        Args:
+            list_id: Target list ID
+            canonical_id: Canonical ID of the object to remove
+            
+        Returns:
+            True if removed, False if not found
+        """
+        with session_scope() as session:
+            item = session.query(TargetListItem)\
+                .filter(TargetListItem.list_id == list_id)\
+                .filter(TargetListItem.canonical_id == canonical_id)\
+                .first()
+            
+            if item:
+                item_id = item.id
+                session.delete(item)
+                session.commit()
+                
+                bus.emit(NightGuideEvent.TARGET_LIST_ITEM_REMOVED, {'id': item_id})
+                return True
+            return False

@@ -110,6 +110,26 @@ CREATE INDEX idx_target_list_items_list_id ON target_list_items(list_id);
 - [ ] Run the app and test UI functionality
 - [ ] Verify database persistence works
 
+### ✅ Task 9: Cross-Tab UX Integration
+**File:** `src/app/ui/main_window/observation_data/observation_data_component.py`
+
+Integrated target list management into the main scoring view:
+
+- [x] Added "Lists" column to results table showing membership indicators
+- [x] Right-click context menu on table rows:
+  - "Add to..." submenu with all user's custom lists
+  - "➕ New List..." option to create and add in one action
+  - "Remove from..." submenu (only shows lists containing the object)
+- [x] Visual indicator (📋 count) with tooltip showing list names
+- [x] Multi-select support for adding/removing multiple objects at once
+- [x] Event bus integration to refresh indicators when lists change
+- [x] Bulk query (`get_list_membership_bulk`) for efficient loading
+
+**Service additions:**
+- `get_lists_for_object(canonical_id)` - Query lists containing an object
+- `get_list_membership_bulk(canonical_ids)` - Efficient batch query
+- `remove_object_by_canonical_id(list_id, canonical_id)` - Remove by ID
+
 ---
 
 ## File Structure
