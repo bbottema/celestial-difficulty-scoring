@@ -10,7 +10,6 @@ OpenNGC provides high-quality DSO data (NGC/IC/Messier) with:
 Research findings: OpenNGC is the PRIMARY source for DSO classification
 because its type system is designed for amateur astronomy observing.
 """
-import logging
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -20,8 +19,6 @@ from app.domain.model.celestial_object import CelestialObject
 from app.domain.model.object_classification import ObjectClassification, SurfaceBrightness, AngularSize
 from app.domain.model.data_provenance import DataProvenance
 from app.catalog.interfaces import ProviderDTO
-
-logger = logging.getLogger(__name__)
 
 
 class OpenNGCProvider:
@@ -40,7 +37,6 @@ class OpenNGCProvider:
             csv_path: Path to OpenNGC.csv file
         """
         self.df = self._load_csv(csv_path)
-        logger.info(f"Loaded {len(self.df)} objects from NGC.csv")
 
         # Load OpenNGC addendum (M40, M45, Caldwell objects, named DSOs)
         # M40 and M45 are not NGC/IC objects, so they're in the official addendum.csv
@@ -48,7 +44,6 @@ class OpenNGCProvider:
         if addendum_path.exists():
             addendum_df = self._load_csv(addendum_path)
             self.df = pd.concat([self.df, addendum_df], ignore_index=True)
-            logger.info(f"Added {len(addendum_df)} addendum objects, total: {len(self.df)}")
 
         self.adapter = OpenNGCAdapter()
 

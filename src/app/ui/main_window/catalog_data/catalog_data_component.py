@@ -284,7 +284,6 @@ class CatalogDataComponent(QWidget):
                 # Need to go up 6 levels to project root, then into data/catalogs
                 csv_path = Path(__file__).parent.parent.parent.parent.parent.parent / "data" / "catalogs" / "NGC.csv"
                 print(f"Loading OpenNGC from: {csv_path}")
-                print(f"Path exists: {csv_path.exists()}")
                 self.openngc_provider = OpenNGCProvider(csv_path)
 
             # Get dataframe

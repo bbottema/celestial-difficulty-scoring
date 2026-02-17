@@ -1,4 +1,3 @@
-import math
 from typing import Optional
 
 from app.domain.model.celestial_object import CelestialObjectScore, ScoredCelestialObject, CelestialsList, \

@@ -504,19 +504,6 @@ class ObservationDataComponent(QWidget):
                     f"✓ {result.success_count}/{result.total_count} resolved"
                 )
                 self.list_status_label.setStyleSheet("color: #ff9800; font-style: italic;")
-                
-                # Show warning if many objects failed to resolve
-                if result.success_rate < 50.0:
-                    failure_sample = result.failures[:5]
-                    failure_details = "\n".join([f"  • {f.name}: {f.reason}" for f in failure_sample])
-                    more_text = f"\n  ... and {len(result.failures) - 5} more" if len(result.failures) > 5 else ""
-                    QMessageBox.warning(
-                        self,
-                        "Low Resolution Rate",
-                        f"Only {result.success_count} of {result.total_count} objects could be resolved.\n\n"
-                        f"Sample failures:\n{failure_details}{more_text}\n\n"
-                        f"This may indicate a problem with the catalog data."
-                    )
             else:
                 self.list_status_label.setText(f"✓ {result.success_count} objects loaded")
                 self.list_status_label.setStyleSheet("color: #4caf50; font-style: italic;")
@@ -672,7 +659,7 @@ class ObservationDataComponent(QWidget):
             data_source: Display name for data source (e.g., "Messier Catalog")
             failure_entries: Optional list of failed resolution dicts to append (Phase 9.1)
         """
-        # IMPORTANT: Disable sorting during population to prevent Qt from 
+        # IMPORTANT: Disable sorting during population to prevent Qt from
         # misplacing items as they're added
         self.table.setSortingEnabled(False)
         
@@ -697,12 +684,6 @@ class ObservationDataComponent(QWidget):
             self.table.insertRow(i)
             self.table.setItem(i, 0, centered_table_widget_item(celestial_object.name))
             self.table.setItem(i, 1, centered_table_widget_item(celestial_object.object_type or '-'))
-            
-            # DEBUG: Print first few objects to console
-            if i < 3:
-                print(f"DEBUG populate_table[{i}]: name='{celestial_object.name}', "
-                      f"type='{celestial_object.object_type}', mag={celestial_object.magnitude}, "
-                      f"size={celestial_object.size}, alt={celestial_object.altitude}")
             
             # Handle magnitude display (99.0 means unknown)
             mag_str = '-' if celestial_object.magnitude is None or celestial_object.magnitude >= 99.0 else f"{celestial_object.magnitude:.1f}"
